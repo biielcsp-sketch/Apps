@@ -698,6 +698,7 @@ table input::-webkit-calendar-picker-indicator{filter:invert(.7)}
       <section class="page" id="page-proddevol"></section>
       <section class="page" id="page-prodequipe"></section>
       <section class="page" id="page-prodranking"></section>
+      <section class="page" id="page-prodmeudesempenho"></section>
       <section class="page" id="page-prodrel"></section>
       <section class="page" id="page-prodconfig"></section>
       <section class="page" id="page-vendas"></section>
@@ -983,6 +984,7 @@ const TITLES = {
   prodavarias:['Avarias','Registro e histórico de avarias'],
   proddevol:  ['Devoluções','Registro e histórico de devoluções'],
   prodranking:['Ranking','Pontuação e destaque da equipe'],
+  prodmeudesempenho:['Meu Desempenho','Sua performance pessoal na produção'],
   prodequipe: ['Equipe','Colaboradores, metas e desempenho'],
   prodrel:    ['Relatórios','Relatórios de produção em PDF'],
   prodconfig: ['Configurações','Empresa, módulos, metas e turnos'],
@@ -2475,6 +2477,7 @@ const NAV_ICONS = {
   prodrel:    '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/>',
   prodconfig: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
   prodranking:'<path d="M8.21 13.89 7 23l5-3 5 3-1.21-9.12"/><circle cx="12" cy="8" r="7"/>',
+  prodmeudesempenho:'<path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>',
   dashboard: '<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',
   vendas:    '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
   funil:     '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
@@ -2492,7 +2495,7 @@ const NAV_ICONS = {
 function navItem(page,label){
   return `<div class="nav-item" data-page="${page}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${NAV_ICONS[page]||''}</svg>${label}</div>`;
 }
-const OPERADOR_PAGES = ['proddash','prodavarias','prodranking'];
+const OPERADOR_PAGES = ['proddash','prodavarias','prodranking','prodmeudesempenho'];
 const SUPERVISOR_PAGES = ['proddash','prodlanc','prodavarias','proddevol','prodequipe','prodranking','prodrel'];
 function buildSidebar(){
   const cu=currentUser();
@@ -2501,6 +2504,7 @@ function buildSidebar(){
     ho+=navItem('proddash','Dashboard');
     ho+=navItem('prodavarias','Avarias');
     ho+=navItem('prodranking','Ranking');
+    ho+=navItem('prodmeudesempenho','Meu Desempenho');
     $('#sidebarNav').innerHTML=ho;
     document.querySelectorAll('#sidebarNav [data-page]').forEach(item=>{
       item.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); go(this.dataset.page); });
@@ -4404,6 +4408,112 @@ function renderRankAno(){
   const yr=yearRange(rankAnoOff);
   const ranking=calcRanking(yr.ini,yr.fim);
   $('#rankBody').innerHTML = periodNav(String(yr.y),'rankAnoOff','renderRankAno') + rankingHTML(ranking, String(yr.y));
+}
+
+/* =====================================================================
+   === NOVO: MEU DESEMPENHO (visão pessoal do operador) ===
+   ===================================================================== */
+let mdTab='semana', mdSemOff=0, mdMesOff=0, mdAnoOff=0;
+RENDER.prodmeudesempenho=function(){
+  const cu=currentUser();
+  const colab = cu && cu.colaborador_id ? prod.colaboradores.find(c=>c.id===cu.colaborador_id) : null;
+  if(!colab){
+    $('#page-prodmeudesempenho').innerHTML=`<div class="empty"><p>Seu usuário ainda não está vinculado a um colaborador da produção.</p><p style="margin-top:6px;font-size:12.5px">Peça para um administrador vincular seu login em Configurações → Equipe.</p></div>`;
+    return;
+  }
+  renderMdTab();
+};
+function mdTabBtn(k,label){const on=mdTab===k;return `<button onclick="mdTab='${k}';renderMdTab()" style="background:none;border:none;padding:11px 4px;margin-right:18px;font-family:inherit;font-weight:600;font-size:14px;color:${on?'var(--accent)':'var(--text-3)'};border-bottom:2px solid ${on?'var(--accent)':'transparent'};cursor:pointer">${label}</button>`;}
+function renderMdTab(){
+  $('#page-prodmeudesempenho').innerHTML=`
+    <div class="subtabs" style="display:flex;border-bottom:1px solid var(--border);margin-bottom:20px">
+      ${mdTabBtn('semana','Semana')}${mdTabBtn('mes','Mês')}${mdTabBtn('ano','Ano')}
+    </div>
+    <div id="mdBody"></div>`;
+  if(mdTab==='semana') renderMdSemana();
+  else if(mdTab==='mes') renderMdMes();
+  else renderMdAno();
+}
+function meuDesempenhoHTML(ini,fim,dias,tituloPeriodo){
+  const cu=currentUser();
+  const colab=prod.colaboradores.find(c=>c.id===cu.colaborador_id);
+  const regs=prod.producao.filter(r=>r.colaborador_id===colab.id && r.data>=ini && r.data<=fim).sort((a,b)=>a.data<b.data?-1:1);
+  const a=aggReg(regs);
+  const minhasAvarias=(prod.avarias||[]).filter(x=>x.responsavel===colab.nome && x.data>=ini && x.data<=fim).sort((x,y)=>y.data<x.data?-1:1);
+  const st=statsColaborador(colab.id, dias);
+  const nivel=nivelEficiencia(a.ef);
+  const ranking=calcRanking(ini,fim);
+  const minhaPos=ranking.findIndex(r=>r.colaborador.id===colab.id);
+  const meuRank = minhaPos>=0 ? ranking[minhaPos] : null;
+  const porMotivo={}; minhasAvarias.forEach(x=>{const k=(x.motivo||'—').trim()||'—'; porMotivo[k]=(porMotivo[k]||0)+1;});
+  const listaMotivo=Object.entries(porMotivo).sort((a,b)=>b[1]-a[1]);
+  const cores=['#2979FF','#FF3D57','#F5A623','#27C28B','#9b59b6','#38C6F5'];
+
+  const avRows = minhasAvarias.length ? minhasAvarias.map(x=>`<tr><td>${dBR(x.data)}</td><td>${x.motivo||'-'}</td><td>${x.cor||'-'}</td><td>${x.tamanho||'-'}</td></tr>`).join('')
+    : `<tr><td colspan="4"><div class="empty" style="padding:24px"><p>Nenhuma avaria sua no período — parabéns!</p></div></td></tr>`;
+
+  return `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+      ${avatarHTML(colab.nome, colab.foto, 'avatar', 'width:56px;height:56px;font-size:20px')}
+      <div>
+        <div style="font-size:18px;font-weight:700">${colab.nome}</div>
+        <div style="font-size:12.5px;color:var(--text-3)">${colab.funcao} · ${turnoLabel(colab.turno)} · meta diária ${colab.meta_diaria}</div>
+      </div>
+      ${meuRank?`<div style="margin-left:auto;text-align:right"><div style="font-size:11.5px;color:var(--text-3)">Posição no ranking</div><div style="font-size:20px;font-weight:700;color:var(--accent)">${minhaPos+1}º <span style="font-size:13px;color:var(--text-3);font-weight:500">de ${ranking.length}</span></div></div>`:''}
+    </div>
+    <div class="kpi-grid">
+      ${dashKpi('Produzido — '+tituloPeriodo, a.prodTot, a.n+' lançamentos','#2979FF')}
+      ${dashKpi('Eficiência', a.ef.toFixed(0)+'%', nivel.label, nivel.cor)}
+      ${dashKpi('Minhas Avarias', a.avTot, a.taxaAv.toFixed(1)+'% do que produzi', a.avTot>0?'#FF3D57':'#27C28B')}
+      ${dashKpi('Pontos no Ranking', meuRank?meuRank.total:0, meuRank?(meuRank.bonus+' pts de bônus por semana limpa'):'', '#F5A623')}
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+      ${st.consistente?'<span class="badge" style="color:#27C28B;background:#27C28B18">Consistente</span>':''}
+      <span class="badge" style="color:var(--text-2);background:var(--surface-2)">${st.tarrow} ${st.tendencia} (últimos 7 dias)</span>
+      <span class="badge" style="color:var(--text-2);background:var(--surface-2)">Melhor dia: ${st.melhor} · Pior dia: ${st.pior}</span>
+    </div>
+    <div class="card" style="margin-bottom:20px"><div class="card-head"><div class="card-title">Minha produção no período</div></div><div style="height:240px"><canvas id="mdChart"></canvas></div></div>
+    <div class="bottom-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <div class="card-head"><div class="card-title">Minhas avarias por motivo</div></div>
+        ${listaMotivo.length?listaMotivo.map(([motivo,n],i)=>{const pct=a.avTot>0?(n/minhasAvarias.length*100):0;return `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px"><span class="strong">${motivo}</span><span style="color:var(--text-3)">${n}</span></div><div class="progress-wrap"><div class="progress-bar" style="width:${pct}%;background:${cores[i%cores.length]}"></div></div></div>`;}).join(''):'<div class="empty" style="padding:24px"><p>Nenhuma avaria no período</p></div>'}
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">Detalhe das avarias</div></div>
+        <div class="table-wrapper"><table><thead><tr><th>Data</th><th>Motivo</th><th>Cor</th><th>Tam.</th></tr></thead><tbody>${avRows}</tbody></table></div>
+      </div>
+    </div>`;
+}
+function drawMdChart(labels, data, metaLinha){
+  setTimeout(()=>{ drawDashChart('mdChart','bar',labels,[
+    {label:'Produzido',data,backgroundColor:'#2979FF',borderRadius:6},
+    {label:'Meta',data:labels.map(()=>metaLinha),type:'line',borderColor:'rgba(150,150,160,.8)',borderDash:[6,4],pointRadius:0,fill:false}
+  ]); },40);
+}
+function renderMdSemana(){
+  const wk=weekRange(mdSemOff);
+  const cu=currentUser(); const colab=prod.colaboradores.find(c=>c.id===cu.colaborador_id);
+  $('#mdBody').innerHTML = periodNav(dBR(wk.ini)+' — '+dBR(wk.fim),'mdSemOff','renderMdSemana') + meuDesempenhoHTML(wk.ini,wk.fim,7,'Semana');
+  const regs=prod.producao.filter(r=>r.colaborador_id===colab.id);
+  const byDay=wk.dias.map(d=>regs.filter(r=>r.data===d).reduce((s,r)=>s+(+r.produzido_liquido||0),0));
+  drawMdChart(['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'], byDay, +colab.meta_diaria||0);
+}
+function renderMdMes(){
+  const mo=monthRange(mdMesOff);
+  const cu=currentUser(); const colab=prod.colaboradores.find(c=>c.id===cu.colaborador_id);
+  $('#mdBody').innerHTML = periodNav(mo.label,'mdMesOff','renderMdMes') + meuDesempenhoHTML(mo.ini,mo.fim,30,'Mês');
+  const regs=prod.producao.filter(r=>r.colaborador_id===colab.id);
+  const byDay=mo.dias.map(d=>regs.filter(r=>r.data===d).reduce((s,r)=>s+(+r.produzido_liquido||0),0));
+  drawMdChart(mo.dias.map(d=>d.slice(8,10)), byDay, +colab.meta_diaria||0);
+}
+function renderMdAno(){
+  const yr=yearRange(mdAnoOff);
+  const cu=currentUser(); const colab=prod.colaboradores.find(c=>c.id===cu.colaborador_id);
+  $('#mdBody').innerHTML = periodNav(String(yr.y),'mdAnoOff','renderMdAno') + meuDesempenhoHTML(yr.ini,yr.fim,365,'Ano');
+  const regs=prod.producao.filter(r=>r.colaborador_id===colab.id);
+  const MES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const porMes=yr.meses.map(mm=>regs.filter(r=>r.data>=mm.ini&&r.data<=mm.fim).reduce((s,r)=>s+(+r.produzido_liquido||0),0));
+  drawMdChart(MES, porMes, (+colab.meta_diaria||0)*22);
 }
 
 /* =====================================================================
