@@ -115,6 +115,7 @@ button,a,[onclick]{-webkit-tap-highlight-color:transparent;touch-action:manipula
 .nav-item.active::before{content:'';position:absolute;left:-14px;top:50%;transform:translateY(-50%);width:3px;height:22px;background:var(--accent);border-radius:0 3px 3px 0;box-shadow:var(--accent-glow)}
 .sidebar-foot{margin-top:auto;padding:14px 12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:11px}
 .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a4fb8);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:#fff;flex-shrink:0}
+.podio-av{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#1a4fb8);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;color:#fff;flex-shrink:0;border:2px solid var(--border)}
 .sidebar-foot .who{font-size:13.5px;font-weight:600;line-height:1.2}
 .sidebar-foot .role{font-size:11.5px;color:var(--text-3)}
 
@@ -673,6 +674,7 @@ table input::-webkit-calendar-picker-indicator{filter:invert(.7)}
       <section class="page" id="page-prodavarias"></section>
       <section class="page" id="page-proddevol"></section>
       <section class="page" id="page-prodequipe"></section>
+      <section class="page" id="page-prodranking"></section>
       <section class="page" id="page-prodrel"></section>
       <section class="page" id="page-prodconfig"></section>
       <section class="page" id="page-vendas"></section>
@@ -836,6 +838,31 @@ const dBR = s => { if(!s)return''; const [y,m,d]=s.split('-'); return `${d}/${m}
 const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const initials = n => n.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 const $ = s => document.querySelector(s);
+function avatarHTML(nome, foto, cls, extraStyle){
+  cls = cls||'mini-av'; extraStyle = extraStyle||'';
+  if(foto) return `<div class="${cls}" style="padding:0;overflow:hidden;${extraStyle}"><img src="${foto}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`;
+  return `<div class="${cls}" style="${extraStyle}">${initials(nome||'?')}</div>`;
+}
+function resizeImageToDataURL(file, maxSize, quality){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onerror=()=>reject(new Error('Falha ao ler arquivo'));
+    reader.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>reject(new Error('Arquivo não é uma imagem válida'));
+      img.onload=()=>{
+        let w=img.width, h=img.height;
+        if(w>h){ if(w>maxSize){ h=Math.round(h*maxSize/w); w=maxSize; } }
+        else{ if(h>maxSize){ w=Math.round(w*maxSize/h); h=maxSize; } }
+        const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg', quality||0.72));
+      };
+      img.src=reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 let state = {clientes:[],produtos:[],vendas:[],leads:[],transacoes:[],metas:[],tarefas:[],orcamentos:[],os:[],users:[]};
 function clearLocalData(){
@@ -933,6 +960,7 @@ const TITLES = {
   prodlanc:   ['Lançamento Diário','Registre a produção da equipe'],
   prodavarias:['Avarias','Registro e histórico de avarias'],
   proddevol:  ['Devoluções','Registro e histórico de devoluções'],
+  prodranking:['Ranking','Pontuação e destaque da equipe'],
   prodequipe: ['Equipe','Colaboradores, metas e desempenho'],
   prodrel:    ['Relatórios','Relatórios de produção em PDF'],
   prodconfig: ['Configurações','Empresa, módulos, metas e turnos'],
@@ -952,6 +980,8 @@ const TITLES = {
 };
 function go(page){
   if(!TITLES[page]) return;
+  const cu=currentUser();
+  if(cu && cu.perfil==='operador' && !OPERADOR_PAGES.includes(page)) page='proddash';
   const pageEl = $('#page-'+page); if(!pageEl) return;
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.page===page));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -1354,10 +1384,10 @@ RENDER.config = function(){
 
   const userRows = users.map(u=>`
     <div class="user-list-item">
-      <div class="user-av ${u.perfil==='admin'?'':'collab'}">${initials(u.nome)}</div>
+      ${avatarHTML(u.nome, u.foto, 'user-av'+(u.perfil==='admin'?'':' collab'))}
       <div class="user-info">
-        <div class="uname">${u.nome} ${u.id===cu.id?'<span style="font-size:11px;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:6px;margin-left:4px">Você</span>':''}</div>
-        <div class="umeta">${u.login} · ${u.cargo||( u.perfil==='admin'?'Administrador':'Colaborador')}</div>
+        <div class="uname">${u.nome} ${u.id===cu.id?'<span style="font-size:11px;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:6px;margin-left:4px">Você</span>':''} ${u.perfil==='operador'?'<span class="badge b-blue" style="margin-left:4px">operador</span>':''}</div>
+        <div class="umeta">${u.login} · ${u.cargo||({admin:'Administrador',operador:'Operador'}[u.perfil]||'Colaborador')}</div>
       </div>
       <div class="user-actions">
         <button class="btn btn-ghost" style="padding:6px 12px;font-size:12.5px" onclick="editUser('${u.id}')">Editar</button>
@@ -1917,7 +1947,7 @@ function currentUser(){
   try{const r=localStorage.getItem(SESSION_KEY);return r?JSON.parse(r):null;}catch(e){return null;}
 }
 function setSession(u){
-  localStorage.setItem(SESSION_KEY,JSON.stringify({id:u.id,nome:u.nome,login:u.login,perfil:u.perfil,cargo:u.cargo||'',org_id:u.org_id||orgId}));
+  localStorage.setItem(SESSION_KEY,JSON.stringify({id:u.id,nome:u.nome,login:u.login,perfil:u.perfil,cargo:u.cargo||'',org_id:u.org_id||orgId,foto:u.foto||null,colaborador_id:u.colaborador_id||null}));
 }
 function clearSession(){localStorage.removeItem(SESSION_KEY);}
 
@@ -1972,12 +2002,71 @@ function updateSidebarUser(){
   const cu=currentUser(); if(!cu)return;
   const users=loadUsers(); const u=users.find(x=>x.id===cu.id)||cu;
   const av=$('#sbAvatar'), nm=$('#sbName'), rl=$('#sbRole');
-  if(av) av.textContent=initials(cu.nome);
+  if(av){
+    av.innerHTML = u.foto ? `<img src="${u.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block">` : initials(cu.nome);
+    av.style.cursor='pointer'; av.title='Editar meu perfil'; av.onclick=()=>abrirMeuPerfil();
+  }
   if(nm) nm.textContent=cu.nome;
-  if(rl) rl.textContent=u.cargo||(cu.perfil==='admin'?'Administrador':'Colaborador');
+  const perfilLabel={admin:'Administrador',operador:'Operador',colaborador:'Colaborador'}[cu.perfil]||'Colaborador';
+  if(rl) rl.textContent=u.cargo||perfilLabel;
+}
+
+/* --- MEU PERFIL (foto + senha, disponível para qualquer login) --- */
+function abrirMeuPerfil(){
+  const cu=currentUser(); if(!cu)return;
+  const users=loadUsers(); const u=users.find(x=>x.id===cu.id)||cu;
+  openModal('Meu Perfil',`
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:20px">
+      <div id="mpAvatarPreview" style="width:84px;height:84px;border-radius:50%;overflow:hidden;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:26px;color:var(--accent)">${u.foto?`<img src="${u.foto}" style="width:100%;height:100%;object-fit:cover">`:initials(cu.nome)}</div>
+      <label class="btn btn-ghost" style="cursor:pointer">
+        Trocar foto
+        <input type="file" accept="image/*" id="mpFotoInput" style="display:none" onchange="mpPreviewFoto(this)">
+      </label>
+    </div>
+    <div class="field"><label>Nome</label><input value="${cu.nome}" disabled style="opacity:.6"></div>
+    <div class="field"><label>Login</label><input value="${cu.login}" disabled style="opacity:.6"></div>
+    <div class="field-row">
+      <div class="field"><label>Senha atual</label><input type="password" id="mpSenhaAtual" placeholder="Para trocar a senha"></div>
+      <div class="field"><label>Nova senha</label><input type="password" id="mpSenhaNova" placeholder="Mínimo 6 caracteres"></div>
+    </div>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Fechar</button>
+     <button class="btn btn-primary" onclick="salvarMeuPerfil()">Salvar</button>`);
+}
+let _mpFotoDataUrl=null;
+async function mpPreviewFoto(input){
+  const file=input.files&&input.files[0]; if(!file)return;
+  if(!file.type.startsWith('image/')){Toast('Selecione um arquivo de imagem','erro');return;}
+  try{
+    _mpFotoDataUrl = await resizeImageToDataURL(file, 240, 0.72);
+    $('#mpAvatarPreview').innerHTML = `<img src="${_mpFotoDataUrl}" style="width:100%;height:100%;object-fit:cover">`;
+  }catch(e){ Toast('Não foi possível processar a imagem','erro'); }
+}
+async function salvarMeuPerfil(){
+  try{
+    if(_mpFotoDataUrl){
+      const res=await rpcT('rpc_user_set_foto',{p_foto:_mpFotoDataUrl});
+      if(!res||!res.ok){Toast((res&&res.erro)||'Não foi possível salvar a foto','erro');return;}
+      const cu=currentUser(); setSession({...cu,foto:_mpFotoDataUrl});
+      _mpFotoDataUrl=null;
+    }
+    const atual=$('#mpSenhaAtual').value, nova=$('#mpSenhaNova').value;
+    if(nova){
+      if(nova.length<6){Toast('Nova senha: mínimo 6 caracteres','erro');return;}
+      if(!atual){Toast('Informe a senha atual para trocá-la','erro');return;}
+      const r2=await rpcT('rpc_change_password',{p_atual:atual,p_nova:nova});
+      if(!r2||!r2.ok){Toast((r2&&r2.erro)||'Senha atual incorreta','erro');return;}
+    }
+    await refreshUsers();
+    updateSidebarUser(); closeModal(); Toast('Perfil atualizado!','sucesso');
+  }catch(e){ Toast('Erro: '+(e.message||e),'erro'); }
 }
 
 /* --- CRUD USUÁRIOS (Supabase) --- */
+function colabLinkOptions(selectedId){
+  const opts=['<option value="">Nenhum (não vinculado)</option>']
+    .concat((prod.colaboradores||[]).map(c=>`<option value="${c.id}" ${selectedId===c.id?'selected':''}>${c.nome}</option>`));
+  return opts.join('');
+}
 async function formNovoUsuario(){
   openModal('Novo Usuário',`
     <div class="field"><label>Nome completo</label><input id="uNome" placeholder="Nome do usuário"></div>
@@ -1990,9 +2079,13 @@ async function formNovoUsuario(){
       <div class="field"><label>Perfil de acesso</label>
         <select id="uPerfil">
           <option value="colaborador">Colaborador</option>
+          <option value="operador">Operador (acesso restrito)</option>
           <option value="admin">Administrador</option>
         </select>
       </div>
+    </div>
+    <div class="field"><label>Vincular a colaborador <span style="color:var(--text-3);font-weight:400">(opcional — liga a foto e o ranking a esse login)</span></label>
+      <select id="uColabId">${colabLinkOptions(null)}</select>
     </div>
   `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
      <button class="btn btn-primary" onclick="saveNovoUsuario()">Criar usuário</button>`);
@@ -2005,7 +2098,7 @@ async function saveNovoUsuario(){
   if(!nome||!login||!senha){Toast('Preencha todos os campos','erro');return;}
   if(senha.length<6){Toast('Senha mínimo 6 caracteres','erro');return;}
   try{
-    const res=await rpcT('rpc_user_create',{p_nome:nome,p_login:login,p_senha:senha,p_cargo:$('#uCargo').value.trim()||'Colaborador',p_perfil:$('#uPerfil').value});
+    const res=await rpcT('rpc_user_create',{p_nome:nome,p_login:login,p_senha:senha,p_cargo:$('#uCargo').value.trim()||'Colaborador',p_perfil:$('#uPerfil').value,p_colaborador_id:$('#uColabId').value||null});
     if(!res||!res.ok){Toast((res&&res.erro)||'Não foi possível criar','erro');return;}
     await refreshUsers();
     closeModal(); RENDER.config(); Toast('Usuário criado com sucesso!','sucesso');
@@ -2023,11 +2116,15 @@ function editUser(id){
     <div class="field-row">
       <div class="field"><label>Cargo / Função</label><input id="euCargo" value="${u.cargo||''}" placeholder="ex: Vendedor..."></div>
       <div class="field"><label>Perfil</label>
-        <select id="euPerfil" ${u.id===cu?.id&&users.filter(x=>x.perfil==='admin').length<=1?'disabled':''}> 
+        <select id="euPerfil" ${u.id===cu?.id&&users.filter(x=>x.perfil==='admin').length<=1?'disabled':''}>
           <option value="colaborador" ${u.perfil==='colaborador'?'selected':''}>Colaborador</option>
+          <option value="operador" ${u.perfil==='operador'?'selected':''}>Operador (acesso restrito)</option>
           <option value="admin" ${u.perfil==='admin'?'selected':''}>Administrador</option>
         </select>
       </div>
+    </div>
+    <div class="field"><label>Vincular a colaborador <span style="color:var(--text-3);font-weight:400">(opcional)</span></label>
+      <select id="euColabId">${colabLinkOptions(u.colaborador_id||null)}</select>
     </div>
   `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
      <button class="btn btn-primary" onclick="saveEditUser('${id}')">Salvar</button>`);
@@ -2039,7 +2136,7 @@ async function saveEditUser(id){
   const users=loadUsers(); const u=users.find(x=>x.id===id); if(!u)return;
   if(senha && senha.length<6){Toast('Senha mínimo 6 caracteres','erro');return;}
   try{
-    const res=await rpcT('rpc_user_update',{p_id:id,p_nome:nome,p_login:login,p_cargo:cargo,p_perfil:perfil,p_ativo:(u.ativo!==false)});
+    const res=await rpcT('rpc_user_update',{p_id:id,p_nome:nome,p_login:login,p_cargo:cargo,p_perfil:perfil,p_ativo:(u.ativo!==false),p_colaborador_id:$('#euColabId').value||null});
     if(!res||!res.ok){Toast((res&&res.erro)||'Não foi possível salvar','erro');return;}
     if(senha){
       const r2=await rpcT('rpc_user_set_password',{p_id:id,p_senha:senha});
@@ -2334,6 +2431,7 @@ const NAV_ICONS = {
   prodequipe: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   prodrel:    '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/>',
   prodconfig: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  prodranking:'<path d="M8.21 13.89 7 23l5-3 5 3-1.21-9.12"/><circle cx="12" cy="8" r="7"/>',
   dashboard: '<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',
   vendas:    '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
   funil:     '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
@@ -2351,7 +2449,23 @@ const NAV_ICONS = {
 function navItem(page,label){
   return `<div class="nav-item" data-page="${page}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${NAV_ICONS[page]||''}</svg>${label}</div>`;
 }
+const OPERADOR_PAGES = ['proddash','prodavarias','prodranking'];
 function buildSidebar(){
+  const cu=currentUser();
+  if(cu && cu.perfil==='operador'){
+    let ho=`<div class="nav-label">Produção</div>`;
+    ho+=navItem('proddash','Dashboard');
+    ho+=navItem('prodavarias','Avarias');
+    ho+=navItem('prodranking','Ranking');
+    $('#sidebarNav').innerHTML=ho;
+    document.querySelectorAll('#sidebarNav [data-page]').forEach(item=>{
+      item.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); go(this.dataset.page); });
+      item.addEventListener('touchend', function(e){ e.preventDefault(); go(this.dataset.page); }, {passive:false});
+    });
+    const cur=(location.hash||'#proddash').slice(1);
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===cur));
+    return;
+  }
   const m=loadModules();
   let h=`<div class="nav-label">Produção</div>`;
   h+=navItem('proddash','Dashboard');
@@ -2359,6 +2473,7 @@ function buildSidebar(){
   h+=navItem('prodavarias','Avarias');
   h+=navItem('proddevol','Devoluções');
   h+=navItem('prodequipe','Equipe');
+  h+=navItem('prodranking','Ranking');
   h+=navItem('prodrel','Relatórios');
   // Módulos originais do Ominy — ocultos por padrão, ativáveis em Configurações
   const orig=[];
@@ -3545,7 +3660,7 @@ function colaboradoresHTML(){
     const st=STATUS_COLAB[c.status]||STATUS_COLAB.ativo;
     return `<div class="card" style="cursor:pointer" onclick="abrirColab('${c.id}')">
       <div style="display:flex;align-items:center;gap:14px">
-        <div class="mini-av" style="width:48px;height:48px;font-size:16px">${initials(c.nome)}</div>
+        ${avatarHTML(c.nome, c.foto, 'mini-av', 'width:48px;height:48px;font-size:16px')}
         <div style="flex:1">
           <div class="strong">${c.nome}</div>
           <div style="font-size:12.5px;color:var(--text-3)">${c.funcao} · ${turnoLabel(c.turno)}</div>
@@ -3572,7 +3687,12 @@ function formColab(id){
   const funcOpts=FUNCOES.map(f=>`<option ${c&&c.funcao===f?'selected':''}>${f}</option>`).join('');
   const turnoOpts=[['manha','Manhã'],['tarde','Tarde'],['noite','Noite'],['integral','Integral']].map(([v,l])=>`<option value="${v}" ${c&&c.turno===v?'selected':''}>${l}</option>`).join('');
   const stOpts=[['ativo','Ativo'],['ferias','Férias'],['afastado','Afastado']].map(([v,l])=>`<option value="${v}" ${c&&c.status===v?'selected':''}>${l}</option>`).join('');
+  _colabFotoDataUrl=null;
   openModal(id?'Editar Colaborador':'Novo Colaborador',`
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:18px">
+      <div id="cFotoPreview" style="width:72px;height:72px;border-radius:50%;overflow:hidden;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;color:var(--accent)">${c&&c.foto?`<img src="${c.foto}" style="width:100%;height:100%;object-fit:cover">`:initials(c?c.nome:'?')}</div>
+      <label class="btn btn-ghost" style="cursor:pointer;padding:6px 14px;font-size:12.5px">Trocar foto<input type="file" accept="image/*" style="display:none" onchange="colabPreviewFoto(this)"></label>
+    </div>
     <div class="field"><label>Nome completo</label><input id="cNome" value="${c?c.nome:''}" placeholder="Ex: Ana Paula Ferreira"></div>
     <div class="field-row">
       <div class="field"><label>Função</label><select id="cFunc">${funcOpts}</select></div>
@@ -3586,14 +3706,25 @@ function formColab(id){
     <div class="field"><label>Observações</label><input id="cObs" value="${c?(c.obs||''):''}" placeholder="Opcional"></div>
   `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarColab('${id||''}')">Salvar</button>`);
 }
+let _colabFotoDataUrl=null;
+async function colabPreviewFoto(input){
+  const file=input.files&&input.files[0]; if(!file)return;
+  if(!file.type.startsWith('image/')){Toast('Selecione um arquivo de imagem','erro');return;}
+  try{
+    _colabFotoDataUrl = await resizeImageToDataURL(file, 240, 0.72);
+    $('#cFotoPreview').innerHTML = `<img src="${_colabFotoDataUrl}" style="width:100%;height:100%;object-fit:cover">`;
+  }catch(e){ Toast('Não foi possível processar a imagem','erro'); }
+}
 function salvarColab(id){
   const nome=$('#cNome').value.trim();
   if(!nome){Toast('Informe o nome','erro');return;}
   const meta=Math.max(0,+$('#cMeta').value||0);
+  const existente=id?prod.colaboradores.find(x=>x.id===id):null;
   const obj={
     id:id||('col-'+uid()), nome,
     funcao:$('#cFunc').value, turno:$('#cTurno').value,
-    meta_diaria:meta, admissao:$('#cAdm').value, status:$('#cStatus').value, obs:$('#cObs').value.trim()
+    meta_diaria:meta, admissao:$('#cAdm').value, status:$('#cStatus').value, obs:$('#cObs').value.trim(),
+    foto:_colabFotoDataUrl||(existente?existente.foto:null)
   };
   if(id){ const i=prod.colaboradores.findIndex(x=>x.id===id); if(i>=0)prod.colaboradores[i]=obj; }
   else prod.colaboradores.push(obj);
@@ -4122,18 +4253,161 @@ function renderDashAnual(){
 }
 
 /* =====================================================================
+   === NOVO: TELA RANKING ===
+   Pontuação: +1 por camisa produzida (líquido), -1 por avaria,
+   +5 de bônus por semana trabalhada sem nenhuma avaria.
+   ===================================================================== */
+let rankTab='semana', rankSemOff=0, rankMesOff=0, rankAnoOff=0;
+RENDER.prodranking=function(){ renderRankTab(); };
+function rankTabBtn(k,label){const on=rankTab===k;return `<button onclick="rankTab='${k}';renderRankTab()" style="background:none;border:none;padding:11px 4px;margin-right:18px;font-family:inherit;font-weight:600;font-size:14px;color:${on?'var(--accent)':'var(--text-3)'};border-bottom:2px solid ${on?'var(--accent)':'transparent'};cursor:pointer">${label}</button>`;}
+function renderRankTab(){
+  $('#page-prodranking').innerHTML=`
+    <div class="subtabs" style="display:flex;border-bottom:1px solid var(--border);margin-bottom:20px">
+      ${rankTabBtn('semana','Semana')}${rankTabBtn('mes','Mês')}${rankTabBtn('ano','Ano')}
+    </div>
+    <div id="rankBody"></div>`;
+  if(rankTab==='semana') renderRankSemana();
+  else if(rankTab==='mes') renderRankMes();
+  else renderRankAno();
+}
+function isoWeeksOverlapping(ini,fim){
+  const start=new Date(ini+'T00:00:00'), end=new Date(fim+'T00:00:00');
+  const day=(start.getDay()+6)%7; const mon0=new Date(start); mon0.setDate(start.getDate()-day);
+  const weeks=[]; let cur=new Date(mon0);
+  while(cur<=end){
+    const wIni=ymd(cur); const wEndDate=new Date(cur); wEndDate.setDate(cur.getDate()+6); const wFim=ymd(wEndDate);
+    if(wIni>=ini && wIni<=fim) weeks.push({ini:wIni,fim:wFim});
+    cur.setDate(cur.getDate()+7);
+  }
+  return weeks;
+}
+function calcRanking(ini,fim){
+  const colabs=(prod.colaboradores||[]);
+  const weeks=isoWeeksOverlapping(ini,fim);
+  return colabs.map(c=>{
+    const regs=prod.producao.filter(r=>r.colaborador_nome===c.nome && r.data>=ini && r.data<=fim);
+    const prodPts=regs.reduce((s,r)=>s+(+r.produzido_liquido||0),0);
+    const avNoPeriodo=(prod.avarias||[]).filter(a=>a.responsavel===c.nome && a.data>=ini && a.data<=fim).length;
+    let bonus=0, semanasLimpas=0;
+    weeks.forEach(w=>{
+      const trabalhouNaSemana=prod.producao.some(r=>r.colaborador_nome===c.nome && r.data>=w.ini && r.data<=w.fim);
+      if(!trabalhouNaSemana) return;
+      const avNaSemana=(prod.avarias||[]).filter(a=>a.responsavel===c.nome && a.data>=w.ini && a.data<=w.fim).length;
+      if(avNaSemana===0){ bonus+=5; semanasLimpas++; }
+    });
+    return {colaborador:c, prodPts, avCount:avNoPeriodo, bonus, semanasLimpas, total:prodPts+bonus};
+  }).sort((a,b)=>b.total-a.total);
+}
+function podioCardHTML(r,pos){
+  const medalha={1:['#FFD54A','1º'],2:['#C8CDD6','2º'],3:['#D69A5C','3º']}[pos];
+  const h = pos===1?150:pos===2?120:100;
+  return `<div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1">
+    <div style="position:relative">
+      ${avatarHTML(r.colaborador.nome, r.colaborador.foto, 'podio-av')}
+      <div style="position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);background:${medalha[0]};color:#1a1a1a;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap">${medalha[1]}</div>
+    </div>
+    <div class="strong" style="text-align:center;font-size:13.5px;margin-top:6px">${r.colaborador.nome}</div>
+    <div style="color:var(--accent);font-weight:700;font-size:18px">${r.total} pts</div>
+    <div style="width:100%;background:linear-gradient(180deg,${medalha[0]}33,transparent);border:1px solid ${medalha[0]}55;border-radius:12px 12px 0 0;height:${h}px"></div>
+  </div>`;
+}
+function rankingHTML(ranking, periodTitle){
+  if(!ranking.length) return `<div class="empty"><p>Nenhum colaborador cadastrado ainda</p></div>`;
+  const top3=ranking.slice(0,3), resto=ranking.slice(3);
+  const podio = top3.length ? `<div class="card" style="margin-bottom:20px">
+    <div class="card-head"><div class="card-title">Pódio <span class="muted">· ${periodTitle}</span></div></div>
+    <div style="display:flex;align-items:flex-end;gap:16px;padding:10px 10px 0">
+      ${top3[1]?podioCardHTML(top3[1],2):'<div style="flex:1"></div>'}
+      ${top3[0]?podioCardHTML(top3[0],1):'<div style="flex:1"></div>'}
+      ${top3[2]?podioCardHTML(top3[2],3):'<div style="flex:1"></div>'}
+    </div>
+  </div>` : '';
+  const rows = resto.map((r,i)=>`<tr>
+      <td class="strong">${i+4}º</td>
+      <td><div class="cell-user">${avatarHTML(r.colaborador.nome,r.colaborador.foto)}<div class="strong">${r.colaborador.nome}</div></div></td>
+      <td>${r.prodPts}</td><td>${r.avCount}</td><td>${r.semanasLimpas}</td>
+      <td class="strong" style="color:var(--accent)">${r.total} pts</td>
+    </tr>`).join('') || '';
+  const allRows = ranking.map((r,i)=>`<tr>
+      <td class="strong">${i+1}º</td>
+      <td><div class="cell-user">${avatarHTML(r.colaborador.nome,r.colaborador.foto)}<div class="strong">${r.colaborador.nome}</div></div></td>
+      <td>${r.prodPts}</td><td>${r.avCount}</td><td>${r.semanasLimpas}</td>
+      <td class="strong" style="color:var(--accent)">${r.total} pts</td>
+    </tr>`).join('');
+  return podio + `<div class="card">
+    <div class="card-head"><div class="card-title">Classificação completa</div></div>
+    <div class="table-wrapper"><table><thead><tr><th>#</th><th>Colaborador</th><th>Produzido</th><th>Avarias</th><th>Sem. limpas</th><th>Pontos</th></tr></thead>
+    <tbody>${allRows}</tbody></table></div>
+    <div style="font-size:11.5px;color:var(--text-3);margin-top:14px;line-height:1.6">
+      Pontuação: +1 por camisa produzida (líquido) · −1 por avaria · +5 de bônus por semana trabalhada sem nenhuma avaria.
+    </div>
+  </div>`;
+}
+function renderRankSemana(){
+  const wk=weekRange(rankSemOff);
+  const ranking=calcRanking(wk.ini,wk.fim);
+  $('#rankBody').innerHTML = periodNav(dBR(wk.ini)+' — '+dBR(wk.fim),'rankSemOff','renderRankSemana') + rankingHTML(ranking, dBR(wk.ini)+' — '+dBR(wk.fim));
+}
+function renderRankMes(){
+  const mo=monthRange(rankMesOff);
+  const ranking=calcRanking(mo.ini,mo.fim);
+  $('#rankBody').innerHTML = periodNav(mo.label,'rankMesOff','renderRankMes') + rankingHTML(ranking, mo.label);
+}
+function renderRankAno(){
+  const yr=yearRange(rankAnoOff);
+  const ranking=calcRanking(yr.ini,yr.fim);
+  $('#rankBody').innerHTML = periodNav(String(yr.y),'rankAnoOff','renderRankAno') + rankingHTML(ranking, String(yr.y));
+}
+
+/* =====================================================================
    === NOVO: TELA AVARIAS ===
    ===================================================================== */
 function puid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);}
 const TAMANHOS=['PP','P','M','G','GG','XG','XGG','2XL','3XL'];
 let avSub='registrar', avFiltro={busca:'',de:'',ate:''}, avPage=1, avEdit=null;
 RENDER.prodavarias=function(){
+  const cu=currentUser();
+  if(cu && cu.perfil==='operador'){ renderAvResumoTab(); return; }
   $('#page-prodavarias').innerHTML=`
     <div class="subtabs" style="display:flex;gap:8px;margin-bottom:18px;border-bottom:1px solid var(--border)">
       ${subBtnGen('avSub','registrar','Registrar','renderAvBody')}${subBtnGen('avSub','historico','Histórico','renderAvBody')}
     </div><div id="avBody"></div>`;
   renderAvBody();
 };
+
+/* --- Resumo de avarias (visão restrita do operador: quantidade + motivos) --- */
+let avResumoTab='semana', avResumoSemOff=0, avResumoMesOff=0, avResumoAnoOff=0;
+function avResumoTabBtn(k,label){const on=avResumoTab===k;return `<button onclick="avResumoTab='${k}';renderAvResumoTab()" style="background:none;border:none;padding:11px 4px;margin-right:18px;font-family:inherit;font-weight:600;font-size:14px;color:${on?'var(--accent)':'var(--text-3)'};border-bottom:2px solid ${on?'var(--accent)':'transparent'};cursor:pointer">${label}</button>`;}
+function renderAvResumoTab(){
+  $('#page-prodavarias').innerHTML=`
+    <div class="subtabs" style="display:flex;border-bottom:1px solid var(--border);margin-bottom:20px">
+      ${avResumoTabBtn('semana','Semana')}${avResumoTabBtn('mes','Mês')}${avResumoTabBtn('ano','Ano')}
+    </div>
+    <div id="avResumoBody"></div>`;
+  if(avResumoTab==='semana'){ const wk=weekRange(avResumoSemOff); $('#avResumoBody').innerHTML=periodNav(dBR(wk.ini)+' — '+dBR(wk.fim),'avResumoSemOff','renderAvResumoTab')+avResumoHTML(wk.ini,wk.fim); }
+  else if(avResumoTab==='mes'){ const mo=monthRange(avResumoMesOff); $('#avResumoBody').innerHTML=periodNav(mo.label,'avResumoMesOff','renderAvResumoTab')+avResumoHTML(mo.ini,mo.fim); }
+  else { const yr=yearRange(avResumoAnoOff); $('#avResumoBody').innerHTML=periodNav(String(yr.y),'avResumoAnoOff','renderAvResumoTab')+avResumoHTML(yr.ini,yr.fim); }
+}
+function avResumoHTML(ini,fim){
+  const regs=(prod.avarias||[]).filter(x=>x.data>=ini && x.data<=fim);
+  const total=regs.length;
+  const porMotivo={}; regs.forEach(x=>{const k=(x.motivo||'—').trim()||'—'; porMotivo[k]=(porMotivo[k]||0)+1;});
+  const lista=Object.entries(porMotivo).sort((a,b)=>b[1]-a[1]);
+  const cores=['#2979FF','#FF3D57','#F5A623','#27C28B','#9b59b6','#38C6F5','#E8C84B'];
+  const linhas = lista.length ? lista.map(([motivo,n],i)=>{
+    const pct = total>0 ? (n/total*100) : 0;
+    return `<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13.5px">
+        <span class="strong">${motivo}</span><span style="color:var(--text-3)">${n} (${pct.toFixed(0)}%)</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%;background:${cores[i%cores.length]}"></div></div>
+    </div>`;
+  }).join('') : `<div class="empty"><p>Nenhuma avaria no período</p></div>`;
+  return `<div class="kpi-grid" style="grid-template-columns:1fr;margin-bottom:20px">
+      ${dashKpi('Total de Avarias no Período',total,lista.length+' motivo(s) diferente(s)','#FF3D57')}
+    </div>
+    <div class="card"><div class="card-head"><div class="card-title">Avarias por motivo</div></div>${linhas}</div>`;
+}
 function subBtnGen(varName,k,label,fn){const cur=window[varName];const on=cur===k;return `<button onclick="${varName}='${k}';${fn}()" class="sbg-${varName}-${k}" style="background:none;border:none;padding:11px 4px;margin-right:18px;font-family:inherit;font-weight:600;font-size:14px;color:${on?'var(--accent)':'var(--text-3)'};border-bottom:2px solid ${on?'var(--accent)':'transparent'};cursor:pointer">${label}</button>`;}
 function paintSub(varName,keys){keys.forEach(k=>{const b=document.querySelector('.sbg-'+varName+'-'+k);if(b){const on=window[varName]===k;b.style.color=on?'var(--accent)':'var(--text-3)';b.style.borderBottom='2px solid '+(on?'var(--accent)':'transparent');}});}
 function renderAvBody(){paintSub('avSub',['registrar','historico']);const b=document.getElementById('avBody');if(!b)return;b.innerHTML=avSub==='registrar'?avRegistrarHTML():avHistHTML();}
