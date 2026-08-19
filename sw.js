@@ -1,10 +1,10 @@
 /* =====================================================================
-   OMINY PRODUÇÃO — Service Worker
-   Cache isolado do Ominy original (prefixo ominyprod-)
+   SUTO PRODUÇÃO — Service Worker
+   Cache isolado do sistema (prefixo sutoprod-)
    ===================================================================== */
-const CACHE_VERSION = 'v1';
-const CACHE_STATIC  = 'ominyprod-static-' + CACHE_VERSION;
-const CACHE_DYNAMIC = 'ominyprod-dynamic-' + CACHE_VERSION;
+const CACHE_VERSION = 'v2';
+const CACHE_STATIC  = 'sutoprod-static-' + CACHE_VERSION;
+const CACHE_DYNAMIC = 'sutoprod-dynamic-' + CACHE_VERSION;
 
 const STATIC_ASSETS = [
   './',
@@ -28,7 +28,7 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
-        keys.filter(k => k.startsWith('ominyprod-') && k !== CACHE_STATIC && k !== CACHE_DYNAMIC)
+        keys.filter(k => (k.startsWith('sutoprod-') || k.startsWith('ominyprod-')) && k !== CACHE_STATIC && k !== CACHE_DYNAMIC)
             .map(k => caches.delete(k))
       )
     ).then(() => self.clients.claim())
