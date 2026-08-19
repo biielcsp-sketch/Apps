@@ -1,10 +1,10 @@
-/* Ominy Produção — Service Worker (cache isolado prefixo ominyprod-) */
-const CACHE_VERSION = 'v12';
-const CACHE_STATIC  = 'ominyprod-static-' + CACHE_VERSION;
-const CACHE_DYNAMIC = 'ominyprod-dynamic-' + CACHE_VERSION;
+/* SUTO Produção — Service Worker (cache isolado prefixo sutoprod-) */
+const CACHE_VERSION = 'v13';
+const CACHE_STATIC  = 'sutoprod-static-' + CACHE_VERSION;
+const CACHE_DYNAMIC = 'sutoprod-dynamic-' + CACHE_VERSION;
 const ASSETS = ['./','./index.html','./manifest.json'];
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE_STATIC).then(c=>c.addAll(ASSETS).catch(()=>{}))); });
-self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k=>k.startsWith('ominyprod-')&&k!==CACHE_STATIC&&k!==CACHE_DYNAMIC).map(k=>caches.delete(k)))).then(()=>self.clients.claim())); });
+self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k=>(k.startsWith('sutoprod-')||k.startsWith('ominyprod-'))&&k!==CACHE_STATIC&&k!==CACHE_DYNAMIC).map(k=>caches.delete(k)))).then(()=>self.clients.claim())); });
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
