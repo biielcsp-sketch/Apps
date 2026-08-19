@@ -1,32 +1,21 @@
 {
-  "name": "SUTO Produção — Controle de Produção",
-  "short_name": "SUTO Produção",
+  "name": "Ominy Produção — Controle de Produção",
+  "short_name": "Ominy Produção",
   "description": "Controle de produção para fábricas: lançamento diário, equipe, métricas e relatórios em PDF.",
-  "start_url": "./",
-  "scope": "./",
-  "display": "standalone",
-  "orientation": "any",
-  "theme_color": "#0D0D12",
-  "background_color": "#0D0D12",
-  "lang": "pt-BR",
-  "dir": "ltr",
-  "categories": ["business", "productivity"],
+  "start_url": "./", "scope": "./", "display": "standalone", "orientation": "any",
+  "theme_color": "#0D0D12", "background_color": "#0D0D12", "lang": "pt-BR", "dir": "ltr",
+  "categories": ["business","productivity"],
   "icons": [
-    { "src": "icons/icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ],
-  "shortcuts": [
-    { "name": "Dashboard",        "short_name": "Dashboard", "url": "./#proddash",  "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }] },
-    { "name": "Lançamento Diário","short_name": "Lançar",    "url": "./#prodlanc",  "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }] },
-    { "name": "Relatórios",       "short_name": "Relatórios","url": "./#prodrel",   "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }] }
+    {"src":"icons/icon-72.png","sizes":"72x72","type":"image/png","purpose":"any"},
+    {"src":"icons/icon-96.png","sizes":"96x96","type":"image/png","purpose":"any"},
+    {"src":"icons/icon-128.png","sizes":"128x128","type":"image/png","purpose":"any"},
+    {"src":"icons/icon-144.png","sizes":"144x144","type":"image/png","purpose":"any"},
+    {"src":"icons/icon-152.png","sizes":"152x152","type":"image/png","purpose":"any"},
+    {"src":"icons/icon-180.png","sizes":"180x180","type":"image/png","purpose":"any"},
+    {"src":"icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"icons/icon-384.png","sizes":"384x384","type":"image/png","purpose":"any"},
+    {"src":"icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
+    {"src":"icons/icon-192-maskable.png","sizes":"192x192","type":"image/png","purpose":"maskable"},
+    {"src":"icons/icon-512-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
   ]
 }
