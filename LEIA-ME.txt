@@ -1,0 +1,24 @@
+OMINY PRODUÇÃO — Pasta de Deploy (Netlify)
+==========================================
+
+COMO COLOCAR NO AR:
+1. Acesse https://app.netlify.com  (use a mesma conta do Ominy)
+2. Clique em "Add new site" > "Deploy manually"
+3. Arraste ESTA PASTA INTEIRA (prod-deploy) para a área de upload
+4. Aguarde o deploy. O site fica no ar num endereço .netlify.app
+5. (Opcional) Site settings > Change site name -> escolha algo como "ominy-producao"
+
+IMPORTANTE — antes de usar:
+- Rode o arquivo migration_producao.sql no Supabase (SQL Editor > Run).
+  Isso cria as 3 tabelas novas (colaboradores, producao, config_producao).
+  As tabelas do Ominy original NÃO são afetadas.
+
+CONTEÚDO DA PASTA:
+- index.html      -> o sistema Ominy Produção
+- manifest.json   -> configuração do app instalável (PWA)
+- sw.js           -> service worker (offline) com cache isolado do Ominy original
+- icons/          -> ícones do app
+- _redirects      -> regra do Netlify para SPA
+
+OBS: usa o MESMO projeto Supabase do Ominy. Os dados de produção ficam
+isolados por empresa (org_id). Primeiro acesso cria a conta da fábrica.
