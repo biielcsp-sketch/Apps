@@ -1004,6 +1004,7 @@ function go(page){
   if(!TITLES[page]) return;
   const cu=currentUser();
   if(cu && cu.perfil==='operador' && !OPERADOR_PAGES.includes(page)) page='proddash';
+  if(cu && (cu.perfil==='supervisor'||cu.perfil==='analista') && !SUPERVISOR_PAGES.includes(page)) page='proddash';
   const pageEl = $('#page-'+page); if(!pageEl) return;
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.page===page));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -1424,8 +1425,8 @@ RENDER.config = function(){
     <div class="user-list-item">
       ${avatarHTML(u.nome, u.foto, 'user-av'+(u.perfil==='admin'?'':' collab'))}
       <div class="user-info">
-        <div class="uname">${u.nome} ${u.id===cu.id?'<span style="font-size:11px;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:6px;margin-left:4px">Você</span>':''} ${u.perfil==='operador'?'<span class="badge b-blue" style="margin-left:4px">operador</span>':''}</div>
-        <div class="umeta">${u.login} · ${u.cargo||({admin:'Administrador',operador:'Operador'}[u.perfil]||'Colaborador')}</div>
+        <div class="uname">${u.nome} ${u.id===cu.id?'<span style="font-size:11px;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:6px;margin-left:4px">Você</span>':''} ${u.perfil!=='admin'&&u.perfil!=='colaborador'?`<span class="badge b-blue" style="margin-left:4px">${u.perfil}</span>`:''}</div>
+        <div class="umeta">${u.login} · ${u.cargo||({admin:'Administrador',operador:'Operador',supervisor:'Supervisor',analista:'Analista'}[u.perfil]||'Colaborador')}</div>
       </div>
       <div class="user-actions">
         <button class="btn btn-ghost" style="padding:6px 12px;font-size:12.5px" onclick="editUser('${u.id}')">Editar</button>
@@ -2045,7 +2046,7 @@ function updateSidebarUser(){
     av.style.cursor='pointer'; av.title='Editar meu perfil'; av.onclick=()=>abrirMeuPerfil();
   }
   if(nm) nm.textContent=cu.nome;
-  const perfilLabel={admin:'Administrador',operador:'Operador',colaborador:'Colaborador'}[cu.perfil]||'Colaborador';
+  const perfilLabel={admin:'Administrador',operador:'Operador',supervisor:'Supervisor',analista:'Analista',colaborador:'Colaborador'}[cu.perfil]||'Colaborador';
   if(rl) rl.textContent=u.cargo||perfilLabel;
 }
 
@@ -2118,6 +2119,8 @@ async function formNovoUsuario(){
         <select id="uPerfil">
           <option value="colaborador">Colaborador</option>
           <option value="operador">Operador (acesso restrito)</option>
+          <option value="supervisor">Supervisor</option>
+          <option value="analista">Analista</option>
           <option value="admin">Administrador</option>
         </select>
       </div>
@@ -2157,6 +2160,8 @@ function editUser(id){
         <select id="euPerfil" ${u.id===cu?.id&&users.filter(x=>x.perfil==='admin').length<=1?'disabled':''}>
           <option value="colaborador" ${u.perfil==='colaborador'?'selected':''}>Colaborador</option>
           <option value="operador" ${u.perfil==='operador'?'selected':''}>Operador (acesso restrito)</option>
+          <option value="supervisor" ${u.perfil==='supervisor'?'selected':''}>Supervisor</option>
+          <option value="analista" ${u.perfil==='analista'?'selected':''}>Analista</option>
           <option value="admin" ${u.perfil==='admin'?'selected':''}>Administrador</option>
         </select>
       </div>
@@ -2488,6 +2493,7 @@ function navItem(page,label){
   return `<div class="nav-item" data-page="${page}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${NAV_ICONS[page]||''}</svg>${label}</div>`;
 }
 const OPERADOR_PAGES = ['proddash','prodavarias','prodranking'];
+const SUPERVISOR_PAGES = ['proddash','prodlanc','prodavarias','proddevol','prodequipe','prodranking','prodrel'];
 function buildSidebar(){
   const cu=currentUser();
   if(cu && cu.perfil==='operador'){
@@ -2527,8 +2533,11 @@ function buildSidebar(){
   if(m.comissoes)  orig.push(navItem('comissoes','Comissões'));
   if(m.relatorios) orig.push(navItem('relatorios','Relatórios (vendas)'));
   if(orig.length){ h+=`<div class="nav-label">Módulos SUTO</div>`+orig.join(''); }
-  h+=`<div class="nav-label">Sistema</div>`;
-  h+=navItem('prodconfig','Configurações');
+  const isSupervisorOuAnalista = cu && (cu.perfil==='supervisor' || cu.perfil==='analista');
+  if(!isSupervisorOuAnalista){
+    h+=`<div class="nav-label">Sistema</div>`;
+    h+=navItem('prodconfig','Configurações');
+  }
   $('#sidebarNav').innerHTML=h;
   // Event listeners explícitos — mais confiável em mobile
   document.querySelectorAll('#sidebarNav [data-page]').forEach(item=>{
