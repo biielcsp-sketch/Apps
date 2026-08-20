@@ -699,6 +699,7 @@ table input::-webkit-calendar-picker-indicator{filter:invert(.7)}
       <section class="page" id="page-prodequipe"></section>
       <section class="page" id="page-prodranking"></section>
       <section class="page" id="page-prodmeudesempenho"></section>
+      <section class="page" id="page-prodgeral"></section>
       <section class="page" id="page-prodrel"></section>
       <section class="page" id="page-prodconfig"></section>
       <section class="page" id="page-vendas"></section>
@@ -985,6 +986,7 @@ const TITLES = {
   proddevol:  ['Devoluções','Registro e histórico de devoluções'],
   prodranking:['Ranking','Pontuação e destaque da equipe'],
   prodmeudesempenho:['Meu Desempenho','Sua performance pessoal na produção'],
+  prodgeral:['Desempenho Geral','Indicadores gerais da produção da fábrica'],
   prodequipe: ['Equipe','Colaboradores, metas e desempenho'],
   prodrel:    ['Relatórios','Relatórios de produção em PDF'],
   prodconfig: ['Configurações','Empresa, módulos, metas e turnos'],
@@ -1005,7 +1007,7 @@ const TITLES = {
 function go(page){
   if(!TITLES[page]) return;
   const cu=currentUser();
-  if(cu && cu.perfil==='operador' && !OPERADOR_PAGES.includes(page)) page='proddash';
+  if(cu && cu.perfil==='operador' && !OPERADOR_PAGES.includes(page)) page='prodmeudesempenho';
   if(cu && (cu.perfil==='supervisor'||cu.perfil==='analista') && !SUPERVISOR_PAGES.includes(page)) page='proddash';
   const pageEl = $('#page-'+page); if(!pageEl) return;
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.page===page));
@@ -2020,8 +2022,8 @@ async function doLogin(){
     try{ await loadFromSb(orgId); }catch(e){ console.warn('load:', e.message); }
     $('#login-screen').style.display='none';
     updateSidebarUser(); updateBrand(); buildSidebar();
-    const p=(location.hash||'#proddash').slice(1);
-    go(TITLES[p]?p:'proddash');
+    const p=(location.hash||'#'+defaultPageFor(profile)).slice(1);
+    go(TITLES[p]?p:defaultPageFor(profile));
     Toast('Bem-vindo, '+profile.nome.split(' ')[0]+'!','sucesso');
     if(profile.perfil==='admin'&&!loadCompany()) setTimeout(()=>openOnboarding(),600);
   }catch(e){
@@ -2478,6 +2480,7 @@ const NAV_ICONS = {
   prodconfig: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
   prodranking:'<path d="M8.21 13.89 7 23l5-3 5 3-1.21-9.12"/><circle cx="12" cy="8" r="7"/>',
   prodmeudesempenho:'<path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>',
+  prodgeral:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
   dashboard: '<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',
   vendas:    '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
   funil:     '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
@@ -2495,22 +2498,22 @@ const NAV_ICONS = {
 function navItem(page,label){
   return `<div class="nav-item" data-page="${page}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${NAV_ICONS[page]||''}</svg>${label}</div>`;
 }
-const OPERADOR_PAGES = ['proddash','prodavarias','prodranking','prodmeudesempenho'];
+const OPERADOR_PAGES = ['prodmeudesempenho','prodgeral','prodranking'];
 const SUPERVISOR_PAGES = ['proddash','prodlanc','prodavarias','proddevol','prodequipe','prodranking','prodrel'];
+function defaultPageFor(cu){ return (cu && cu.perfil==='operador') ? 'prodmeudesempenho' : 'proddash'; }
 function buildSidebar(){
   const cu=currentUser();
   if(cu && cu.perfil==='operador'){
     let ho=`<div class="nav-label">Produção</div>`;
-    ho+=navItem('proddash','Dashboard');
-    ho+=navItem('prodavarias','Avarias');
-    ho+=navItem('prodranking','Ranking');
     ho+=navItem('prodmeudesempenho','Meu Desempenho');
+    ho+=navItem('prodgeral','Desempenho Geral');
+    ho+=navItem('prodranking','Ranking');
     $('#sidebarNav').innerHTML=ho;
     document.querySelectorAll('#sidebarNav [data-page]').forEach(item=>{
       item.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); go(this.dataset.page); });
       item.addEventListener('touchend', function(e){ e.preventDefault(); go(this.dataset.page); }, {passive:false});
     });
-    const cur=(location.hash||'#proddash').slice(1);
+    const cur=(location.hash||'#'+defaultPageFor(cu)).slice(1);
     document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===cur));
     return;
   }
@@ -4517,6 +4520,64 @@ function renderMdAno(){
 }
 
 /* =====================================================================
+   === NOVO: DESEMPENHO GERAL (visão agregada, sem citar colaboradores) ===
+   ===================================================================== */
+let dgTab='semana', dgSemOff=0, dgMesOff=0, dgAnoOff=0;
+RENDER.prodgeral=function(){ renderDgTab(); };
+function dgTabBtn(k,label){const on=dgTab===k;return `<button onclick="dgTab='${k}';renderDgTab()" style="background:none;border:none;padding:11px 4px;margin-right:18px;font-family:inherit;font-weight:600;font-size:14px;color:${on?'var(--accent)':'var(--text-3)'};border-bottom:2px solid ${on?'var(--accent)':'transparent'};cursor:pointer">${label}</button>`;}
+function renderDgTab(){
+  $('#page-prodgeral').innerHTML=`
+    <div class="subtabs" style="display:flex;border-bottom:1px solid var(--border);margin-bottom:20px">
+      ${dgTabBtn('semana','Semana')}${dgTabBtn('mes','Mês')}${dgTabBtn('ano','Ano')}
+    </div>
+    <div id="dgBody"></div>`;
+  if(dgTab==='semana') renderDgSemana();
+  else if(dgTab==='mes') renderDgMes();
+  else renderDgAno();
+}
+function desempenhoGeralHTML(ini,fim,tituloPeriodo,metaPeriodo){
+  const regs=prod.producao.filter(r=>r.data>=ini && r.data<=fim);
+  const a=aggReg(regs);
+  const nivel=nivelEficiencia(a.ef);
+  const avMax=+prod.metasGlobais.avaria_max_pct||3;
+  const pctMeta=metaPeriodo>0 ? (a.prodTot/metaPeriodo*100) : 0;
+  return `
+    <div class="kpi-grid">
+      ${dashKpi('Produzido — '+tituloPeriodo, a.prodTot, a.n+' lançamentos','#2979FF')}
+      ${dashKpi('Eficiência Média', a.ef.toFixed(0)+'%', nivel.label, nivel.cor)}
+      ${dashKpi('Avarias da Fábrica', a.avTot, a.taxaAv.toFixed(1)+'% do produzido', a.taxaAv>avMax?'#FF3D57':'#27C28B')}
+      ${dashKpi('Atingimento de Meta', metaPeriodo>0?pctMeta.toFixed(0)+'%':'—', metaPeriodo>0?('meta: '+metaPeriodo):'meta não definida','#F5A623')}
+    </div>
+    <div class="card" style="margin-top:4px"><div class="card-head"><div class="card-title">Produção total da fábrica</div></div><div style="height:260px"><canvas id="dgChart"></canvas></div></div>`;
+}
+function renderDgSemana(){
+  const wk=weekRange(dgSemOff);
+  const metaDia=+prod.metasGlobais.meta_diaria_fabrica||0;
+  $('#dgBody').innerHTML = periodNav(dBR(wk.ini)+' — '+dBR(wk.fim),'dgSemOff','renderDgSemana') + desempenhoGeralHTML(wk.ini,wk.fim,'Semana', metaDia*6);
+  const regs=prod.producao;
+  const byDay=wk.dias.map(d=>regs.filter(r=>r.data===d).reduce((s,r)=>s+(+r.produzido_liquido||0),0));
+  setTimeout(()=>drawDashChart('dgChart','bar',['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],[{label:'Produzido',data:byDay,backgroundColor:'#2979FF',borderRadius:6},{label:'Meta',data:byDay.map(()=>metaDia),type:'line',borderColor:'rgba(150,150,160,.8)',borderDash:[6,4],pointRadius:0,fill:false}]),40);
+}
+function renderDgMes(){
+  const mo=monthRange(dgMesOff);
+  const metaMes=+prod.metasGlobais.meta_mensal||0;
+  $('#dgBody').innerHTML = periodNav(mo.label,'dgMesOff','renderDgMes') + desempenhoGeralHTML(mo.ini,mo.fim,'Mês', metaMes);
+  const regs=prod.producao;
+  const byDay=mo.dias.map(d=>regs.filter(r=>r.data===d).reduce((s,r)=>s+(+r.produzido_liquido||0),0));
+  const metaDia=+prod.metasGlobais.meta_diaria_fabrica||0;
+  setTimeout(()=>drawDashChart('dgChart','line',mo.dias.map(d=>d.slice(8,10)),[{label:'Produzido',data:byDay,borderColor:'#2979FF',backgroundColor:'rgba(41,121,255,.15)',fill:true,tension:.3,pointRadius:0},{label:'Meta diária',data:byDay.map(()=>metaDia),borderColor:'rgba(150,150,160,.8)',borderDash:[6,4],pointRadius:0,fill:false}]),40);
+}
+function renderDgAno(){
+  const yr=yearRange(dgAnoOff);
+  const metaMes=+prod.metasGlobais.meta_mensal||0;
+  $('#dgBody').innerHTML = periodNav(String(yr.y),'dgAnoOff','renderDgAno') + desempenhoGeralHTML(yr.ini,yr.fim,'Ano', metaMes*12);
+  const MES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const regs=prod.producao;
+  const porMes=yr.meses.map(mm=>regs.filter(r=>r.data>=mm.ini&&r.data<=mm.fim).reduce((s,r)=>s+(+r.produzido_liquido||0),0));
+  setTimeout(()=>drawDashChart('dgChart','bar',MES,[{label:'Produzido',data:porMes,backgroundColor:'#2979FF',borderRadius:6},{label:'Meta',data:MES.map(()=>metaMes),type:'line',borderColor:'rgba(150,150,160,.8)',borderDash:[6,4],pointRadius:0,fill:false}]),40);
+}
+
+/* =====================================================================
    === NOVO: TELA AVARIAS ===
    ===================================================================== */
 function puid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);}
@@ -4729,8 +4790,8 @@ function delDevolucao(id){if(!confirm('Excluir esta devolução?'))return;prod.d
 prodLoad();
 /* sem dados fictícios: o sistema inicia vazio */
 buildSidebar();
-const startPage=(location.hash||'#proddash').slice(1);
-go(TITLES[startPage]?startPage:'proddash');
+const startPage=(location.hash||'#'+defaultPageFor(currentUser())).slice(1);
+go(TITLES[startPage]?startPage:defaultPageFor(currentUser()));
 updateNotifDot();
 syncThemeIcon();
 
@@ -4777,8 +4838,8 @@ syncThemeIcon();
       await withTimeout(loadFromSb(orgId), 10000, null);
       updateSidebarUser(); updateBrand(); buildSidebar();
       hideLoading();
-      const p=(location.hash||'#proddash').slice(1);
-      go(TITLES[p]?p:'proddash');
+      const p=(location.hash||'#'+defaultPageFor(cu)).slice(1);
+      go(TITLES[p]?p:defaultPageFor(cu));
       return;
     }catch(e){
       clearToken(); clearSession();
