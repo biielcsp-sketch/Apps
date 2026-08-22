@@ -1,6 +1,6 @@
 {
-  "name": "SUTO Produção — Controle de Produção",
-  "short_name": "SUTO Produção",
+  "name": "SutoData Produção — Controle de Produção",
+  "short_name": "SutoData",
   "description": "Controle de produção para fábricas: lançamento diário, equipe, métricas e relatórios em PDF.",
   "start_url": "./", "scope": "./", "display": "standalone", "orientation": "any",
   "theme_color": "#0D0D12", "background_color": "#0D0D12", "lang": "pt-BR", "dir": "ltr",

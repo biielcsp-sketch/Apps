@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <script>(function(){try{var t=localStorage.getItem('ominy-theme');if(t!=='dark')document.documentElement.setAttribute('data-theme','light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
-<title>SUTO — Gestão Inteligente</title>
+<title>SutoData — Gestão Inteligente</title>
 
 <!-- PWA -->
-<meta name="application-name" content="SUTO">
+<meta name="application-name" content="SutoData">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="SUTO">
+<meta name="apple-mobile-web-app-title" content="SutoData">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0D0D12">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -255,7 +255,7 @@ td .strong{color:var(--text);font-weight:600}
   padding:12px 14px;color:var(--text);font-family:inherit;font-size:14px;outline:none;transition:.18s;
 }
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-/* inputs em tabelas (SUTO Produção) */
+/* inputs em tabelas (SutoData Produção) */
 table input, table select{background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none;transition:.18s}
 table input:focus, table select:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
 table input::-webkit-calendar-picker-indicator{filter:invert(.7)}
@@ -544,24 +544,22 @@ table input::-webkit-calendar-picker-indicator{filter:invert(.7)}
 <body>
 <!-- LOADING -->
 <div id="loading-screen">
-  <svg width="48" height="48" viewBox="0 0 36 36" style="filter:drop-shadow(0 0 8px rgba(41,121,255,.5))">
-    <path d="M25.5,9 C20.5,5.8 12.8,6.6 10.6,11 C9.3,13.6 10.8,15.7 15.7,16.9 C16.7,17.15 17.3,17.35 18,18" fill="none" stroke="#1948D6" stroke-width="6.4" stroke-linecap="round"/><path d="M18,18 C18.7,18.65 19.3,18.85 20.3,19.1 C25.2,20.3 26.7,22.4 25.4,25 C23.2,29.4 15.5,30.2 10.5,27" fill="none" stroke="#3FD3F6" stroke-width="6.4" stroke-linecap="round"/>
-      </svg>
+  <img src="icons/logo-full.png" alt="SutoData" style="height:52px;width:auto;filter:drop-shadow(0 0 8px rgba(41,121,255,.5))">
   <div class="loading-spinner"></div>
-  <div class="loading-txt" id="loadingTxt">Carregando SUTO...</div>
+  <div class="loading-txt" id="loadingTxt">Carregando SutoData...</div>
 </div>
 
 <!-- ============ CADASTRO COM CONVITE ============ -->
 <div id="register-screen" style="display:none">
   <div class="login-box" style="max-width:460px;position:relative">
     <div class="login-brand" style="margin-bottom:6px">
-      <svg width="38" height="38" viewBox="0 0 36 36"><path d="M25.5,9 C20.5,5.8 12.8,6.6 10.6,11 C9.3,13.6 10.8,15.7 15.7,16.9 C16.7,17.15 17.3,17.35 18,18" fill="none" stroke="#1948D6" stroke-width="6.4" stroke-linecap="round"/><path d="M18,18 C18.7,18.65 19.3,18.85 20.3,19.1 C25.2,20.3 26.7,22.4 25.4,25 C23.2,29.4 15.5,30.2 10.5,27" fill="none" stroke="#3FD3F6" stroke-width="6.4" stroke-linecap="round"/></svg>
-      <div class="login-brand-text">Criar conta SUTO</div>
+      <img src="icons/logo-full.png" alt="SutoData" style="height:34px;width:auto">
+      <div class="login-brand-text">Criar conta SutoData</div>
     </div>
     <div style="font-size:13px;color:var(--text-3);margin-bottom:18px">Preencha os dados para ativar o seu sistema.</div>
     <div class="login-error" id="regError"></div>
     <div class="login-field"><label>Código de convite</label>
-      <input id="regCodigo" placeholder="SUTO-XXXX-XXXX" style="text-transform:uppercase;letter-spacing:1px;font-family:monospace" oninput="this.value=this.value.toUpperCase()">
+      <input id="regCodigo" placeholder="SutoData-XXXX-XXXX" style="text-transform:uppercase;letter-spacing:1px;font-family:monospace" oninput="this.value=this.value.toUpperCase()">
     </div>
     <div id="regCodigoStatus" style="font-size:12.5px;margin:-8px 0 12px;display:none"></div>
     <div class="field-row">
@@ -583,8 +581,8 @@ table input::-webkit-calendar-picker-indicator{filter:invert(.7)}
 <!-- ============ PAINEL SUPERADMIN ============ -->
 <div id="superadmin-screen" style="display:none">
   <div class="sa-header">
-    <svg width="32" height="32" viewBox="0 0 36 36"><path d="M25.5,9 C20.5,5.8 12.8,6.6 10.6,11 C9.3,13.6 10.8,15.7 15.7,16.9 C16.7,17.15 17.3,17.35 18,18" fill="none" stroke="#1948D6" stroke-width="6.4" stroke-linecap="round"/><path d="M18,18 C18.7,18.65 19.3,18.85 20.3,19.1 C25.2,20.3 26.7,22.4 25.4,25 C23.2,29.4 15.5,30.2 10.5,27" fill="none" stroke="#3FD3F6" stroke-width="6.4" stroke-linecap="round"/></svg>
-    <div style="font-size:18px;font-weight:700">SUTO</div>
+    <img src="icons/logo-sd.png" alt="SD" style="height:30px;width:auto">
+    <div style="font-size:18px;font-weight:700">SutoData</div>
     <span class="sa-badge">SUPER ADMIN</span>
     <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
       <button class="btn btn-ghost" onclick="saChangePwd()">Alterar senha</button>
@@ -600,8 +598,8 @@ table input::-webkit-calendar-picker-indicator{filter:invert(.7)}
 <div id="firstrun-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9998;align-items:center;justify-content:center;padding:20px">
   <div class="login-box" style="max-width:460px">
     <div class="login-brand" style="margin-bottom:6px">
-      <svg width="38" height="38" viewBox="0 0 36 36"><path d="M25.5,9 C20.5,5.8 12.8,6.6 10.6,11 C9.3,13.6 10.8,15.7 15.7,16.9 C16.7,17.15 17.3,17.35 18,18" fill="none" stroke="#1948D6" stroke-width="6.4" stroke-linecap="round"/><path d="M18,18 C18.7,18.65 19.3,18.85 20.3,19.1 C25.2,20.3 26.7,22.4 25.4,25 C23.2,29.4 15.5,30.2 10.5,27" fill="none" stroke="#3FD3F6" stroke-width="6.4" stroke-linecap="round"/></svg>
-      <div class="login-brand-text">Bem-vindo ao SUTO</div>
+      <img src="icons/logo-full.png" alt="SutoData" style="height:34px;width:auto">
+      <div class="login-brand-text">Bem-vindo ao SutoData</div>
     </div>
     <div style="font-size:13px;color:var(--text-3);margin-bottom:22px">Crie a conta do administrador para começar. Feito uma única vez.</div>
     <div class="login-error" id="firstrunError"></div>
@@ -621,8 +619,7 @@ table input::-webkit-calendar-picker-indicator{filter:invert(.7)}
 <div id="login-screen">
   <div class="login-box">
     <div class="login-brand">
-      <svg width="40" height="40" viewBox="0 0 36 36"><path d="M25.5,9 C20.5,5.8 12.8,6.6 10.6,11 C9.3,13.6 10.8,15.7 15.7,16.9 C16.7,17.15 17.3,17.35 18,18" fill="none" stroke="#1948D6" stroke-width="6.4" stroke-linecap="round"/><path d="M18,18 C18.7,18.65 19.3,18.85 20.3,19.1 C25.2,20.3 26.7,22.4 25.4,25 C23.2,29.4 15.5,30.2 10.5,27" fill="none" stroke="#3FD3F6" stroke-width="6.4" stroke-linecap="round"/></svg>
-      <div class="login-brand-text">SUTO</div>
+      <img src="icons/logo-full.png" alt="SutoData" style="height:40px;width:auto">
     </div>
     <div class="login-sub">Gestão Inteligente. Resultados Reais.</div>
     <div class="login-error" id="loginError">Login ou senha incorretos</div>
@@ -649,10 +646,8 @@ table input::-webkit-calendar-picker-indicator{filter:invert(.7)}
   <!-- ============ SIDEBAR ============ -->
   <aside class="sidebar" id="sidebar">
     <div class="brand">
-      <svg class="logo" width="34" height="34" viewBox="0 0 36 36">
-        <path d="M25.5,9 C20.5,5.8 12.8,6.6 10.6,11 C9.3,13.6 10.8,15.7 15.7,16.9 C16.7,17.15 17.3,17.35 18,18" fill="none" stroke="#1948D6" stroke-width="6.4" stroke-linecap="round"/><path d="M18,18 C18.7,18.65 19.3,18.85 20.3,19.1 C25.2,20.3 26.7,22.4 25.4,25 C23.2,29.4 15.5,30.2 10.5,27" fill="none" stroke="#3FD3F6" stroke-width="6.4" stroke-linecap="round"/>
-              </svg>
-      <div class="brand-txt"><span>SUTO</span></div>
+      <img src="icons/logo-sd.png" alt="SD" class="logo" style="height:36px;width:auto;filter:drop-shadow(0 0 8px rgba(41,121,255,.4))">
+      <div class="brand-txt"><span>SutoData</span></div>
     </div>
 
     <div id="sidebarNav"></div>
@@ -746,11 +741,9 @@ table input::-webkit-calendar-picker-indicator{filter:invert(.7)}
 
 <!-- ============ BANNER PWA ============ -->
 <div id="pwa-banner" style="display:none; position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1C1C27; border:1px solid #2979FF44; border-radius:16px; padding:16px 20px; align-items:center; gap:16px; box-shadow:0 8px 32px #00000066; z-index:9999; font-family:Outfit,sans-serif;">
-  <svg width="36" height="36" viewBox="0 0 36 36">
-    <path d="M25.5,9 C20.5,5.8 12.8,6.6 10.6,11 C9.3,13.6 10.8,15.7 15.7,16.9 C16.7,17.15 17.3,17.35 18,18" fill="none" stroke="#1948D6" stroke-width="6.4" stroke-linecap="round"/><path d="M18,18 C18.7,18.65 19.3,18.85 20.3,19.1 C25.2,20.3 26.7,22.4 25.4,25 C23.2,29.4 15.5,30.2 10.5,27" fill="none" stroke="#3FD3F6" stroke-width="6.4" stroke-linecap="round"/>
-      </svg>
+  <img src="icons/logo-sd.png" alt="SD" style="height:36px;width:auto">
   <div>
-    <div style="color:#E8E8F0; font-weight:600; font-size:14px;">Instalar SUTO</div>
+    <div style="color:#E8E8F0; font-weight:600; font-size:14px;">Instalar SutoData</div>
     <div style="color:#8888A0; font-size:12px;">Adicionar à tela inicial</div>
   </div>
   <button id="pwa-install-btn" style="background:#2979FF; color:#fff; border:none; border-radius:8px; padding:8px 16px; font-family:Outfit,sans-serif; font-weight:600; font-size:13px; cursor:pointer;">Instalar</button>
@@ -1097,7 +1090,7 @@ RENDER.dashboard = function(){
 
     ${!temDados ? `<div class="card" style="text-align:center;padding:48px 24px">
       <svg width="56" height="56" viewBox="0 0 36 36" style="filter:drop-shadow(0 0 10px rgba(41,121,255,.3));margin:0 auto 16px;display:block"><path d="M25.5,9 C20.5,5.8 12.8,6.6 10.6,11 C9.3,13.6 10.8,15.7 15.7,16.9 C16.7,17.15 17.3,17.35 18,18" fill="none" stroke="#1948D6" stroke-width="6.4" stroke-linecap="round"/><path d="M18,18 C18.7,18.65 19.3,18.85 20.3,19.1 C25.2,20.3 26.7,22.4 25.4,25 C23.2,29.4 15.5,30.2 10.5,27" fill="none" stroke="#3FD3F6" stroke-width="6.4" stroke-linecap="round"/></svg>
-      <div style="font-size:18px;font-weight:700;margin-bottom:8px">Bem-vindo ao SUTO!</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px">Bem-vindo ao SutoData!</div>
       <div style="color:var(--text-3);font-size:14px;margin-bottom:24px">Comece cadastrando seus primeiros dados para ver os relatórios aqui.</div>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
         <button class="btn btn-primary" onclick="go('clientes')">Adicionar cliente</button>
@@ -1444,9 +1437,8 @@ RENDER.config = function(){
   $('#page-config').innerHTML = `
     <div class="about-box">
       <div class="card" style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
-        <svg width="56" height="56" viewBox="0 0 36 36" style="filter:drop-shadow(0 0 10px rgba(41,121,255,.5))"><path d="M25.5,9 C20.5,5.8 12.8,6.6 10.6,11 C9.3,13.6 10.8,15.7 15.7,16.9 C16.7,17.15 17.3,17.35 18,18" fill="none" stroke="#1948D6" stroke-width="6.4" stroke-linecap="round"/><path d="M18,18 C18.7,18.65 19.3,18.85 20.3,19.1 C25.2,20.3 26.7,22.4 25.4,25 C23.2,29.4 15.5,30.2 10.5,27" fill="none" stroke="#3FD3F6" stroke-width="6.4" stroke-linecap="round"/></svg>
+        <img src="icons/logo-full.png" alt="SutoData" style="height:56px;width:auto;filter:drop-shadow(0 0 10px rgba(41,121,255,.5))">
         <div>
-          <div style="font-size:20px;font-weight:700">SUTO</div>
           <div style="color:var(--text-3);font-size:13.5px">Gestão Inteligente. Resultados Reais. · v1.0</div>
         </div>
         <button class="btn btn-primary install-hint" style="margin-left:auto" onclick="manualInstall()">
@@ -1470,21 +1462,21 @@ RENDER.config = function(){
       </div>`:''}
 
       <div class="card">
-        <div class="card-head"><div class="card-title">Como instalar o SUTO no seu dispositivo</div></div>
+        <div class="card-head"><div class="card-title">Como instalar o SutoData no seu dispositivo</div></div>
         <div class="about-tabs">
           <div class="about-tab active" onclick="setTab(this,'tab-and')">Android</div>
           <div class="about-tab" onclick="setTab(this,'tab-ios')">iPhone / iPad</div>
           <div class="about-tab" onclick="setTab(this,'tab-desk')">Desktop</div>
         </div>
         <ul class="install-steps" id="tab-and">
-          <li><span class="step-n">1</span> Abra o link do SUTO no <b style="color:var(--text)">&nbsp;Chrome</b></li>
+          <li><span class="step-n">1</span> Abra o link do SutoData no <b style="color:var(--text)">&nbsp;Chrome</b></li>
           <li><span class="step-n">2</span> Toque no menu (⋮) e em "Adicionar à tela inicial"</li>
-          <li><span class="step-n">3</span> Confirme — o ícone SUTO aparece como app</li>
+          <li><span class="step-n">3</span> Confirme — o ícone SutoData aparece como app</li>
         </ul>
         <ul class="install-steps" id="tab-ios" style="display:none">
           <li><span class="step-n">1</span> Abra o link no <b style="color:var(--text)">&nbsp;Safari</b> (obrigatório no iOS)</li>
           <li><span class="step-n">2</span> Toque em Compartilhar (□↑) e em "Adicionar à Tela de Início"</li>
-          <li><span class="step-n">3</span> Confirme — o ícone SUTO aparece como app</li>
+          <li><span class="step-n">3</span> Confirme — o ícone SutoData aparece como app</li>
         </ul>
         <ul class="install-steps" id="tab-desk" style="display:none">
           <li><span class="step-n">1</span> Acesse o link no Chrome ou Edge</li>
@@ -1518,11 +1510,11 @@ function resetData(){
 }
 function manualInstall(){
   const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-  if(standalone){ Toast('SUTO já está instalado neste dispositivo!','sucesso'); return; }
+  if(standalone){ Toast('SutoData já está instalado neste dispositivo!','sucesso'); return; }
   if(deferredPrompt){
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(r=>{
-      if(r.outcome==='accepted') Toast('SUTO instalado com sucesso!','sucesso');
+      if(r.outcome==='accepted') Toast('SutoData instalado com sucesso!','sucesso');
       else Toast('Instalação cancelada','info');
       deferredPrompt=null;
     });
@@ -1532,16 +1524,16 @@ function manualInstall(){
   const ua = navigator.userAgent;
   const isIOS = /iPhone|iPad|iPod/.test(ua);
   const isAndroid = /Android/.test(ua);
-  openModal('Como instalar o SUTO', `
+  openModal('Como instalar o SutoData', `
     <div style="font-size:14px;color:var(--text-2);line-height:1.7">
       ${isIOS?`<b style="color:var(--text)">iPhone / iPad (Safari):</b><br>
       1. Toque em Compartilhar (□↑) na barra inferior<br>
       2. Role e toque em <b style="color:var(--text)">"Adicionar à Tela de Início"</b><br>
-      3. Toque em "Adicionar" — o ícone SUTO aparece na home`
+      3. Toque em "Adicionar" — o ícone SutoData aparece na home`
       :isAndroid?`<b style="color:var(--text)">Android (Chrome):</b><br>
       1. Toque no menu (⋮) no canto superior direito<br>
       2. Toque em <b style="color:var(--text)">"Adicionar à tela inicial"</b><br>
-      3. Confirme — o ícone SUTO aparece como app`
+      3. Confirme — o ícone SutoData aparece como app`
       :`<b style="color:var(--text)">Desktop (Chrome / Edge):</b><br>
       Clique no ícone <b style="color:var(--text)">⊕</b> que aparece na barra de endereços à direita,<br>
       ou aguarde o banner aparecer automaticamente.`}
@@ -1587,7 +1579,7 @@ document.getElementById('pwa-install-btn').addEventListener('click',async()=>{
   if(deferredPrompt){
     deferredPrompt.prompt();
     const {outcome}=await deferredPrompt.userChoice;
-    if(outcome==='accepted') Toast('SUTO instalado com sucesso!','sucesso');
+    if(outcome==='accepted') Toast('SutoData instalado com sucesso!','sucesso');
     deferredPrompt=null;
   }
 });
@@ -1597,7 +1589,7 @@ document.getElementById('pwa-dismiss-btn').addEventListener('click',()=>{
 });
 window.addEventListener('appinstalled',()=>{
   banner.style.display='none';
-  Toast('SUTO adicionado à tela inicial!','sucesso');
+  Toast('SutoData adicionado à tela inicial!','sucesso');
 });
 window.addEventListener('offline',()=>Toast('Você está offline — o app continua funcionando','info'));
 window.addEventListener('online',()=>Toast('Conexão restaurada — dados sincronizados','sucesso'));
@@ -1646,7 +1638,7 @@ async function createFirstAccount(){
     setSession(profile);
     $('#firstrun-screen').style.display='none';
     updateSidebarUser(); updateBrand(); buildSidebar();
-    Toast('Conta criada! Bem-vindo ao SUTO','sucesso');
+    Toast('Conta criada! Bem-vindo ao SutoData','sucesso');
     setTimeout(()=>openOnboarding(),600);
   }catch(e){err.textContent='Erro: '+e.message;err.style.display='block';btn.textContent='Criar conta e entrar →';btn.disabled=false;}
 }
@@ -1975,7 +1967,7 @@ async function doRegister(){
     $('#register-screen').style.display='none';
     updateSidebarUser(); updateBrand(); buildSidebar();
     go('proddash');
-    Toast('Conta criada! Bem-vindo ao SUTO','sucesso');
+    Toast('Conta criada! Bem-vindo ao SutoData','sucesso');
     setTimeout(()=>openOnboarding(),600);
   }catch(e){
     err.textContent='Erro: '+(e.message||e); err.style.display='block'; reset();
@@ -2217,7 +2209,7 @@ function saveCompany(c){ localStorage.setItem(COMPANY_KEY,JSON.stringify(c)); up
 function updateBrand(){
   const c=loadCompany();
   const nm=$('.brand-txt span');
-  if(nm) nm.textContent=c&&c.nome?c.nome:'SUTO';
+  if(nm) nm.textContent=c&&c.nome?c.nome:'SutoData';
 }
 
 /* --- ONBOARDING --- */
@@ -2244,7 +2236,7 @@ function saveOnboarding(){
   const nome=$('#oNome').value.trim();
   if(!nome){ Toast('Informe o nome da empresa','erro'); return; }
   saveCompany({nome,setor:$('#oSetor').value,cnpj:$('#oCnpj').value.trim(),telefone:$('#oTel').value.trim(),email:$('#oEmail').value.trim(),endereco:$('#oEnd').value.trim()});
-  closeModal(); Toast('Empresa configurada! Bem-vindo ao SUTO','sucesso');
+  closeModal(); Toast('Empresa configurada! Bem-vindo ao SutoData','sucesso');
 }
 function skipOnboarding(){ closeModal(); Toast('Configure sua empresa em Configurações quando quiser','info'); }
 
@@ -2325,7 +2317,7 @@ function seedNotifs(){
     {id:uid(),tipo:'estoque',titulo:'Estoque baixo',              desc:'Licença Extra — apenas 3 unidades',      tempo:'há 1h',    lida:false, page:'produtos'},
     {id:uid(),tipo:'cliente',titulo:'Novo cliente cadastrado',    desc:'Elaine Rocha — Studio Elaine',           tempo:'há 2h',    lida:true,  page:'clientes'},
     {id:uid(),tipo:'financ', titulo:'Despesa registrada',         desc:'Anúncios online — R$ 300,00',            tempo:'há 3h',    lida:true,  page:'financeiro'},
-    {id:uid(),tipo:'sistema',titulo:'Bem-vindo ao SUTO!',        desc:'Sistema instalado e funcionando offline',tempo:'hoje',     lida:true,  page:'dashboard'},
+    {id:uid(),tipo:'sistema',titulo:'Bem-vindo ao SutoData!',        desc:'Sistema instalado e funcionando offline',tempo:'hoje',     lida:true,  page:'dashboard'},
   ];
   saveNotifs(ns); return ns;
 }
@@ -2451,21 +2443,21 @@ saveTrans = function(){
 const MODULES_KEY = 'ominy-modules-v1';
 const MODULES_ALL = ['vendas','funil','clientes','produtos','financeiro','metas','agenda','orcamentos','os','comissoes','relatorios'];
 const MODULES_META = {
-  vendas:     {label:'Vendas',               desc:'Registro e acompanhamento de vendas',  page:'vendas',     group:'SUTO — Comercial'},
-  funil:      {label:'Funil de Vendas',       desc:'CRM kanban de oportunidades',          page:'funil',      group:'SUTO — Comercial'},
-  clientes:   {label:'Clientes',              desc:'Base de contatos e clientes',          page:'clientes',   group:'SUTO — Comercial'},
-  produtos:   {label:'Produtos & Estoque',    desc:'Catálogo e inventário',                page:'produtos',   group:'SUTO — Operação'},
-  financeiro: {label:'Financeiro',            desc:'Receitas, despesas e saldo',           page:'financeiro', group:'SUTO — Operação'},
-  metas:      {label:'Metas & Indicadores',   desc:'Metas mensais com progresso',          page:'metas',      group:'SUTO — Operação'},
-  agenda:     {label:'Agenda & Tarefas',      desc:'Follow-ups e compromissos',            page:'agenda',     group:'SUTO — Operação'},
-  orcamentos: {label:'Orçamentos',            desc:'Propostas e cotações',                 page:'orcamentos', group:'SUTO — Operação'},
-  os:         {label:'Ordem de Serviço',      desc:'OS para serviços prestados',           page:'os',         group:'SUTO — Operação'},
-  comissoes:  {label:'Comissões',             desc:'Comissões por vendedor',               page:'comissoes',  group:'SUTO — Operação'},
-  relatorios: {label:'Relatórios (vendas)',   desc:'Relatórios do módulo comercial',       page:'relatorios', group:'SUTO — Operação'},
+  vendas:     {label:'Vendas',               desc:'Registro e acompanhamento de vendas',  page:'vendas',     group:'SutoData — Comercial'},
+  funil:      {label:'Funil de Vendas',       desc:'CRM kanban de oportunidades',          page:'funil',      group:'SutoData — Comercial'},
+  clientes:   {label:'Clientes',              desc:'Base de contatos e clientes',          page:'clientes',   group:'SutoData — Comercial'},
+  produtos:   {label:'Produtos & Estoque',    desc:'Catálogo e inventário',                page:'produtos',   group:'SutoData — Operação'},
+  financeiro: {label:'Financeiro',            desc:'Receitas, despesas e saldo',           page:'financeiro', group:'SutoData — Operação'},
+  metas:      {label:'Metas & Indicadores',   desc:'Metas mensais com progresso',          page:'metas',      group:'SutoData — Operação'},
+  agenda:     {label:'Agenda & Tarefas',      desc:'Follow-ups e compromissos',            page:'agenda',     group:'SutoData — Operação'},
+  orcamentos: {label:'Orçamentos',            desc:'Propostas e cotações',                 page:'orcamentos', group:'SutoData — Operação'},
+  os:         {label:'Ordem de Serviço',      desc:'OS para serviços prestados',           page:'os',         group:'SutoData — Operação'},
+  comissoes:  {label:'Comissões',             desc:'Comissões por vendedor',               page:'comissoes',  group:'SutoData — Operação'},
+  relatorios: {label:'Relatórios (vendas)',   desc:'Relatórios do módulo comercial',       page:'relatorios', group:'SutoData — Operação'},
 };
 function loadModules(){
   try{const r=localStorage.getItem(MODULES_KEY);if(r)return JSON.parse(r);}catch(e){}
-  const d={};MODULES_ALL.forEach(m=>d[m]=false);return d; // versão Produção: módulos SUTO desativados por padrão
+  const d={};MODULES_ALL.forEach(m=>d[m]=false);return d; // versão Produção: módulos SutoData desativados por padrão
 }
 function saveModules(m){localStorage.setItem(MODULES_KEY,JSON.stringify(m));}
 function isOn(m){return loadModules()[m]!==false;}
@@ -2531,7 +2523,7 @@ function buildSidebar(){
   h+=navItem('prodequipe','Gestão de Pessoas');
   h+=navItem('prodranking','Ranking');
   h+=navItem('prodrel','Relatórios');
-  // Módulos originais do SUTO — ocultos por padrão, ativáveis em Configurações
+  // Módulos originais do SutoData — ocultos por padrão, ativáveis em Configurações
   const orig=[];
   if(m.vendas)     orig.push(navItem('vendas','Vendas'));
   if(m.funil)      orig.push(navItem('funil','Funil de Vendas'));
@@ -2544,7 +2536,7 @@ function buildSidebar(){
   if(m.os)         orig.push(navItem('os','Ordem de Serviço'));
   if(m.comissoes)  orig.push(navItem('comissoes','Comissões'));
   if(m.relatorios) orig.push(navItem('relatorios','Relatórios (vendas)'));
-  if(orig.length){ h+=`<div class="nav-label">Módulos SUTO</div>`+orig.join(''); }
+  if(orig.length){ h+=`<div class="nav-label">Módulos SutoData</div>`+orig.join(''); }
   const isSupervisorOuAnalista = cu && (cu.perfil==='supervisor' || cu.perfil==='analista');
   if(!isSupervisorOuAnalista){
     h+=`<div class="nav-label">Sistema</div>`;
@@ -2833,7 +2825,7 @@ function imprimirOrc(id){
   const co=loadCompany()||{};
   const corAzul=[41,121,255];
   doc.setFillColor(13,13,18);doc.rect(0,0,210,30,'F');
-  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text(co.nome||'SUTO',14,12);
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text(co.nome||'SutoData',14,12);
   doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(160,160,180);
   doc.text(`${co.cnpj||''} ${co.telefone||''} ${co.email||''}`.trim(),14,19);
   doc.setTextColor(255,255,255);doc.text(dBR(o.data),196,12,{align:'right'});
@@ -2855,7 +2847,7 @@ function imprimirOrc(id){
   doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(12);
   doc.text('TOTAL: '+fmt(o.total),196,fy+14,{align:'right'});
   doc.setFontSize(8);doc.setTextColor(100,100,120);doc.setFont('helvetica','normal');
-  doc.text('SUTO — Gestão Inteligente',14,287);
+  doc.text('SutoData — Gestão Inteligente',14,287);
   doc.save(`orcamento-${o.num}.pdf`);
   Toast('PDF do orçamento gerado!','sucesso');
 }
@@ -2976,7 +2968,7 @@ function printReport(tipo){
   // Cabeçalho
   doc.setFillColor(13,13,18);doc.rect(0,0,210,30,'F');
   doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(16);
-  doc.text(co.nome||'SUTO',14,12);
+  doc.text(co.nome||'SutoData',14,12);
   doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(160,160,180);
   doc.text(`${co.cnpj||''} ${co.telefone||''} ${co.email||''}`.trim(),14,19);
   doc.text('Emitido em '+new Date().toLocaleDateString('pt-BR'),14,25);
@@ -3021,7 +3013,7 @@ function printReport(tipo){
   }
   // Rodapé
   doc.setFontSize(8);doc.setTextColor(100,100,120);
-  doc.text('SUTO — Gestão Inteligente',14,287);
+  doc.text('SutoData — Gestão Inteligente',14,287);
   doc.text('Página 1',196,287,{align:'right'});
   doc.save(`suto-${tipo}-${today()}.pdf`);
   Toast('PDF gerado com sucesso!','sucesso');
@@ -3115,9 +3107,9 @@ if(!state.os) state.os=[];
 if(!state.users) state.users=[];
 
 
-/* ===== SUTO PRODUÇÃO — BLOCOS ===== */
+/* ===== SutoData PRODUÇÃO — BLOCOS ===== */
 /* =====================================================================
-   SUTO PRODUÇÃO — NÚCLEO (DB, MÉTRICAS, SEED)
+   SutoData PRODUÇÃO — NÚCLEO (DB, MÉTRICAS, SEED)
    ===================================================================== */
 
 /* Estado de produção — vive ao lado do `state` original */
@@ -3292,7 +3284,7 @@ function prodSeed(){
 }
 
 /* =====================================================================
-   SUTO PRODUÇÃO — TELAS (RENDER)
+   SutoData PRODUÇÃO — TELAS (RENDER)
    ===================================================================== */
 
 /* ícones SVG hi-tech (sem emoji) */
@@ -3650,7 +3642,7 @@ function salvarEdicaoLancamento(id){
 }
 
 /* =====================================================================
-   SUTO PRODUÇÃO — TELAS PARTE 2 (Equipe, Relatórios, Config) + Supabase
+   SutoData PRODUÇÃO — TELAS PARTE 2 (Equipe, Relatórios, Config) + Supabase
    ===================================================================== */
 
 /* ---------- Supabase helpers (tabelas de produção) ---------- */
@@ -4816,7 +4808,7 @@ function gerarPDF(tipo){
 
   doc.setFillColor(13,13,18); doc.rect(0,0,210,34,'F');
   doc.setTextColor(41,121,255); doc.setFontSize(17);
-  doc.text('SUTO PRODUÇÃO',14,14);
+  doc.text('SutoData PRODUÇÃO',14,14);
   doc.setTextColor(255,255,255); doc.setFontSize(10);
   doc.text(bz('Relatório de Produção')+' — '+tlabel,14,22);
   doc.setFontSize(8); doc.setTextColor(180,180,190);
@@ -4896,7 +4888,7 @@ function renderCfgBody(){
   ['empresa','modulos','metas','turno'].forEach(k=>{const b=document.querySelector('.cfgtab-'+k);if(b){const on=prodCfgTab===k;b.style.color=on?'var(--accent)':'var(--text-3)';b.style.borderBottom='2px solid '+(on?'var(--accent)':'transparent');}});
   const body=document.getElementById('cfgBody'); if(!body)return;
   if(prodCfgTab==='empresa') body.innerHTML=cfgEmpresaHTML();
-  else if(prodCfgTab==='modulos') body.innerHTML=modulesSection()+`<div class="card" style="margin-top:14px;background:var(--accent-soft);border-color:var(--border-blue)"><div style="font-size:13px;color:var(--text-2)">Esta é uma versão personalizada <strong>SUTO Produção</strong>. Os demais módulos do SUTO estão disponíveis e podem ser ativados a qualquer momento.</div></div>`;
+  else if(prodCfgTab==='modulos') body.innerHTML=modulesSection()+`<div class="card" style="margin-top:14px;background:var(--accent-soft);border-color:var(--border-blue)"><div style="font-size:13px;color:var(--text-2)">Esta é uma versão personalizada <strong>SutoData Produção</strong>. Os demais módulos do SutoData estão disponíveis e podem ser ativados a qualquer momento.</div></div>`;
   else if(prodCfgTab==='metas') body.innerHTML=cfgMetasHTML();
   else body.innerHTML=cfgTurnoHTML();
 }
@@ -5717,7 +5709,7 @@ syncThemeIcon();
    ===================================================================== */
 const I18N_ZH = {
   // navegação / seções / títulos
-  'Produção':'生产','Sistema':'系统','Módulos SUTO':'SUTO 模块',
+  'Produção':'生产','Sistema':'系统','Módulos SutoData':'SutoData 模块',
   'Dashboard':'仪表板','Lançamento Diário':'每日录入','Equipe':'团队',
   'Relatórios':'报表','Avarias':'次品','Devoluções':'退货','Configurações':'设置',
   'Produção do dia e indicadores':'当日生产与指标','Registre a produção da equipe':'录入团队生产',
