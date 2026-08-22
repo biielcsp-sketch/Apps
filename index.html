@@ -700,6 +700,7 @@ table input::-webkit-calendar-picker-indicator{filter:invert(.7)}
       <section class="page" id="page-prodranking"></section>
       <section class="page" id="page-prodmeudesempenho"></section>
       <section class="page" id="page-prodgeral"></section>
+      <section class="page" id="page-prodminhastarefas"></section>
       <section class="page" id="page-prodrel"></section>
       <section class="page" id="page-prodconfig"></section>
       <section class="page" id="page-vendas"></section>
@@ -988,7 +989,8 @@ const TITLES = {
   prodranking:['Ranking','Pontuação e destaque da equipe'],
   prodmeudesempenho:['Meu Desempenho','Sua performance pessoal na produção'],
   prodgeral:['Desempenho Geral','Indicadores gerais da produção da fábrica'],
-  prodequipe: ['Equipe','Colaboradores, metas e desempenho'],
+  prodequipe: ['Gestão de Pessoas','Funcionários, metas, frequência e bonificações'],
+  prodminhastarefas:['Minhas Tarefas','Suas tarefas, feedbacks e sugestões de melhoria'],
   prodrel:    ['Relatórios','Relatórios de produção em PDF'],
   prodconfig: ['Configurações','Empresa, módulos, metas e turnos'],
   dashboard:  ['Dashboard','Visão geral do seu negócio'],
@@ -2482,6 +2484,7 @@ const NAV_ICONS = {
   prodranking:'<path d="M8.21 13.89 7 23l5-3 5 3-1.21-9.12"/><circle cx="12" cy="8" r="7"/>',
   prodmeudesempenho:'<path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>',
   prodgeral:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
+  prodminhastarefas:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
   dashboard: '<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',
   vendas:    '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
   funil:     '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
@@ -2499,7 +2502,7 @@ const NAV_ICONS = {
 function navItem(page,label){
   return `<div class="nav-item" data-page="${page}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${NAV_ICONS[page]||''}</svg>${label}</div>`;
 }
-const OPERADOR_PAGES = ['prodmeudesempenho','prodgeral','prodranking'];
+const OPERADOR_PAGES = ['prodmeudesempenho','prodgeral','prodranking','prodminhastarefas'];
 const SUPERVISOR_PAGES = ['proddash','prodlanc','prodavarias','proddevol','prodequipe','prodranking','prodrel'];
 function defaultPageFor(cu){ return (cu && cu.perfil==='operador') ? 'prodmeudesempenho' : 'proddash'; }
 function buildSidebar(){
@@ -2509,6 +2512,7 @@ function buildSidebar(){
     ho+=navItem('prodmeudesempenho','Meu Desempenho');
     ho+=navItem('prodgeral','Desempenho Geral');
     ho+=navItem('prodranking','Ranking');
+    ho+=navItem('prodminhastarefas','Minhas Tarefas');
     $('#sidebarNav').innerHTML=ho;
     document.querySelectorAll('#sidebarNav [data-page]').forEach(item=>{
       item.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); go(this.dataset.page); });
@@ -2524,7 +2528,7 @@ function buildSidebar(){
   h+=navItem('prodlanc','Lançamento Diário');
   h+=navItem('prodavarias','Avarias');
   h+=navItem('proddevol','Devoluções');
-  h+=navItem('prodequipe','Equipe');
+  h+=navItem('prodequipe','Gestão de Pessoas');
   h+=navItem('prodranking','Ranking');
   h+=navItem('prodrel','Relatórios');
   // Módulos originais do SUTO — ocultos por padrão, ativáveis em Configurações
@@ -3122,6 +3126,12 @@ let prod = {
   producao: [],
   avarias: [],         // === NOVO: registros de avarias ===
   devolucoes: [],      // === NOVO: registros de devoluções ===
+  perfisEmbalagem: [],
+  frequencia: [],
+  avaliacoesMensais: [],
+  tarefasProducao: [],
+  feedbacks: [],
+  ideias: [],
   metasGlobais: { meta_diaria_fabrica: 0, meta_mensal: 0, avaria_max_pct: 3 },
   turnos: {
     integral: { ini:'08:00', fim:'17:30', almoco_ini:'12:00', almoco_fim:'13:00' },
@@ -3654,17 +3664,29 @@ function sbDelProd(table,id){
 async function loadProdFromSb(oid){
   if(typeof sb==='undefined'||!sb||!getToken())return;
   try{
-    const [cols,prods,cfgArr,avs,devs]=await Promise.all([
+    const [cols,prods,cfgArr,avs,devs,perfEmb,freq,aval,tarefasP,fbs,ideias]=await Promise.all([
       rpcT('rpc_select',{p_tbl:'colaboradores'}).catch(()=>[]),
       rpcT('rpc_select',{p_tbl:'producao'}).catch(()=>[]),
       rpcT('rpc_select',{p_tbl:'config_producao'}).catch(()=>[]),
       rpcT('rpc_select',{p_tbl:'avarias'}).catch(()=>[]),
-      rpcT('rpc_select',{p_tbl:'devolucoes'}).catch(()=>[])
+      rpcT('rpc_select',{p_tbl:'devolucoes'}).catch(()=>[]),
+      rpcT('rpc_select',{p_tbl:'perfil_embalagem'}).catch(()=>[]),
+      rpcT('rpc_select',{p_tbl:'frequencia'}).catch(()=>[]),
+      rpcT('rpc_select',{p_tbl:'avaliacoes_mensais'}).catch(()=>[]),
+      rpcT('rpc_select',{p_tbl:'tarefas_producao'}).catch(()=>[]),
+      rpcT('rpc_select',{p_tbl:'feedbacks_individuais'}).catch(()=>[]),
+      rpcT('rpc_select',{p_tbl:'ideias_melhoria'}).catch(()=>[]),
     ]);
     if(Array.isArray(cols)) prod.colaboradores=cols;
     if(Array.isArray(prods)) prod.producao=prods;
     if(Array.isArray(avs)) prod.avarias=avs;
     if(Array.isArray(devs)) prod.devolucoes=devs;
+    if(Array.isArray(perfEmb)) prod.perfisEmbalagem=perfEmb;
+    if(Array.isArray(freq)) prod.frequencia=freq;
+    if(Array.isArray(aval)) prod.avaliacoesMensais=aval;
+    if(Array.isArray(tarefasP)) prod.tarefasProducao=tarefasP;
+    if(Array.isArray(fbs)) prod.feedbacks=fbs;
+    if(Array.isArray(ideias)) prod.ideias=ideias;
     const cfg=Array.isArray(cfgArr)?cfgArr[0]:null;
     if(cfg&&cfg.dados){ const d=cfg.dados; if(d.metasGlobais)prod.metasGlobais=d.metasGlobais; if(d.turnos)prod.turnos=d.turnos; }
     prodSave();
@@ -3676,39 +3698,516 @@ function sbSaveProdConfig(){
     .catch(e=>console.error('cfgprod',e.message));
 }
 
+/* ---------- Gestão de Pessoas: RPCs dedicadas ---------- */
+async function gpFecharPeriodo(competencia){ return rpcT('rpc_fechar_periodo',{p_competencia:competencia}); }
+async function gpReabrirPeriodo(colabId,competencia,motivo){ return rpcT('rpc_reabrir_periodo',{p_colaborador_id:colabId,p_competencia:competencia,p_motivo:motivo}); }
+async function gpApontamento(colabId,data,descricao){ return rpcT('rpc_apontamento_registrar',{p_colaborador_id:colabId,p_data:data,p_descricao:descricao||null}); }
+async function gpBonificacaoCriar(colabId,tipo,justificativa,tarefaId){ return rpcT('rpc_bonificacao_extra_criar',{p_colaborador_id:colabId,p_tipo:tipo,p_justificativa:justificativa,p_tarefa_id:tarefaId||null}); }
+async function gpFechamentosList(competencia){ return rpcT('rpc_fechamentos_list',{p_competencia:competencia||null}); }
+async function gpLancamentosList(colabId,ini,fim){ return rpcT('rpc_lancamentos_list',{p_colaborador_id:colabId||null,p_ini:ini||null,p_fim:fim||null}); }
+async function gpBonificacoesList(colabId,competencia){ return rpcT('rpc_bonificacoes_extra_list',{p_colaborador_id:colabId||null,p_competencia:competencia||null}); }
+function mesAtualISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01'; }
+function idadeAnos(dataNasc){ if(!dataNasc)return null; const b=new Date(dataNasc+'T00:00:00'); const h=new Date(); let a=h.getFullYear()-b.getFullYear(); const m=h.getMonth()-b.getMonth(); if(m<0||(m===0&&h.getDate()<b.getDate()))a--; return a; }
+
 /* =======================================================
    TELA: EQUIPE
    ======================================================= */
-let equipeSubtab='colaboradores';
+let equipeSubtab='gpdash';
+const GP_TABS=[
+  ['gpdash','Dashboard'],
+  ['funcionarios','Funcionários'],
+  ['frequencia','Frequência'],
+  ['metasind','Metas Individuais'],
+  ['desempenho','Desempenho'],
+  ['tarefas','Tarefas'],
+  ['feedback','Feedback'],
+  ['bonificacao','Bonificação Extra'],
+  ['ideias','Sugestões de Melhorias'],
+  ['usuarios','Usuários'],
+];
+function gpTabsVisiveis(cu){
+  // Analista tem acesso restrito (somente seus próprios dados nas abas pessoais)
+  if(cu && cu.perfil==='analista') return ['tarefas','feedback','ideias'];
+  return GP_TABS.map(t=>t[0]); // admin: tudo; supervisor/líder: tudo (Usuários com edição restrita a cargo)
+}
 RENDER.prodequipe = function(){
   const cu=currentUser();
-  const podeVerUsuarios = cu && (cu.perfil==='admin' || cu.perfil==='supervisor');
+  const visiveis=gpTabsVisiveis(cu);
+  if(!visiveis.includes(equipeSubtab)) equipeSubtab=visiveis[0];
   $('#page-prodequipe').innerHTML=`
-    <div class="subtabs" style="display:flex;gap:8px;margin-bottom:18px;border-bottom:1px solid var(--border)">
-      ${eqTab('colaboradores','Colaboradores')}
-      ${eqTab('metas','Metas')}
-      ${eqTab('desempenho','Desempenho')}
-      ${podeVerUsuarios?eqTab('usuarios','Usuários'):''}
+    <div class="subtabs" style="display:flex;gap:8px;margin-bottom:18px;border-bottom:1px solid var(--border);overflow-x:auto">
+      ${GP_TABS.filter(t=>visiveis.includes(t[0])).map(t=>eqTab(t[0],t[1])).join('')}
     </div>
     <div id="equipeBody"></div>`;
   renderEquipeBody();
 };
 function eqTab(k,label){
   const on=equipeSubtab===k;
-  return `<button onclick="equipeSubtab='${k}';renderEquipeBody()" class="eqtab-${k}" style="background:none;border:none;padding:11px 4px;margin-right:18px;font-family:inherit;font-weight:600;font-size:14px;color:${on?'var(--accent)':'var(--text-3)'};border-bottom:2px solid ${on?'var(--accent)':'transparent'};cursor:pointer">${label}</button>`;
+  return `<button onclick="equipeSubtab='${k}';renderEquipeBody()" class="eqtab-${k}" style="white-space:nowrap;background:none;border:none;padding:11px 4px;margin-right:18px;font-family:inherit;font-weight:600;font-size:14px;color:${on?'var(--accent)':'var(--text-3)'};border-bottom:2px solid ${on?'var(--accent)':'transparent'};cursor:pointer">${label}</button>`;
 }
 function renderEquipeBody(){
   RENDER.prodequipe._skip=true;
-  const body=document.getElementById('equipeBody')||(()=>{RENDER.prodequipe();return document.getElementById('equipeBody');})();
-  // re-render tabs colors
-  ['colaboradores','metas','desempenho','usuarios'].forEach(k=>{
+  const body=document.getElementById('equipeBody')||(()=>{RENDER.prodequipe._skip=false;RENDER.prodequipe();return document.getElementById('equipeBody');})();
+  GP_TABS.forEach(([k])=>{
     const b=document.querySelector('.eqtab-'+k); if(b){const on=equipeSubtab===k;b.style.color=on?'var(--accent)':'var(--text-3)';b.style.borderBottom='2px solid '+(on?'var(--accent)':'transparent');}
   });
-  if(equipeSubtab==='colaboradores') body.innerHTML=colaboradoresHTML();
-  else if(equipeSubtab==='metas') body.innerHTML=metasHTML();
-  else if(equipeSubtab==='usuarios') body.innerHTML=usuariosHTML();
-  else body.innerHTML=desempenhoHTML();
+  const map={
+    gpdash: gpDashboardHTML,
+    funcionarios: colaboradoresHTML,
+    frequencia: frequenciaHTML,
+    metasind: metasIndividuaisHTML,
+    desempenho: desempenhoHTML,
+    tarefas: tarefasHTML,
+    feedback: feedbackHTML,
+    bonificacao: bonificacaoExtraHTML,
+    ideias: ideiasHTML,
+    usuarios: usuariosHTML,
+  };
+  const fn=map[equipeSubtab]||gpDashboardHTML;
+  body.innerHTML=fn();
   if(equipeSubtab==='desempenho') setTimeout(drawDesempenhoChart,30);
+  if(equipeSubtab==='ideias') setTimeout(wireIdeiasDragDrop,30);
+}
+
+/* =======================================================
+   GESTÃO DE PESSOAS — Dashboard
+   ======================================================= */
+function categoriaColab(c){ return c.funcao==='Embalagem'?'embalagem':(c.funcao==='Analista'?'analista':'producao'); }
+function gpDashboardHTML(){
+  const ativos=prod.colaboradores.filter(c=>c.status==='ativo');
+  const porCat={producao:0,embalagem:0,analista:0};
+  ativos.forEach(c=>porCat[categoriaColab(c)]++);
+  const mesIni=mesAtualISO();
+  const fechCache=(gpDashboardHTML._fech||[]).filter(f=>f.competencia===mesIni);
+  const fechados=fechCache.length;
+  const aptos=fechCache.filter(f=>f.apto_bonificacao).length;
+  const tarefasPend=prod.tarefasProducao.filter(t=>t.status==='pendente').length;
+  const faltasMes=prod.frequencia.filter(f=>f.data>=mesIni && f.tipo==='falta_injustificada').length;
+  const ideiasAbertas=prod.ideias.filter(i=>i.coluna!=='concluida'&&i.coluna!=='inviavel').length;
+  if(!gpDashboardHTML._loaded){
+    gpDashboardHTML._loaded=true;
+    gpFechamentosList(mesIni).then(r=>{ if(Array.isArray(r)){ gpDashboardHTML._fech=r; if(equipeSubtab==='gpdash')renderEquipeBody(); } }).catch(()=>{});
+  }
+  const kpi=(label,val,color)=>`<div class="kpi" style="padding:16px"><div class="kpi-label">${label}</div><div class="kpi-value" style="font-size:1.6rem;color:${color||'inherit'}">${val}</div></div>`;
+  return `
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px">
+      ${kpi('Colaboradores ativos', ativos.length)}
+      ${kpi('Produção', porCat.producao)}
+      ${kpi('Embalagem', porCat.embalagem)}
+      ${kpi('Analistas', porCat.analista)}
+    </div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px">
+      ${kpi('Fechamentos do mês', fechados+'/'+ativos.length)}
+      ${kpi('Aptos à bonificação', aptos, '#27C28B')}
+      ${kpi('Tarefas pendentes', tarefasPend, tarefasPend?'#F5A623':'inherit')}
+      ${kpi('Faltas injustificadas (mês)', faltasMes, faltasMes?'#FF3D57':'inherit')}
+      ${kpi('Ideias em aberto', ideiasAbertas)}
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">Resumo por função</div></div>
+      <div class="table-wrapper"><table>
+        <thead><tr><th>Função</th><th>Colaboradores ativos</th><th>Mínimo de bonificação</th></tr></thead>
+        <tbody>
+          <tr><td class="strong">Produção</td><td>${porCat.producao}</td><td>Q + 13</td></tr>
+          <tr><td class="strong">Embalagem</td><td>${porCat.embalagem}</td><td>Q + 13</td></tr>
+          <tr><td class="strong">Analista</td><td>${porCat.analista}</td><td>10</td></tr>
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+/* =======================================================
+   GESTÃO DE PESSOAS — Frequência
+   ======================================================= */
+let freqFiltro={colaboradorId:'',mes:mesAtualISO().slice(0,7)};
+function frequenciaHTML(){
+  const cu=currentUser();
+  const podeEditar = cu && (cu.perfil==='admin'||cu.perfil==='supervisor');
+  const colabOpts=['<option value="">Todos</option>'].concat(prod.colaboradores.map(c=>`<option value="${c.id}" ${freqFiltro.colaboradorId===c.id?'selected':''}>${c.nome}</option>`)).join('');
+  const [ay,am]=freqFiltro.mes.split('-').map(Number);
+  const regs=prod.frequencia.filter(f=>{
+    if(freqFiltro.colaboradorId && f.colaborador_id!==freqFiltro.colaboradorId) return false;
+    const d=new Date(f.data+'T00:00:00');
+    return d.getFullYear()===ay && (d.getMonth()+1)===am;
+  }).sort((a,b)=>a.data<b.data?1:-1);
+  const nomeDe=id=>{const c=prod.colaboradores.find(x=>x.id===id);return c?c.nome:'—';};
+  const rows=regs.map(f=>`
+    <tr>
+      <td class="strong">${nomeDe(f.colaborador_id)}</td>
+      <td>${dBR(f.data)}</td>
+      <td>${f.tipo==='falta_injustificada'?'<span class="badge" style="color:#FF3D57;background:#FF3D5718">Injustificada</span>':'<span class="badge" style="color:#F5A623;background:#F5A62318">Justificada</span>'}</td>
+      <td>${f.motivo||'—'}</td>
+      <td>${podeEditar?`<button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="delFrequencia('${f.id}')">Excluir</button>`:''}</td>
+    </tr>`).join('');
+  // resumo agregado por colaborador no mês filtrado
+  const aggMap={};
+  prod.frequencia.forEach(f=>{
+    const d=new Date(f.data+'T00:00:00');
+    if(d.getFullYear()!==ay || (d.getMonth()+1)!==am) return;
+    if(!aggMap[f.colaborador_id]) aggMap[f.colaborador_id]={just:0,injust:0};
+    aggMap[f.colaborador_id][f.tipo==='falta_injustificada'?'injust':'just']++;
+  });
+  const aggRows=Object.entries(aggMap).map(([cid,v])=>`
+    <tr><td class="strong">${nomeDe(cid)}</td><td>${v.just}</td><td style="color:${v.injust>0?'#FF3D57':'inherit'}">${v.injust}</td>
+    <td>${v.injust===0?'<span class="badge" style="color:#27C28B;background:#27C28B18">+5 frequência</span>':'<span class="badge" style="color:#FF3D57;background:#FF3D5718">0 pts frequência</span>'}</td></tr>`).join('');
+  return `
+    <div class="row-between" style="margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <select onchange="freqFiltro.colaboradorId=this.value;renderEquipeBody()">${colabOpts}</select>
+        <input type="month" value="${freqFiltro.mes}" onchange="freqFiltro.mes=this.value;renderEquipeBody()">
+      </div>
+      ${podeEditar?`<button class="btn btn-primary" onclick="formFrequencia()">Registrar falta</button>`:''}
+    </div>
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-head"><div class="card-title">Resumo do mês por colaborador</div></div>
+      <div class="table-wrapper"><table>
+        <thead><tr><th>Colaborador</th><th>Faltas justificadas</th><th>Faltas injustificadas</th><th>Pontuação de frequência</th></tr></thead>
+        <tbody>${aggRows||emptyRow(4)}</tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">Registros do mês</div></div>
+      <div class="table-wrapper"><table>
+        <thead><tr><th>Colaborador</th><th>Data</th><th>Tipo</th><th>Motivo</th><th></th></tr></thead>
+        <tbody>${rows||emptyRow(5)}</tbody>
+      </table></div>
+    </div>`;
+}
+function formFrequencia(){
+  const opts=prod.colaboradores.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  openModal('Registrar Falta',`
+    <div class="field"><label>Colaborador</label><select id="fqColab">${opts}</select></div>
+    <div class="field-row">
+      <div class="field"><label>Data</label><input type="date" id="fqData" value="${today()}"></div>
+      <div class="field"><label>Tipo</label><select id="fqTipo"><option value="falta_justificada">Justificada</option><option value="falta_injustificada">Injustificada</option></select></div>
+    </div>
+    <div class="field"><label>Motivo</label><input id="fqMotivo" placeholder="Opcional"></div>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarFrequencia()">Salvar</button>`);
+}
+function salvarFrequencia(){
+  const colaborador_id=$('#fqColab').value;
+  if(!colaborador_id){Toast('Selecione o colaborador','erro');return;}
+  const obj={id:'fq-'+uid(),colaborador_id,data:$('#fqData').value,tipo:$('#fqTipo').value,motivo:$('#fqMotivo').value.trim()||null};
+  prod.frequencia.push(obj); prodSave(); sbUpProd('frequencia',obj);
+  closeModal(); renderEquipeBody(); Toast('Falta registrada!','sucesso');
+}
+function delFrequencia(id){
+  if(!confirm('Excluir este registro de falta?'))return;
+  prod.frequencia=prod.frequencia.filter(x=>x.id!==id); prodSave(); sbDelProd('frequencia',id);
+  renderEquipeBody(); Toast('Registro excluído','info');
+}
+
+/* =======================================================
+   GESTÃO DE PESSOAS — Metas Individuais (Status de Metas)
+   ======================================================= */
+function fimDoMes(iniISO){ const d=new Date(iniISO+'T00:00:00'); const f=new Date(d.getFullYear(),d.getMonth()+1,0); return f.toISOString().slice(0,10); }
+function metasIndividuaisHTML(){
+  const cu=currentUser();
+  const podeAvaliar = cu && (cu.perfil==='admin'||cu.perfil==='supervisor');
+  const mesIni=mesAtualISO(), mesFim=fimDoMes(mesIni);
+  if(metasIndividuaisHTML._mes!==mesIni){
+    metasIndividuaisHTML._mes=mesIni; metasIndividuaisHTML._lanc=null;
+    gpLancamentosList(null,mesIni,mesFim).then(r=>{
+      metasIndividuaisHTML._lanc=Array.isArray(r)?r:[];
+      if(equipeSubtab==='metasind') renderEquipeBody();
+    }).catch(()=>{ metasIndividuaisHTML._lanc=[]; });
+  }
+  const lanc=metasIndividuaisHTML._lanc;
+  const ativos=prod.colaboradores.filter(c=>c.status==='ativo');
+  const cards=ativos.map(c=>{
+    const cat=categoriaColab(c);
+    const meus=lanc?lanc.filter(l=>l.colaborador_id===c.id):null;
+    const dias=meus?new Set(meus.filter(l=>l.tipo==='peca_produzida'||l.tipo==='apontamento_diario').map(l=>l.data)).size:0;
+    const pecas=meus?meus.filter(l=>l.tipo==='peca_produzida').reduce((s,l)=>s+Number(l.valor||0),0):0;
+    const apont=meus?meus.filter(l=>l.tipo==='apontamento_diario').length:0;
+    const Q=Number(c.meta_diaria||0)*dias;
+    const pct=Q>0?Math.min(100,Math.round(pecas/Q*100)):0;
+    const aval=(prod.avaliacoesMensais||[]).find(a=>a.colaborador_id===c.id && a.competencia===mesIni);
+    const velocOk=aval?!!aval.velocidade_ok:false;
+    const faltasInj=prod.frequencia.filter(f=>f.colaborador_id===c.id && f.data>=mesIni && f.data<=mesFim && f.tipo==='falta_injustificada').length;
+    const corpo = cat==='analista'
+      ? `<div class="kpi" style="padding:12px"><div class="kpi-label">Apontamentos diários</div><div class="kpi-value" style="font-size:1.3rem">${lanc?apont:'…'}</div></div>`
+      : `<div style="margin:10px 0">
+           <div class="row-between" style="font-size:12px;color:var(--text-3);margin-bottom:4px"><span>Peças no mês</span><span>${lanc?(pecas+' / '+Q):'…'}</span></div>
+           <div style="height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden"><div style="height:100%;width:${pct}%;background:${pct>=100?'#27C28B':'#2979FF'}"></div></div>
+         </div>
+         <div class="field" style="margin-bottom:6px"><label>Meta diária (Q base)</label><input type="number" min="0" value="${c.meta_diaria}" ${podeAvaliar?`onchange="setMetaColab('${c.id}',this.value)"`:'disabled'} style="width:100%"></div>
+         <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:${podeAvaliar?'pointer':'default'}">
+           <input type="checkbox" ${velocOk?'checked':''} ${podeAvaliar?`onchange="setVelocidade('${c.id}',this.checked)"`:'disabled'}> Velocidade adequada (+3)
+         </label>`;
+    return `<div class="card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+        ${avatarHTML(c.nome,c.foto,'mini-av','width:38px;height:38px;font-size:13px')}
+        <div style="flex:1"><div class="strong">${c.nome}</div><div style="font-size:12px;color:var(--text-3)">${c.funcao}</div></div>
+        <span class="badge" style="color:${faltasInj===0?'#27C28B':'#FF3D57'};background:${faltasInj===0?'#27C28B18':'#FF3D5718'}">${faltasInj===0?'+5 frequência':'0 frequência'}</span>
+      </div>
+      ${corpo}
+    </div>`;
+  }).join('');
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">${cards||'<div class="card"><div class="empty">Nenhum colaborador ativo</div></div>'}</div>`;
+}
+async function setVelocidade(colabId,checked){
+  const mesIni=mesAtualISO();
+  const obj={id:'av-'+colabId+'-'+mesIni.slice(0,7),colaborador_id:colabId,competencia:mesIni,velocidade_ok:checked};
+  const i=prod.avaliacoesMensais.findIndex(a=>a.colaborador_id===colabId&&a.competencia===mesIni);
+  if(i>=0) prod.avaliacoesMensais[i]={...prod.avaliacoesMensais[i],...obj}; else prod.avaliacoesMensais.push(obj);
+  prodSave(); sbUpProd('avaliacoes_mensais',obj);
+  Toast('Avaliação de velocidade atualizada','sucesso');
+}
+
+/* =======================================================
+   GESTÃO DE PESSOAS — Tarefas Individuais
+   ======================================================= */
+function tarefasHTML(){
+  const cu=currentUser();
+  const podeGerenciar = cu.perfil==='admin'||cu.perfil==='supervisor';
+  let list=prod.tarefasProducao.slice();
+  if(cu.perfil==='analista') list=list.filter(t=>t.colaborador_id===cu.colaborador_id);
+  list.sort((a,b)=>(a.status===b.status)?(b.criado_em||'').localeCompare(a.criado_em||''):(a.status==='pendente'?-1:1));
+  const nomeDe=id=>{const c=prod.colaboradores.find(x=>x.id===id);return c?c.nome:'—';};
+  const rows=list.map(t=>`
+    <tr>
+      <td class="strong">${nomeDe(t.colaborador_id)}</td>
+      <td>${t.titulo}${t.descricao?`<div style="font-size:12px;color:var(--text-3)">${t.descricao}</div>`:''}</td>
+      <td>${t.status==='concluida'?'<span class="badge" style="color:#27C28B;background:#27C28B18">Concluída</span>':'<span class="badge" style="color:#F5A623;background:#F5A62318">Pendente</span>'}</td>
+      <td>${t.concluido_em?dBR(t.concluido_em.slice(0,10)):'—'}</td>
+      <td>${podeGerenciar?`<button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="delTarefaProd('${t.id}')">Excluir</button>`:''}</td>
+    </tr>`).join('');
+  return `
+    <div class="row-between" style="margin-bottom:16px">
+      <span class="chip">${list.length} tarefa${list.length!==1?'s':''}</span>
+      ${podeGerenciar?`<button class="btn btn-primary" onclick="formTarefaProd()">Nova tarefa</button>`:''}
+    </div>
+    <div class="card"><div class="table-wrapper"><table>
+      <thead><tr><th>Colaborador</th><th>Tarefa</th><th>Status</th><th>Concluída em</th><th></th></tr></thead>
+      <tbody>${rows||emptyRow(5)}</tbody>
+    </table></div></div>`;
+}
+function formTarefaProd(){
+  const opts=prod.colaboradores.filter(c=>c.status==='ativo').map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  openModal('Nova Tarefa',`
+    <div class="field"><label>Colaborador</label><select id="tpColab">${opts}</select></div>
+    <div class="field"><label>Título</label><input id="tpTitulo" placeholder="Ex: Organizar estoque de linhas"></div>
+    <div class="field"><label>Descrição</label><input id="tpDesc" placeholder="Opcional"></div>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarTarefaProd()">Criar</button>`);
+}
+function salvarTarefaProd(){
+  const titulo=$('#tpTitulo').value.trim();
+  if(!titulo){Toast('Informe o título da tarefa','erro');return;}
+  const cu=currentUser();
+  const obj={id:'tp-'+uid(),colaborador_id:$('#tpColab').value,titulo,descricao:$('#tpDesc').value.trim()||null,status:'pendente',criado_por:cu.id,criado_em:new Date().toISOString()};
+  prod.tarefasProducao.push(obj); prodSave(); sbUpProd('tarefas_producao',obj);
+  closeModal(); renderEquipeBody(); Toast('Tarefa criada!','sucesso');
+}
+function delTarefaProd(id){
+  if(!confirm('Excluir esta tarefa?'))return;
+  prod.tarefasProducao=prod.tarefasProducao.filter(x=>x.id!==id); prodSave(); sbDelProd('tarefas_producao',id);
+  renderEquipeBody(); if(RENDER.prodminhastarefas)RENDER.prodminhastarefas();
+  Toast('Tarefa excluída','info');
+}
+function concluirTarefaProd(id){
+  const t=prod.tarefasProducao.find(x=>x.id===id); if(!t)return;
+  t.status='concluida'; t.concluido_em=new Date().toISOString();
+  prodSave(); sbUpProd('tarefas_producao',t);
+  RENDER.prodminhastarefas(); Toast('Tarefa concluída!','sucesso');
+}
+
+/* =======================================================
+   GESTÃO DE PESSOAS — Feedback Individual
+   ======================================================= */
+function feedbackHTML(){
+  const cu=currentUser();
+  const podeCriar = cu.perfil==='admin'||cu.perfil==='supervisor';
+  let list=prod.feedbacks.slice();
+  if(cu.perfil==='analista') list=list.filter(f=>f.colaborador_id===cu.colaborador_id);
+  list.sort((a,b)=>(b.criado_em||'').localeCompare(a.criado_em||''));
+  const nomeDe=id=>{const c=prod.colaboradores.find(x=>x.id===id);return c?c.nome:'—';};
+  const cor={positivo:'#27C28B',negativo:'#FF3D57',geral:'#2979FF'};
+  const label={positivo:'Positivo',negativo:'A melhorar',geral:'Geral'};
+  const cards=list.map(f=>`
+    <div class="card" style="margin-bottom:10px">
+      <div class="row-between">
+        <div class="strong">${nomeDe(f.colaborador_id)}</div>
+        <span class="badge" style="color:${cor[f.tipo]||'#2979FF'};background:${(cor[f.tipo]||'#2979FF')}18">${label[f.tipo]||'Geral'}</span>
+      </div>
+      <div style="margin:8px 0;color:var(--text-2)">${f.texto}</div>
+      <div class="row-between"><span style="font-size:11.5px;color:var(--text-3)">${f.criado_em?dBR(f.criado_em.slice(0,10)):''}</span>${podeCriar?`<button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="delFeedback('${f.id}')">Excluir</button>`:''}</div>
+    </div>`).join('');
+  return `
+    <div class="row-between" style="margin-bottom:16px">
+      <span class="chip">${list.length} feedback${list.length!==1?'s':''}</span>
+      ${podeCriar?`<button class="btn btn-primary" onclick="formFeedback()">Novo feedback</button>`:''}
+    </div>
+    ${cards||'<div class="card"><div class="empty">Nenhum feedback registrado</div></div>'}`;
+}
+function formFeedback(){
+  const opts=prod.colaboradores.filter(c=>c.status==='ativo').map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  openModal('Novo Feedback',`
+    <div class="field"><label>Colaborador</label><select id="fbColab">${opts}</select></div>
+    <div class="field"><label>Tipo</label><select id="fbTipo"><option value="positivo">Positivo</option><option value="negativo">A melhorar</option><option value="geral">Geral</option></select></div>
+    <div class="field"><label>Mensagem</label><input id="fbTexto" placeholder="Escreva o feedback"></div>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarFeedback()">Salvar</button>`);
+}
+function salvarFeedback(){
+  const texto=$('#fbTexto').value.trim();
+  if(!texto){Toast('Escreva a mensagem do feedback','erro');return;}
+  const cu=currentUser();
+  const obj={id:'fb-'+uid(),colaborador_id:$('#fbColab').value,tipo:$('#fbTipo').value,texto,criado_por:cu.id,criado_em:new Date().toISOString()};
+  prod.feedbacks.push(obj); prodSave(); sbUpProd('feedbacks_individuais',obj);
+  closeModal(); renderEquipeBody(); Toast('Feedback registrado!','sucesso');
+}
+function delFeedback(id){
+  if(!confirm('Excluir este feedback?'))return;
+  prod.feedbacks=prod.feedbacks.filter(x=>x.id!==id); prodSave(); sbDelProd('feedbacks_individuais',id);
+  renderEquipeBody(); Toast('Feedback excluído','info');
+}
+
+/* =======================================================
+   GESTÃO DE PESSOAS — Bonificação Extra
+   ======================================================= */
+function bonificacaoExtraHTML(){
+  const cu=currentUser();
+  const podeCriar = cu.perfil==='admin'||cu.perfil==='supervisor';
+  const mesIni=mesAtualISO();
+  if(bonificacaoExtraHTML._mes!==mesIni){
+    bonificacaoExtraHTML._mes=mesIni; bonificacaoExtraHTML._lista=null;
+    gpBonificacoesList(null,mesIni).then(r=>{ bonificacaoExtraHTML._lista=Array.isArray(r)?r:[]; if(equipeSubtab==='bonificacao')renderEquipeBody(); }).catch(()=>{ bonificacaoExtraHTML._lista=[]; });
+  }
+  let lista=bonificacaoExtraHTML._lista;
+  if(cu.perfil==='analista') lista=(lista||[]).filter(b=>b.colaborador_id===cu.colaborador_id);
+  const nomeDe=id=>{const c=prod.colaboradores.find(x=>x.id===id);return c?c.nome:'—';};
+  const TIPO_LABEL={tarefa_cumprida:'Tarefa cumprida',organizacao:'Organização',ideia_sugerida:'Ideia sugerida',ideia_concluida:'Ideia concluída'};
+  const rows=(lista||[]).map(b=>`
+    <tr>
+      <td class="strong">${nomeDe(b.colaborador_id)}</td>
+      <td>${TIPO_LABEL[b.tipo]||b.tipo}</td>
+      <td class="strong" style="color:#27C28B">+${b.valor}</td>
+      <td>${b.justificativa}</td>
+      <td>${b.origem==='kanban_ideias'?'<span class="badge" style="color:var(--text-2);background:var(--surface-2)">Kanban</span>':'Manual'}</td>
+    </tr>`).join('');
+  const total=(lista||[]).reduce((s,b)=>s+Number(b.valor||0),0);
+  return `
+    <div class="row-between" style="margin-bottom:16px">
+      <span class="chip">Total do mês: +${total} pts</span>
+      ${podeCriar?`<button class="btn btn-primary" onclick="formBonificacaoExtra()">Novo lançamento</button>`:''}
+    </div>
+    <div class="card"><div class="table-wrapper"><table>
+      <thead><tr><th>Colaborador</th><th>Tipo</th><th>Pontos</th><th>Justificativa</th><th>Origem</th></tr></thead>
+      <tbody>${lista===null?emptyRow(5):(rows||emptyRow(5))}</tbody>
+    </table></div></div>`;
+}
+function formBonificacaoExtra(){
+  const opts=prod.colaboradores.filter(c=>c.status==='ativo').map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  openModal('Nova Bonificação Extra',`
+    <div class="field"><label>Colaborador</label><select id="beColab" onchange="atualizarTarefasBonificacao()">${opts}</select></div>
+    <div class="field"><label>Tipo</label><select id="beTipo" onchange="atualizarTarefasBonificacao()">
+      <option value="tarefa_cumprida">Tarefa cumprida (proatividade) — +3</option>
+      <option value="organizacao">Organização — +3</option>
+    </select></div>
+    <div class="field" id="beTarefaWrap"><label>Tarefa concluída vinculada</label><select id="beTarefa"></select></div>
+    <div class="field"><label>Justificativa (mínimo 20 caracteres)</label><input id="beJustif" placeholder="Descreva o motivo" oninput="document.getElementById('beContador').textContent=this.value.length+'/20'"></div>
+    <div id="beContador" style="font-size:11.5px;color:var(--text-3);margin-top:-8px;margin-bottom:8px">0/20</div>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarBonificacaoExtra()">Lançar</button>`);
+  atualizarTarefasBonificacao();
+}
+function atualizarTarefasBonificacao(){
+  const tipo=$('#beTipo').value; const colabId=$('#beColab').value;
+  const wrap=$('#beTarefaWrap'); if(!wrap)return;
+  wrap.style.display = tipo==='tarefa_cumprida'?'block':'none';
+  if(tipo==='tarefa_cumprida'){
+    const concluidas=prod.tarefasProducao.filter(t=>t.colaborador_id===colabId && t.status==='concluida');
+    $('#beTarefa').innerHTML = concluidas.length
+      ? concluidas.map(t=>`<option value="${t.id}">${t.titulo}</option>`).join('')
+      : `<option value="">Nenhuma tarefa concluída para este colaborador</option>`;
+  }
+}
+async function salvarBonificacaoExtra(){
+  const colabId=$('#beColab').value, tipo=$('#beTipo').value, justificativa=$('#beJustif').value.trim();
+  const tarefaId = tipo==='tarefa_cumprida' ? ($('#beTarefa').value||null) : null;
+  if(justificativa.length<20){Toast('Justificativa deve ter no mínimo 20 caracteres','erro');return;}
+  if(tipo==='tarefa_cumprida' && !tarefaId){Toast('Selecione a tarefa concluída vinculada','erro');return;}
+  try{
+    const r=await gpBonificacaoCriar(colabId,tipo,justificativa,tarefaId);
+    if(!r||!r.ok){Toast((r&&r.erro)||'Não foi possível lançar','erro');return;}
+    closeModal(); bonificacaoExtraHTML._mes=null; renderEquipeBody(); Toast('Bonificação lançada!','sucesso');
+  }catch(e){ Toast('Erro: '+(e.message||e),'erro'); }
+}
+
+/* =======================================================
+   GESTÃO DE PESSOAS — Sugestões de Melhorias (Kanban)
+   ======================================================= */
+const IDEIA_COLS=[
+  {k:'ideias',label:'Ideias',color:'#2979FF'},
+  {k:'avaliando',label:'Avaliando',color:'#F5A623'},
+  {k:'executando',label:'Executando',color:'#8B5CF6'},
+  {k:'concluida',label:'Concluída',color:'#27C28B'},
+  {k:'inviavel',label:'Inviável',color:'#FF3D57'},
+];
+function ideiasHTML(){
+  const cu=currentUser();
+  if(cu.perfil==='analista'){
+    const minhas=prod.ideias.filter(i=>i.colaborador_id===cu.colaborador_id).sort((a,b)=>(b.criado_em||'').localeCompare(a.criado_em||''));
+    const IDEIA_COL_LABEL=Object.fromEntries(IDEIA_COLS.map(c=>[c.k,c.label]));
+    const rows=minhas.map(i=>`<tr><td class="strong">${i.descricao}</td><td>${IDEIA_COL_LABEL[i.coluna]||i.coluna}</td></tr>`).join('');
+    return `
+      <div class="row-between" style="margin-bottom:16px">
+        <span class="chip">${minhas.length} sugestão(ões)</span>
+        <button class="btn btn-primary" onclick="formSugerirIdeia()">Sugerir ideia</button>
+      </div>
+      <div class="card"><div class="table-wrapper"><table><thead><tr><th>Ideia</th><th>Status</th></tr></thead><tbody>${rows||emptyRow(2)}</tbody></table></div></div>`;
+  }
+  const nomeDe=id=>{const c=prod.colaboradores.find(x=>x.id===id);return c?c.nome:'—';};
+  const cols=IDEIA_COLS.map(st=>{
+    const items=prod.ideias.filter(i=>i.coluna===st.k);
+    const cards=items.map(i=>`
+      <div class="kcard" draggable="true" data-id="${i.id}" style="cursor:pointer" onclick="abrirIdeiaDetalhe(event,'${i.id}')">
+        <div class="kcard-top"><div class="kcard-name">${nomeDe(i.colaborador_id)}</div></div>
+        <div class="kcard-co">${i.descricao}</div>
+        ${i.area_melhoria?`<div style="font-size:11.5px;color:var(--text-3);margin-top:4px">Área: ${i.area_melhoria}</div>`:''}
+      </div>`).join('');
+    return `<div class="kanban-col" data-stage="${st.k}">
+      <div class="kcol-head"><div class="kcol-title"><span class="kcol-dot" style="background:${st.color}"></span>${st.label}</div><span class="kcol-count">${items.length}</span></div>
+      ${cards}
+    </div>`;
+  }).join('');
+  return `<div class="kanban-board">${cols}</div>`;
+}
+function wireIdeiasDragDrop(){
+  let dragId=null;
+  document.querySelectorAll('#equipeBody .kcard').forEach(card=>{
+    card.addEventListener('dragstart',()=>{dragId=card.dataset.id;card.classList.add('dragging');});
+    card.addEventListener('dragend',()=>card.classList.remove('dragging'));
+  });
+  document.querySelectorAll('#equipeBody .kanban-col').forEach(col=>{
+    col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('drag-over');});
+    col.addEventListener('dragleave',()=>col.classList.remove('drag-over'));
+    col.addEventListener('drop',e=>{
+      e.preventDefault();col.classList.remove('drag-over');
+      moverIdeiaColuna(dragId,col.dataset.stage);
+    });
+  });
+}
+function moverIdeiaColuna(id,coluna){
+  const i=prod.ideias.find(x=>x.id===id); if(!i||i.coluna===coluna)return;
+  i.coluna=coluna; i.atualizado_em=new Date().toISOString();
+  prodSave(); sbUpProd('ideias_melhoria',i);
+  renderEquipeBody();
+  if(coluna==='concluida') Toast('Ideia concluída! +50 pontos de bonificação extra.','sucesso');
+}
+function abrirIdeiaDetalhe(ev,id){
+  if(ev)ev.stopPropagation();
+  const i=prod.ideias.find(x=>x.id===id); if(!i)return;
+  const nomeDe=cid=>{const c=prod.colaboradores.find(x=>x.id===cid);return c?c.nome:'—';};
+  const moveOpts=IDEIA_COLS.map(c=>`<option value="${c.k}" ${i.coluna===c.k?'selected':''}>${c.label}</option>`).join('');
+  openModal('Sugestão de Melhoria',`
+    <div style="margin-bottom:10px"><span class="muted">Responsável:</span> <span class="strong">${nomeDe(i.colaborador_id)}</span></div>
+    <div style="margin-bottom:10px">${i.descricao}</div>
+    ${i.area_melhoria?`<div style="margin-bottom:6px"><span class="muted">Área de melhoria:</span> ${i.area_melhoria}</div>`:''}
+    ${i.impacto_produtivo?`<div style="margin-bottom:6px"><span class="muted">Impacto produtivo:</span> ${i.impacto_produtivo}</div>`:''}
+    ${i.impacto_custos?`<div style="margin-bottom:6px"><span class="muted">Impacto em custos:</span> ${i.impacto_custos}</div>`:''}
+    ${i.impacto_rotina?`<div style="margin-bottom:6px"><span class="muted">Impacto na rotina:</span> ${i.impacto_rotina}</div>`:''}
+    <div class="field" style="margin-top:14px"><label>Mover para</label><select id="ideiaMoveSel">${moveOpts}</select></div>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Fechar</button><button class="btn btn-primary" onclick="moverIdeiaColuna('${id}',document.getElementById('ideiaMoveSel').value);closeModal()">Mover</button>`);
 }
 
 function usuariosHTML(){
@@ -3775,9 +4274,45 @@ function colaboradoresHTML(){
   return `
     <div class="row-between" style="margin-bottom:16px">
       <span class="chip">${prod.colaboradores.length} colaboradores</span>
-      <button class="btn btn-primary" onclick="formColab()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo Colaborador</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="gerenciarPerfisEmbalagem()">Perfis de Embalagem</button>
+        <button class="btn btn-primary" onclick="formColab()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo Colaborador</button>
+      </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">${cards||'<div class="card"><div class="empty">Nenhum colaborador cadastrado</div></div>'}</div>`;
+}
+function perfilEmbalagemNome(id){ const p=(prod.perfisEmbalagem||[]).find(x=>x.id===id); return p?p.nome:'—'; }
+function gerenciarPerfisEmbalagem(){
+  const rows=(prod.perfisEmbalagem||[]).map(p=>`
+    <tr>
+      <td class="strong">${p.nome}</td>
+      <td>${p.descricao||''}</td>
+      <td>${p.ativo!==false?'<span class="badge" style="color:#27C28B;background:#27C28B18">Ativo</span>':'<span class="badge" style="color:var(--text-3);background:var(--surface-2)">Inativo</span>'}</td>
+      <td><button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="delPerfilEmbalagem('${p.id}')">Excluir</button></td>
+    </tr>`).join('');
+  openModal('Perfis de Embalagem',`
+    <div style="font-size:12.5px;color:var(--text-3);margin-bottom:14px">Perfis organizacionais da função Embalagem. Não alteram a fórmula de pontos — servem para atribuição de tarefas.</div>
+    <div class="field-row">
+      <div class="field"><label>Nome do perfil</label><input id="peNome" placeholder="Ex: Bipagem, Dobra, Etiquetagem..."></div>
+      <div class="field"><label>Descrição</label><input id="peDesc" placeholder="Opcional"></div>
+    </div>
+    <button class="btn btn-primary" style="margin-bottom:16px" onclick="addPerfilEmbalagem()">Adicionar</button>
+    <div class="table-wrapper"><table><thead><tr><th>Nome</th><th>Descrição</th><th>Status</th><th></th></tr></thead>
+    <tbody>${rows||emptyRow(4)}</tbody></table></div>
+  `,`<button class="btn btn-primary" onclick="closeModal()">Fechar</button>`);
+}
+function addPerfilEmbalagem(){
+  const nome=$('#peNome').value.trim(); if(!nome){Toast('Informe o nome do perfil','erro');return;}
+  const obj={id:'pe-'+uid(),nome,descricao:$('#peDesc').value.trim()||null,ativo:true};
+  prod.perfisEmbalagem=prod.perfisEmbalagem||[]; prod.perfisEmbalagem.push(obj);
+  prodSave(); sbUpProd('perfil_embalagem',obj);
+  gerenciarPerfisEmbalagem(); Toast('Perfil adicionado!','sucesso');
+}
+function delPerfilEmbalagem(id){
+  if(!confirm('Excluir este perfil de embalagem?'))return;
+  prod.perfisEmbalagem=(prod.perfisEmbalagem||[]).filter(x=>x.id!==id);
+  prodSave(); sbDelProd('perfil_embalagem',id);
+  gerenciarPerfisEmbalagem(); Toast('Perfil excluído','info');
 }
 function turnoLabel(t){return {manha:'Manhã',tarde:'Tarde',noite:'Noite',integral:'Integral'}[t]||t;}
 
@@ -3786,6 +4321,8 @@ function formColab(id){
   const funcOpts=FUNCOES.map(f=>`<option ${c&&c.funcao===f?'selected':''}>${f}</option>`).join('');
   const turnoOpts=[['manha','Manhã'],['tarde','Tarde'],['noite','Noite'],['integral','Integral']].map(([v,l])=>`<option value="${v}" ${c&&c.turno===v?'selected':''}>${l}</option>`).join('');
   const stOpts=[['ativo','Ativo'],['ferias','Férias'],['afastado','Afastado']].map(([v,l])=>`<option value="${v}" ${c&&c.status===v?'selected':''}>${l}</option>`).join('');
+  const civilOpts=[['','—'],['solteiro','Solteiro(a)'],['casado','Casado(a)'],['uniao_estavel','União estável'],['divorciado','Divorciado(a)'],['viuvo','Viúvo(a)']].map(([v,l])=>`<option value="${v}" ${c&&c.estado_civil===v?'selected':''}>${l}</option>`).join('');
+  const embOpts=[['','—']].concat((prod.perfisEmbalagem||[]).map(p=>[p.id,p.nome])).map(([v,l])=>`<option value="${v}" ${c&&c.perfil_embalagem_id===v?'selected':''}>${l}</option>`).join('');
   _colabFotoDataUrl=null;
   openModal(id?'Editar Colaborador':'Novo Colaborador',`
     <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:18px">
@@ -3794,14 +4331,29 @@ function formColab(id){
     </div>
     <div class="field"><label>Nome completo</label><input id="cNome" value="${c?c.nome:''}" placeholder="Ex: Ana Paula Ferreira"></div>
     <div class="field-row">
-      <div class="field"><label>Função</label><select id="cFunc">${funcOpts}</select></div>
+      <div class="field"><label>Função</label><select id="cFunc" onchange="document.getElementById('cEmbWrap').style.display=this.value==='Embalagem'?'block':'none'">${funcOpts}</select></div>
       <div class="field"><label>Turno</label><select id="cTurno">${turnoOpts}</select></div>
     </div>
+    <div id="cEmbWrap" class="field" style="display:${c&&c.funcao==='Embalagem'?'block':'none'}"><label>Perfil de Embalagem</label><select id="cPerfilEmb">${embOpts}</select></div>
     <div class="field-row">
       <div class="field"><label>Meta diária (unidades)</label><input type="number" min="0" id="cMeta" value="${c?c.meta_diaria:100}"></div>
       <div class="field"><label>Data de admissão</label><input type="date" id="cAdm" value="${c?c.admissao:today()}"></div>
     </div>
     <div class="field"><label>Status</label><select id="cStatus">${stOpts}</select></div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3);margin:18px 0 8px">Dados pessoais</div>
+    <div class="field-row">
+      <div class="field"><label>Data de nascimento</label><input type="date" id="cNasc" value="${c?(c.data_nascimento||''):''}"></div>
+      <div class="field"><label>Estado civil</label><select id="cCivil">${civilOpts}</select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>E-mail</label><input type="email" id="cEmail" value="${c?(c.email||''):''}" placeholder="Opcional"></div>
+      <div class="field"><label>Telefone</label><input id="cTel" value="${c?(c.telefone||''):''}" placeholder="Opcional"></div>
+    </div>
+    <div class="field"><label>Endereço</label><input id="cEndereco" value="${c?(c.endereco||''):''}" placeholder="Opcional"></div>
+    <div class="field-row">
+      <div class="field"><label>Contato de emergência</label><input id="cContEmergNome" value="${c?(c.contato_emergencia_nome||''):''}" placeholder="Nome"></div>
+      <div class="field"><label>Telefone de emergência</label><input id="cContEmergTel" value="${c?(c.contato_emergencia_telefone||''):''}" placeholder="Opcional"></div>
+    </div>
     <div class="field"><label>Observações</label><input id="cObs" value="${c?(c.obs||''):''}" placeholder="Opcional"></div>
   `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarColab('${id||''}')">Salvar</button>`);
 }
@@ -3819,11 +4371,20 @@ function salvarColab(id){
   if(!nome){Toast('Informe o nome','erro');return;}
   const meta=Math.max(0,+$('#cMeta').value||0);
   const existente=id?prod.colaboradores.find(x=>x.id===id):null;
+  const funcao=$('#cFunc').value;
   const obj={
     id:id||('col-'+uid()), nome,
-    funcao:$('#cFunc').value, turno:$('#cTurno').value,
+    funcao, turno:$('#cTurno').value,
     meta_diaria:meta, admissao:$('#cAdm').value, status:$('#cStatus').value, obs:$('#cObs').value.trim(),
-    foto:_colabFotoDataUrl||(existente?existente.foto:null)
+    foto:_colabFotoDataUrl||(existente?existente.foto:null),
+    perfil_embalagem_id: funcao==='Embalagem'?($('#cPerfilEmb').value||null):null,
+    data_nascimento: $('#cNasc').value||null,
+    estado_civil: $('#cCivil').value||null,
+    email: $('#cEmail').value.trim()||null,
+    telefone: $('#cTel').value.trim()||null,
+    endereco: $('#cEndereco').value.trim()||null,
+    contato_emergencia_nome: $('#cContEmergNome').value.trim()||null,
+    contato_emergencia_telefone: $('#cContEmergTel').value.trim()||null,
   };
   if(id){ const i=prod.colaboradores.findIndex(x=>x.id===id); if(i>=0)prod.colaboradores[i]=obj; }
   else prod.colaboradores.push(obj);
@@ -3836,10 +4397,12 @@ function abrirColab(id){
   const regs=prod.producao.filter(r=>r.colaborador_id===id);
   const taxaAvHist=regs.length?(regs.reduce((a,r)=>a+r.avarias,0)/Math.max(1,regs.reduce((a,r)=>a+r.produzido_bruto,0))*100):0;
   const efMedia=regs.length?regs.reduce((a,r)=>a+r.eficiencia,0)/regs.length:0;
+  const idade=idadeAnos(c.data_nascimento);
   openModal(c.nome,`
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
       <span class="badge" style="color:var(--accent);background:var(--accent-soft)">${c.funcao}</span>
       <span class="badge" style="color:#F5A623;background:#F5A62318">${turnoLabel(c.turno)}</span>
+      ${c.funcao==='Embalagem'&&c.perfil_embalagem_id?`<span class="badge" style="color:var(--text-2);background:var(--surface-2)">${perfilEmbalagemNome(c.perfil_embalagem_id)}</span>`:''}
       ${s.consistente?'<span class="badge" style="color:#27C28B;background:#27C28B18">Consistente</span>':''}
       <span class="badge" style="color:var(--text-2);background:var(--surface-2)">${s.tarrow} ${s.tendencia}</span>
     </div>
@@ -3849,7 +4412,18 @@ function abrirColab(id){
       <div class="kpi" style="padding:14px"><div class="kpi-label">Melhor / Pior dia</div><div class="kpi-value" style="font-size:1.4rem">${s.melhor} / ${s.pior}</div></div>
       <div class="kpi" style="padding:14px"><div class="kpi-label">Taxa avarias</div><div class="kpi-value" style="font-size:1.4rem;color:${taxaAvHist>3?'#FF3D57':'#27C28B'}">${taxaAvHist.toFixed(1)}%</div></div>
     </div>
-    <div style="height:200px"><canvas id="colabChart"></canvas></div>
+    <div style="height:200px;margin-bottom:16px"><canvas id="colabChart"></canvas></div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3);margin:4px 0 8px">Dados pessoais</div>
+    <div class="table-wrapper"><table>
+      <tbody>
+        <tr><td class="muted" style="width:40%">Data de nascimento</td><td>${c.data_nascimento?dBR(c.data_nascimento)+(idade!=null?' ('+idade+' anos)':''):'—'}</td></tr>
+        <tr><td class="muted">Estado civil</td><td>${c.estado_civil||'—'}</td></tr>
+        <tr><td class="muted">E-mail</td><td>${c.email||'—'}</td></tr>
+        <tr><td class="muted">Telefone</td><td>${c.telefone||'—'}</td></tr>
+        <tr><td class="muted">Endereço</td><td>${c.endereco||'—'}</td></tr>
+        <tr><td class="muted">Contato de emergência</td><td>${c.contato_emergencia_nome?c.contato_emergencia_nome+(c.contato_emergencia_telefone?' · '+c.contato_emergencia_telefone:''):'—'}</td></tr>
+      </tbody>
+    </table></div>
   `,`<button class="btn btn-ghost" onclick="formColab('${id}')">Editar</button><button class="btn btn-ghost" onclick="delColab('${id}')" style="color:#FF3D57">Excluir</button><button class="btn btn-primary" onclick="closeModal()">Fechar</button>`);
   setTimeout(()=>{
     const el=document.getElementById('colabChart'); if(!el||typeof Chart==='undefined')return;
@@ -3907,7 +4481,10 @@ function desempenhoHTML(){
       <td style="color:${r.taxaAv>3?'#FF3D57':'var(--text-2)'}">${r.avarias} (${r.taxaAv.toFixed(1)}%)</td>
       <td class="strong">${r.efic.toFixed(0)}%</td>
     </tr>`).join('');
+  const cu=currentUser();
+  const podeFechar = cu && (cu.perfil==='admin'||cu.perfil==='supervisor');
   return `
+    ${podeFechar?fechamentoMensalHTML():''}
     <div class="card" style="margin-bottom:20px">
       <div class="card-head"><div class="card-title">Eficiência por Colaborador <span class="muted">· últimos 30 dias</span></div></div>
       <div style="height:280px"><canvas id="chartDesemp"></canvas></div>
@@ -3918,6 +4495,60 @@ function desempenhoHTML(){
         <thead><tr><th>#</th><th>Colaborador</th><th>Produzido</th><th>Avarias</th><th>Eficiência</th></tr></thead>
         <tbody>${rows||emptyRow(5)}</tbody></table></div>
     </div>`;
+}
+function fechamentoMensalHTML(){
+  const mesIni=mesAtualISO();
+  if(fechamentoMensalHTML._mes!==mesIni){
+    fechamentoMensalHTML._mes=mesIni; fechamentoMensalHTML._lista=null;
+    gpFechamentosList(mesIni).then(r=>{ fechamentoMensalHTML._lista=Array.isArray(r)?r:[]; if(equipeSubtab==='desempenho')renderEquipeBody(); }).catch(()=>{ fechamentoMensalHTML._lista=[]; });
+  }
+  const lista=fechamentoMensalHTML._lista;
+  const nomeDe=id=>{const c=prod.colaboradores.find(x=>x.id===id);return c?c.nome:'—';};
+  const rows=(lista||[]).map(f=>`
+    <tr>
+      <td class="strong">${nomeDe(f.colaborador_id)}</td>
+      <td>${f.total_nucleo}</td>
+      <td>${f.minimo_funcao}</td>
+      <td>${f.apto_bonificacao?'<span class="badge" style="color:#27C28B;background:#27C28B18">Apto</span>':'<span class="badge" style="color:#FF3D57;background:#FF3D5718">Não apto</span>'}</td>
+      <td>${f.pontos_extra}</td>
+      <td class="strong">${f.total_ranking}</td>
+      <td>${f.reaberto?'<span class="badge" style="color:#F5A623;background:#F5A62318">Reaberto</span>':`<button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="abrirReaberturaModal('${f.colaborador_id}')">Reabrir</button>`}</td>
+    </tr>`).join('');
+  return `<div class="card" style="margin-bottom:20px">
+    <div class="card-head">
+      <div class="card-title">Fechamento Mensal <span class="muted">· competência ${mesIni.slice(0,7)}</span></div>
+      <button class="btn btn-primary" onclick="confirmarFecharPeriodo()">Fechar período do mês</button>
+    </div>
+    ${lista===null?'<div class="empty">Carregando...</div>':`<div class="table-wrapper"><table>
+      <thead><tr><th>Colaborador</th><th>Núcleo</th><th>Mínimo</th><th>Status</th><th>Extra</th><th>Total Ranking</th><th></th></tr></thead>
+      <tbody>${rows||emptyRow(7)}</tbody>
+    </table></div>`}
+    <div style="font-size:11.5px;color:var(--text-3);padding-top:10px">Fechar o período trava novos lançamentos retroativos para os colaboradores já processados. Reabrir exige motivo e fica registrado em log.</div>
+  </div>`;
+}
+async function confirmarFecharPeriodo(){
+  const mesIni=mesAtualISO();
+  if(!confirm('Fechar o período de '+mesIni.slice(0,7)+'? Isso trava novos lançamentos retroativos para os colaboradores processados.'))return;
+  try{
+    const r=await gpFecharPeriodo(mesIni);
+    if(!r||!r.ok){Toast((r&&r.erro)||'Não foi possível fechar o período','erro');return;}
+    Toast(`Período fechado! ${r.processados} processado(s), ${r.ja_fechados} já estavam fechados.`,'sucesso');
+    fechamentoMensalHTML._mes=null; renderEquipeBody();
+  }catch(e){ Toast('Erro: '+(e.message||e),'erro'); }
+}
+function abrirReaberturaModal(colabId){
+  openModal('Reabrir Período',`
+    <div class="field"><label>Motivo da reabertura</label><input id="reabMotivo" placeholder="Obrigatório"></div>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="confirmarReabrirPeriodo('${colabId}')">Reabrir</button>`);
+}
+async function confirmarReabrirPeriodo(colabId){
+  const motivo=$('#reabMotivo').value.trim();
+  if(!motivo){Toast('Informe o motivo','erro');return;}
+  try{
+    const r=await gpReabrirPeriodo(colabId,mesAtualISO(),motivo);
+    if(!r||!r.ok){Toast((r&&r.erro)||'Não foi possível reabrir','erro');return;}
+    closeModal(); fechamentoMensalHTML._mes=null; renderEquipeBody(); Toast('Período reaberto','sucesso');
+  }catch(e){ Toast('Erro: '+(e.message||e),'erro'); }
 }
 function rankingPeriodo(dias){
   const hoje=new Date();
@@ -4620,6 +5251,73 @@ function renderDgAno(){
   const regs=prod.producao;
   const porMes=yr.meses.map(mm=>regs.filter(r=>r.data>=mm.ini&&r.data<=mm.fim).reduce((s,r)=>s+(+r.produzido_liquido||0),0));
   setTimeout(()=>drawDashChart('dgChart','bar',MES,[{label:'Produzido',data:porMes,backgroundColor:'#2979FF',borderRadius:6},{label:'Meta',data:MES.map(()=>metaMes),type:'line',borderColor:'rgba(150,150,160,.8)',borderDash:[6,4],pointRadius:0,fill:false}]),40);
+}
+
+/* =====================================================================
+   === NOVO: MINHAS TAREFAS (Operador/Auxiliar/Analista — página própria) ===
+   ===================================================================== */
+RENDER.prodminhastarefas=function(){
+  const cu=currentUser();
+  const colabId=cu.colaborador_id;
+  if(!colabId){ $('#page-prodminhastarefas').innerHTML='<div class="card"><div class="empty">Seu usuário não está vinculado a um colaborador. Fale com seu Líder/Supervisor.</div></div>'; return; }
+  const podeMarcar = cu.perfil==='operador';
+  const minhasTarefas=prod.tarefasProducao.filter(t=>t.colaborador_id===colabId).sort((a,b)=>(a.status===b.status)?0:(a.status==='pendente'?-1:1));
+  const tRows=minhasTarefas.map(t=>`
+    <tr>
+      <td class="strong">${t.titulo}${t.descricao?`<div style="font-size:12px;color:var(--text-3)">${t.descricao}</div>`:''}</td>
+      <td>${t.status==='concluida'?'<span class="badge" style="color:#27C28B;background:#27C28B18">Concluída</span>':'<span class="badge" style="color:#F5A623;background:#F5A62318">Pendente</span>'}</td>
+      <td>${(podeMarcar&&t.status==='pendente')?`<button class="btn btn-primary" style="padding:5px 12px;font-size:12px" onclick="concluirTarefaProd('${t.id}')">Marcar concluída</button>`:''}</td>
+    </tr>`).join('');
+
+  const meusFeedbacks=prod.feedbacks.filter(f=>f.colaborador_id===colabId).sort((a,b)=>(b.criado_em||'').localeCompare(a.criado_em||''));
+  const fbTipoCor={positivo:'#27C28B',negativo:'#FF3D57',geral:'#2979FF'};
+  const fRows=meusFeedbacks.map(f=>`
+    <div class="card" style="margin-bottom:10px">
+      <div class="row-between"><span class="badge" style="color:${fbTipoCor[f.tipo]||'#2979FF'};background:${(fbTipoCor[f.tipo]||'#2979FF')}18">${({positivo:'Positivo',negativo:'A melhorar',geral:'Geral'})[f.tipo]||'Geral'}</span><span style="font-size:11.5px;color:var(--text-3)">${f.criado_em?dBR(f.criado_em.slice(0,10)):''}</span></div>
+      <div style="margin-top:8px">${f.texto}</div>
+    </div>`).join('');
+
+  const minhasIdeias=prod.ideias.filter(i=>i.colaborador_id===colabId).sort((a,b)=>(b.criado_em||'').localeCompare(a.criado_em||''));
+  const IDEIA_COL_LABEL={ideias:'Ideias',avaliando:'Avaliando',executando:'Executando',concluida:'Concluída',inviavel:'Inviável'};
+  const iRows=minhasIdeias.map(i=>`
+    <tr><td class="strong">${i.descricao}</td><td>${IDEIA_COL_LABEL[i.coluna]||i.coluna}</td></tr>`).join('');
+
+  $('#page-prodminhastarefas').innerHTML=`
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-head"><div class="card-title">Minhas Tarefas</div></div>
+      <div class="table-wrapper"><table><thead><tr><th>Tarefa</th><th>Status</th><th></th></tr></thead><tbody>${tRows||emptyRow(3)}</tbody></table></div>
+    </div>
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-head"><div class="card-title">Meu Feedback</div></div>
+      ${fRows||'<div class="empty">Nenhum feedback registrado ainda</div>'}
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Sugestões de Melhoria</div>
+        <button class="btn btn-primary" onclick="formSugerirIdeia()">Sugerir ideia</button>
+      </div>
+      <div class="table-wrapper"><table><thead><tr><th>Ideia</th><th>Status</th></tr></thead><tbody>${iRows||emptyRow(2)}</tbody></table></div>
+    </div>`;
+};
+function formSugerirIdeia(){
+  openModal('Sugerir Ideia de Melhoria',`
+    <div class="field"><label>Descrição da ideia</label><input id="sgDesc" placeholder="Descreva sua ideia"></div>
+    <div class="field"><label>Área de melhoria</label><input id="sgArea" placeholder="Ex: Processo, Qualidade, Segurança..."></div>
+    <div class="field"><label>Impacto produtivo</label><input id="sgImpProd" placeholder="Opcional"></div>
+    <div class="field"><label>Impacto em custos</label><input id="sgImpCusto" placeholder="Opcional"></div>
+    <div class="field"><label>Impacto na rotina</label><input id="sgImpRotina" placeholder="Opcional"></div>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarSugestaoIdeia()">Enviar</button>`);
+}
+function salvarSugestaoIdeia(){
+  const descricao=$('#sgDesc').value.trim();
+  if(!descricao){Toast('Descreva sua ideia','erro');return;}
+  const cu=currentUser();
+  const obj={id:'id-'+uid(),colaborador_id:cu.colaborador_id,descricao,
+    area_melhoria:$('#sgArea').value.trim()||null, impacto_produtivo:$('#sgImpProd').value.trim()||null,
+    impacto_custos:$('#sgImpCusto').value.trim()||null, impacto_rotina:$('#sgImpRotina').value.trim()||null,
+    coluna:'ideias', criado_por:cu.id, criado_em:new Date().toISOString(), atualizado_em:new Date().toISOString()};
+  prod.ideias.push(obj); prodSave(); sbUpProd('ideias_melhoria',obj);
+  closeModal(); RENDER.prodminhastarefas(); Toast('Ideia enviada! +3 pontos de bonificação extra.','sucesso');
 }
 
 /* =====================================================================
