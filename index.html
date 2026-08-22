@@ -3132,6 +3132,7 @@ let prod = {
   tarefasProducao: [],
   feedbacks: [],
   ideias: [],
+  configGestao: { velocidadeMinima: 90, justificativaMinChars: 20 },
   metasGlobais: { meta_diaria_fabrica: 0, meta_mensal: 0, avaria_max_pct: 3 },
   turnos: {
     integral: { ini:'08:00', fim:'17:30', almoco_ini:'12:00', almoco_fim:'13:00' },
@@ -3688,7 +3689,12 @@ async function loadProdFromSb(oid){
     if(Array.isArray(fbs)) prod.feedbacks=fbs;
     if(Array.isArray(ideias)) prod.ideias=ideias;
     const cfg=Array.isArray(cfgArr)?cfgArr[0]:null;
-    if(cfg&&cfg.dados){ const d=cfg.dados; if(d.metasGlobais)prod.metasGlobais=d.metasGlobais; if(d.turnos)prod.turnos=d.turnos; }
+    if(cfg&&cfg.dados){
+      const d=cfg.dados; if(d.metasGlobais)prod.metasGlobais=d.metasGlobais; if(d.turnos)prod.turnos=d.turnos;
+      if(d.velocidadeMinima!=null||d.justificativaMinChars!=null){
+        prod.configGestao={velocidadeMinima:d.velocidadeMinima??90, justificativaMinChars:d.justificativaMinChars??20};
+      }
+    }
     prodSave();
   }catch(e){ console.warn('loadProdFromSb',e.message); }
 }
@@ -3706,6 +3712,8 @@ async function gpBonificacaoCriar(colabId,tipo,justificativa,tarefaId){ return r
 async function gpFechamentosList(competencia){ return rpcT('rpc_fechamentos_list',{p_competencia:competencia||null}); }
 async function gpLancamentosList(colabId,ini,fim){ return rpcT('rpc_lancamentos_list',{p_colaborador_id:colabId||null,p_ini:ini||null,p_fim:fim||null}); }
 async function gpBonificacoesList(colabId,competencia){ return rpcT('rpc_bonificacoes_extra_list',{p_colaborador_id:colabId||null,p_competencia:competencia||null}); }
+async function gpConfigGet(){ return rpcT('rpc_config_gestao_get',{}); }
+async function gpConfigSet(velocidadeMinima,justificativaMinChars){ return rpcT('rpc_config_gestao_set',{p_velocidade_minima:velocidadeMinima,p_justificativa_min_chars:justificativaMinChars}); }
 function mesAtualISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01'; }
 function idadeAnos(dataNasc){ if(!dataNasc)return null; const b=new Date(dataNasc+'T00:00:00'); const h=new Date(); let a=h.getFullYear()-b.getFullYear(); const m=h.getMonth()-b.getMonth(); if(m<0||(m===0&&h.getDate()<b.getDate()))a--; return a; }
 
@@ -3923,7 +3931,12 @@ function metasIndividuaisHTML(){
     const Q=Number(c.meta_diaria||0)*dias;
     const pct=Q>0?Math.min(100,Math.round(pecas/Q*100)):0;
     const aval=(prod.avaliacoesMensais||[]).find(a=>a.colaborador_id===c.id && a.competencia===mesIni);
-    const velocOk=aval?!!aval.velocidade_ok:false;
+    const temOverride = !!aval;
+    const limiar=(prod.configGestao&&prod.configGestao.velocidadeMinima)||90;
+    const regsMes=prod.producao.filter(r=>r.colaborador_id===c.id && r.data>=mesIni && r.data<=mesFim);
+    const effMedia=regsMes.length?regsMes.reduce((s,r)=>s+(+r.eficiencia||0),0)/regsMes.length:0;
+    const velocAuto=effMedia>=limiar;
+    const velocOk=temOverride?!!aval.velocidade_ok:velocAuto;
     const faltasInj=prod.frequencia.filter(f=>f.colaborador_id===c.id && f.data>=mesIni && f.data<=mesFim && f.tipo==='falta_injustificada').length;
     const corpo = cat==='analista'
       ? `<div class="kpi" style="padding:12px"><div class="kpi-label">Apontamentos diários</div><div class="kpi-value" style="font-size:1.3rem">${lanc?apont:'…'}</div></div>`
@@ -3932,8 +3945,9 @@ function metasIndividuaisHTML(){
            <div style="height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden"><div style="height:100%;width:${pct}%;background:${pct>=100?'#27C28B':'#2979FF'}"></div></div>
          </div>
          <div class="field" style="margin-bottom:6px"><label>Meta diária (Q base)</label><input type="number" min="0" value="${c.meta_diaria}" ${podeAvaliar?`onchange="setMetaColab('${c.id}',this.value)"`:'disabled'} style="width:100%"></div>
+         <div style="font-size:11.5px;color:var(--text-3);margin-bottom:4px">Eficiência média do mês: <span class="strong" style="color:var(--text)">${effMedia.toFixed(0)}%</span> (limiar: ${limiar}%)${temOverride?' · avaliação manual ativa':' · calculado automaticamente'}</div>
          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:${podeAvaliar?'pointer':'default'}">
-           <input type="checkbox" ${velocOk?'checked':''} ${podeAvaliar?`onchange="setVelocidade('${c.id}',this.checked)"`:'disabled'}> Velocidade adequada (+3)
+           <input type="checkbox" ${velocOk?'checked':''} ${podeAvaliar?`onchange="setVelocidade('${c.id}',this.checked)"`:'disabled'}> Velocidade adequada (+3)${podeAvaliar&&temOverride?` <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:11px;margin-left:6px" onclick="limparOverrideVelocidade('${c.id}')">usar automático</button>`:''}
          </label>`;
     return `<div class="card">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
@@ -3952,7 +3966,15 @@ async function setVelocidade(colabId,checked){
   const i=prod.avaliacoesMensais.findIndex(a=>a.colaborador_id===colabId&&a.competencia===mesIni);
   if(i>=0) prod.avaliacoesMensais[i]={...prod.avaliacoesMensais[i],...obj}; else prod.avaliacoesMensais.push(obj);
   prodSave(); sbUpProd('avaliacoes_mensais',obj);
-  Toast('Avaliação de velocidade atualizada','sucesso');
+  renderEquipeBody(); Toast('Avaliação de velocidade atualizada (manual)','sucesso');
+}
+function limparOverrideVelocidade(colabId){
+  const mesIni=mesAtualISO();
+  const aval=prod.avaliacoesMensais.find(a=>a.colaborador_id===colabId&&a.competencia===mesIni);
+  if(!aval)return;
+  prod.avaliacoesMensais=prod.avaliacoesMensais.filter(a=>a.id!==aval.id);
+  prodSave(); sbDelProd('avaliacoes_mensais',aval.id);
+  renderEquipeBody(); Toast('Voltou a usar o cálculo automático de velocidade','info');
 }
 
 /* =======================================================
@@ -4097,6 +4119,7 @@ function bonificacaoExtraHTML(){
     </table></div></div>`;
 }
 function formBonificacaoExtra(){
+  const minChars=(prod.configGestao&&prod.configGestao.justificativaMinChars)||20;
   const opts=prod.colaboradores.filter(c=>c.status==='ativo').map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
   openModal('Nova Bonificação Extra',`
     <div class="field"><label>Colaborador</label><select id="beColab" onchange="atualizarTarefasBonificacao()">${opts}</select></div>
@@ -4105,8 +4128,8 @@ function formBonificacaoExtra(){
       <option value="organizacao">Organização — +3</option>
     </select></div>
     <div class="field" id="beTarefaWrap"><label>Tarefa concluída vinculada</label><select id="beTarefa"></select></div>
-    <div class="field"><label>Justificativa (mínimo 20 caracteres)</label><input id="beJustif" placeholder="Descreva o motivo" oninput="document.getElementById('beContador').textContent=this.value.length+'/20'"></div>
-    <div id="beContador" style="font-size:11.5px;color:var(--text-3);margin-top:-8px;margin-bottom:8px">0/20</div>
+    <div class="field"><label>Justificativa (mínimo ${minChars} caracteres)</label><input id="beJustif" placeholder="Descreva o motivo" oninput="document.getElementById('beContador').textContent=this.value.length+'/${minChars}'"></div>
+    <div id="beContador" style="font-size:11.5px;color:var(--text-3);margin-top:-8px;margin-bottom:8px">0/${minChars}</div>
   `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarBonificacaoExtra()">Lançar</button>`);
   atualizarTarefasBonificacao();
 }
@@ -4122,9 +4145,10 @@ function atualizarTarefasBonificacao(){
   }
 }
 async function salvarBonificacaoExtra(){
+  const minChars=(prod.configGestao&&prod.configGestao.justificativaMinChars)||20;
   const colabId=$('#beColab').value, tipo=$('#beTipo').value, justificativa=$('#beJustif').value.trim();
   const tarefaId = tipo==='tarefa_cumprida' ? ($('#beTarefa').value||null) : null;
-  if(justificativa.length<20){Toast('Justificativa deve ter no mínimo 20 caracteres','erro');return;}
+  if(justificativa.length<minChars){Toast('Justificativa deve ter no mínimo '+minChars+' caracteres','erro');return;}
   if(tipo==='tarefa_cumprida' && !tarefaId){Toast('Selecione a tarefa concluída vinculada','erro');return;}
   try{
     const r=await gpBonificacaoCriar(colabId,tipo,justificativa,tarefaId);
@@ -4251,10 +4275,15 @@ async function salvarCargoUsuario(id){
 }
 
 const FUNCOES=['Auxiliar','Operador','Supervisor','Líder','Costureira','Cortador','Acabamento','Estamparia','Revisão','Embalagem'];
-const STATUS_COLAB={ativo:{l:'Ativo',c:'#27C28B'},ferias:{l:'Férias',c:'#F5A623'},afastado:{l:'Afastado',c:'#FF3D57'}};
+const STATUS_COLAB={ativo:{l:'Ativo',c:'#27C28B'},ferias:{l:'Férias',c:'#F5A623'},afastado:{l:'Afastado',c:'#FF3D57'},desligado:{l:'Desligado',c:'#8b8b95'}};
+let mostrarDesligados=false;
 
 function colaboradoresHTML(){
-  const cards=prod.colaboradores.map(c=>{
+  const cu=currentUser();
+  const podeGerenciar = cu.perfil==='admin'||cu.perfil==='supervisor';
+  const desligados=prod.colaboradores.filter(c=>c.status==='desligado');
+  const visiveis=mostrarDesligados?prod.colaboradores:prod.colaboradores.filter(c=>c.status!=='desligado');
+  const cards=visiveis.map(c=>{
     const st=STATUS_COLAB[c.status]||STATUS_COLAB.ativo;
     return `<div class="card" style="cursor:pointer" onclick="abrirColab('${c.id}')">
       <div style="display:flex;align-items:center;gap:14px">
@@ -4272,14 +4301,42 @@ function colaboradoresHTML(){
     </div>`;
   }).join('');
   return `
-    <div class="row-between" style="margin-bottom:16px">
-      <span class="chip">${prod.colaboradores.length} colaboradores</span>
+    <div class="row-between" style="margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;gap:10px;align-items:center">
+        <span class="chip">${visiveis.length} colaboradores</span>
+        ${desligados.length?`<label style="font-size:12px;color:var(--text-3);cursor:pointer;display:flex;align-items:center;gap:5px"><input type="checkbox" ${mostrarDesligados?'checked':''} onchange="mostrarDesligados=this.checked;renderEquipeBody()">Mostrar desligados (${desligados.length})</label>`:''}
+      </div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost" onclick="gerenciarPerfisEmbalagem()">Perfis de Embalagem</button>
+        ${podeGerenciar?`<button class="btn btn-ghost" onclick="configGestaoModal()">Configurações</button>`:''}
         <button class="btn btn-primary" onclick="formColab()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo Colaborador</button>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">${cards||'<div class="card"><div class="empty">Nenhum colaborador cadastrado</div></div>'}</div>`;
+}
+function configGestaoModal(){
+  const cfg=prod.configGestao||{velocidadeMinima:90,justificativaMinChars:20};
+  openModal('Configurações de Gestão de Pessoas',`
+    <div class="field">
+      <label>Eficiência mínima para "Velocidade adequada" (+3 pts automáticos)</label>
+      <input type="number" min="0" max="200" id="cfgVeloc" value="${cfg.velocidadeMinima}">
+      <div style="font-size:11.5px;color:var(--text-3);margin-top:4px">Calculada como (produzido líquido ÷ meta diária) × 100, em média no mês. Quando não há avaliação manual, esse limiar decide os pontos automaticamente.</div>
+    </div>
+    <div class="field">
+      <label>Mínimo de caracteres na justificativa da Bonificação Extra</label>
+      <input type="number" min="1" max="500" id="cfgJustif" value="${cfg.justificativaMinChars}">
+    </div>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarConfigGestao()">Salvar</button>`);
+}
+async function salvarConfigGestao(){
+  const veloc=Math.max(0,+$('#cfgVeloc').value||0);
+  const justif=Math.max(1,+$('#cfgJustif').value||20);
+  try{
+    const r=await gpConfigSet(veloc,justif);
+    if(!r||!r.ok){Toast((r&&r.erro)||'Não foi possível salvar','erro');return;}
+    prod.configGestao={velocidadeMinima:veloc,justificativaMinChars:justif}; prodSave();
+    closeModal(); Toast('Configurações salvas!','sucesso');
+  }catch(e){ Toast('Erro: '+(e.message||e),'erro'); }
 }
 function perfilEmbalagemNome(id){ const p=(prod.perfisEmbalagem||[]).find(x=>x.id===id); return p?p.nome:'—'; }
 function gerenciarPerfisEmbalagem(){
@@ -4393,19 +4450,30 @@ function salvarColab(id){
 }
 function abrirColab(id){
   const c=prod.colaboradores.find(x=>x.id===id); if(!c)return;
+  const cu=currentUser();
+  const podeGerenciar = cu.perfil==='admin'||cu.perfil==='supervisor';
   const s=statsColaborador(id);
   const regs=prod.producao.filter(r=>r.colaborador_id===id);
   const taxaAvHist=regs.length?(regs.reduce((a,r)=>a+r.avarias,0)/Math.max(1,regs.reduce((a,r)=>a+r.produzido_bruto,0))*100):0;
   const efMedia=regs.length?regs.reduce((a,r)=>a+r.eficiencia,0)/regs.length:0;
   const idade=idadeAnos(c.data_nascimento);
+  const st=STATUS_COLAB[c.status]||STATUS_COLAB.ativo;
+  let statusInfo='';
+  if(c.status==='desligado') statusInfo=`Desligado em ${c.data_desligamento?dBR(c.data_desligamento):'—'}${c.motivo_desligamento?' · '+c.motivo_desligamento:''}`;
+  else if(c.status==='ferias'||c.status==='afastado') statusInfo=`Desde ${c.status_desde?dBR(c.status_desde):'—'}${c.status_previsto_ate?' · retorno previsto '+dBR(c.status_previsto_ate):''}${c.motivo_status?' · '+c.motivo_status:''}`;
+  const acoesStatus = !podeGerenciar ? '' : (c.status==='ativo'
+    ? `<button class="btn btn-ghost" onclick="statusColabModal('${id}','ferias')">Colocar de férias</button><button class="btn btn-ghost" onclick="statusColabModal('${id}','afastado')">Afastar</button><button class="btn btn-ghost" onclick="desligarColabModal('${id}')" style="color:#FF3D57">Desligar</button>`
+    : `<button class="btn btn-ghost" onclick="reativarColab('${id}')" style="color:#27C28B">Reativar</button>`);
   openModal(c.nome,`
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
       <span class="badge" style="color:var(--accent);background:var(--accent-soft)">${c.funcao}</span>
       <span class="badge" style="color:#F5A623;background:#F5A62318">${turnoLabel(c.turno)}</span>
+      <span class="badge" style="color:${st.c};background:${st.c}1a">${st.l}</span>
       ${c.funcao==='Embalagem'&&c.perfil_embalagem_id?`<span class="badge" style="color:var(--text-2);background:var(--surface-2)">${perfilEmbalagemNome(c.perfil_embalagem_id)}</span>`:''}
       ${s.consistente?'<span class="badge" style="color:#27C28B;background:#27C28B18">Consistente</span>':''}
       <span class="badge" style="color:var(--text-2);background:var(--surface-2)">${s.tarrow} ${s.tendencia}</span>
     </div>
+    ${statusInfo?`<div style="font-size:12px;color:var(--text-3);margin:-8px 0 16px">${statusInfo}</div>`:''}
     <div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px">
       <div class="kpi" style="padding:14px"><div class="kpi-label">Média (30d)</div><div class="kpi-value" style="font-size:1.4rem">${s.media}</div></div>
       <div class="kpi" style="padding:14px"><div class="kpi-label">Eficiência média</div><div class="kpi-value" style="font-size:1.4rem">${efMedia.toFixed(0)}%</div></div>
@@ -4424,13 +4492,60 @@ function abrirColab(id){
         <tr><td class="muted">Contato de emergência</td><td>${c.contato_emergencia_nome?c.contato_emergencia_nome+(c.contato_emergencia_telefone?' · '+c.contato_emergencia_telefone:''):'—'}</td></tr>
       </tbody>
     </table></div>
-  `,`<button class="btn btn-ghost" onclick="formColab('${id}')">Editar</button><button class="btn btn-ghost" onclick="delColab('${id}')" style="color:#FF3D57">Excluir</button><button class="btn btn-primary" onclick="closeModal()">Fechar</button>`);
+  `,`${acoesStatus}<button class="btn btn-ghost" onclick="formColab('${id}')">Editar</button><button class="btn btn-ghost" onclick="delColab('${id}')" style="color:#FF3D57">Excluir</button><button class="btn btn-primary" onclick="closeModal()">Fechar</button>`);
   setTimeout(()=>{
     const el=document.getElementById('colabChart'); if(!el||typeof Chart==='undefined')return;
     const last=regs.slice().sort((a,b)=>a.data<b.data?-1:1).slice(-30);
     const css=getComputedStyle(document.body); const txt=css.getPropertyValue('--text-3')||'#888';
     new Chart(el,{type:'line',data:{labels:last.map(r=>dBR(r.data).slice(0,5)),datasets:[{label:'Produção',data:last.map(r=>r.produzido_liquido),borderColor:'#2979FF',backgroundColor:'rgba(41,121,255,.1)',fill:true,tension:.35,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:txt,maxTicksLimit:8},grid:{display:false}},y:{ticks:{color:txt},grid:{color:'rgba(150,150,160,.1)'}}}}});
   },50);
+}
+function statusColabModal(id,tipo){
+  const label=tipo==='ferias'?'Férias':'Afastamento';
+  openModal(`Registrar ${label}`,`
+    <div class="field-row">
+      <div class="field"><label>Início</label><input type="date" id="stDesde" value="${today()}"></div>
+      <div class="field"><label>Retorno previsto</label><input type="date" id="stAte" value=""></div>
+    </div>
+    <div class="field"><label>Motivo</label><input id="stMotivo" placeholder="Opcional"></div>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarStatusColab('${id}','${tipo}')">Confirmar</button>`);
+}
+function salvarStatusColab(id,tipo){
+  const c=prod.colaboradores.find(x=>x.id===id); if(!c)return;
+  const obj={...c,status:tipo,status_desde:$('#stDesde').value||today(),status_previsto_ate:$('#stAte').value||null,motivo_status:$('#stMotivo').value.trim()||null};
+  const i=prod.colaboradores.findIndex(x=>x.id===id); if(i>=0)prod.colaboradores[i]=obj;
+  prodSave(); sbUpProd('colaboradores',obj);
+  closeModal(); renderEquipeBody(); Toast((tipo==='ferias'?'Férias':'Afastamento')+' registrado(a)!','sucesso');
+}
+function desligarColabModal(id){
+  openModal('Desligar Colaborador',`
+    <div style="font-size:12.5px;color:var(--text-3);margin-bottom:14px">O colaborador sai da lista de ativos (fechamentos futuros não o incluem) e o(s) login(s) vinculado(s) são desativados. O histórico de pontos e lançamentos é mantido.</div>
+    <div class="field"><label>Data de desligamento</label><input type="date" id="dlData" value="${today()}"></div>
+    <div class="field"><label>Motivo</label><input id="dlMotivo" placeholder="Opcional"></div>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" style="background:#FF3D57" onclick="confirmarDesligarColab('${id}')">Desligar</button>`);
+}
+async function confirmarDesligarColab(id){
+  const c=prod.colaboradores.find(x=>x.id===id); if(!c)return;
+  const obj={...c,status:'desligado',data_desligamento:$('#dlData').value||today(),motivo_desligamento:$('#dlMotivo').value.trim()||null};
+  const i=prod.colaboradores.findIndex(x=>x.id===id); if(i>=0)prod.colaboradores[i]=obj;
+  prodSave(); sbUpProd('colaboradores',obj);
+  await desativarLoginsDoColaborador(id);
+  closeModal(); renderEquipeBody(); Toast('Colaborador desligado. Login(s) desativado(s).','info');
+}
+function reativarColab(id){
+  const c=prod.colaboradores.find(x=>x.id===id); if(!c)return;
+  const obj={...c,status:'ativo',status_desde:null,status_previsto_ate:null,motivo_status:null,data_desligamento:null,motivo_desligamento:null};
+  const i=prod.colaboradores.findIndex(x=>x.id===id); if(i>=0)prod.colaboradores[i]=obj;
+  prodSave(); sbUpProd('colaboradores',obj);
+  renderEquipeBody(); Toast('Colaborador reativado!','sucesso');
+}
+async function desativarLoginsDoColaborador(colabId){
+  const vinculados=loadUsers().filter(u=>u.colaborador_id===colabId && u.ativo!==false);
+  for(const u of vinculados){
+    try{ await rpcT('rpc_user_update',{p_id:u.id,p_nome:u.nome,p_login:u.login,p_cargo:u.cargo,p_perfil:u.perfil,p_ativo:false,p_colaborador_id:u.colaborador_id||null}); }
+    catch(e){ console.error('desativarLogin',e.message); }
+  }
+  if(vinculados.length) await refreshUsers();
 }
 function delColab(id){
   if(!confirm('Excluir colaborador? Os lançamentos dele serão mantidos no histórico.'))return;
