@@ -4282,7 +4282,7 @@ function colaboradoresHTML(){
         ${avatarHTML(c.nome, c.foto, 'mini-av', 'width:48px;height:48px;font-size:16px')}
         <div style="flex:1">
           <div class="strong">${c.nome}</div>
-          <div style="font-size:12.5px;color:var(--text-3)">${c.funcao} · ${turnoLabel(c.turno)}</div>
+          <div style="font-size:12.5px;color:var(--text-3)"><span>${c.funcao}</span> · <span>${turnoLabel(c.turno)}</span></div>
         </div>
         <span class="badge" style="color:${st.c};background:${st.c}1a">${st.l}</span>
       </div>
@@ -5094,19 +5094,6 @@ function renderDashAnual(){
    Pontuação: +1 por camisa produzida (líquido), -1 por avaria,
    +5 de bônus por semana trabalhada sem nenhuma avaria.
    ===================================================================== */
-let rankTab='semana', rankSemOff=0, rankMesOff=0, rankAnoOff=0;
-RENDER.prodranking=function(){ renderRankTab(); };
-function rankTabBtn(k,label){const on=rankTab===k;return `<button onclick="rankTab='${k}';renderRankTab()" style="background:none;border:none;padding:11px 4px;margin-right:18px;font-family:inherit;font-weight:600;font-size:14px;color:${on?'var(--accent)':'var(--text-3)'};border-bottom:2px solid ${on?'var(--accent)':'transparent'};cursor:pointer">${label}</button>`;}
-function renderRankTab(){
-  $('#page-prodranking').innerHTML=`
-    <div class="subtabs" style="display:flex;border-bottom:1px solid var(--border);margin-bottom:20px">
-      ${rankTabBtn('semana','Semana')}${rankTabBtn('mes','Mês')}${rankTabBtn('ano','Ano')}
-    </div>
-    <div id="rankBody"></div>`;
-  if(rankTab==='semana') renderRankSemana();
-  else if(rankTab==='mes') renderRankMes();
-  else renderRankAno();
-}
 function isoWeeksOverlapping(ini,fim){
   const start=new Date(ini+'T00:00:00'), end=new Date(fim+'T00:00:00');
   const day=(start.getDay()+6)%7; const mon0=new Date(start); mon0.setDate(start.getDate()-day);
@@ -5118,6 +5105,8 @@ function isoWeeksOverlapping(ini,fim){
   }
   return weeks;
 }
+// Estimativa de posição por produção bruta no período (usada só como indicador pessoal em "Meu Desempenho";
+// o ranking OFICIAL de bonificação é mensal e vem do fechamento — ver renderRankMensal).
 function calcRanking(ini,fim){
   const colabs=(prod.colaboradores||[]);
   const weeks=isoWeeksOverlapping(ini,fim);
@@ -5135,22 +5124,31 @@ function calcRanking(ini,fim){
     return {colaborador:c, prodPts, avCount:avNoPeriodo, bonus, semanasLimpas, total:prodPts+bonus};
   }).sort((a,b)=>b.total-a.total);
 }
-function podioCardHTML(r,pos){
-  const medalha={1:['#FFD54A','1º'],2:['#C8CDD6','2º'],3:['#D69A5C','3º']}[pos];
-  const h = pos===1?150:pos===2?120:100;
-  return `<div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1">
-    <div style="position:relative">
-      ${avatarHTML(r.colaborador.nome, r.colaborador.foto, 'podio-av')}
-      <div style="position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);background:${medalha[0]};color:#1a1a1a;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap">${medalha[1]}</div>
-    </div>
-    <div class="strong" style="text-align:center;font-size:13.5px;margin-top:6px">${r.colaborador.nome}</div>
-    <div style="color:var(--accent);font-weight:700;font-size:18px">${r.total} pts</div>
-    <div style="width:100%;background:linear-gradient(180deg,${medalha[0]}33,transparent);border:1px solid ${medalha[0]}55;border-radius:12px 12px 0 0;height:${h}px"></div>
-  </div>`;
+
+let rankMesOff=0;
+RENDER.prodranking=function(){ renderRankMensal(); };
+function renderRankMensal(){
+  const mo=monthRange(rankMesOff);
+  const competencia=mo.ini;
+  $('#page-prodranking').innerHTML = periodNav(mo.label,'rankMesOff','renderRankMensal') + `<div id="rankBody"><div class="empty">Carregando...</div></div>`;
+  gpFechamentosList(competencia).then(lista=>{
+    $('#rankBody').innerHTML = rankingMensalHTML(Array.isArray(lista)?lista:[], mo.label, competencia);
+  }).catch(()=>{ $('#rankBody').innerHTML = '<div class="card"><div class="empty">Não foi possível carregar o ranking deste mês.</div></div>'; });
 }
-function rankingHTML(ranking, periodTitle){
-  if(!ranking.length) return `<div class="empty"><p>Nenhum colaborador cadastrado ainda</p></div>`;
-  const top3=ranking.slice(0,3), resto=ranking.slice(3);
+function rankingMensalHTML(lista, periodTitle, competencia){
+  const linhas = lista.map(f=>{
+    const c=prod.colaboradores.find(x=>x.id===f.colaborador_id);
+    return {...f, nome:c?c.nome:'—', foto:c?c.foto:null, funcao:c?c.funcao:'—'};
+  }).sort((a,b)=>b.total_ranking-a.total_ranking);
+
+  if(!linhas.length){
+    const isMesAtual = competencia===mesAtualISO();
+    return `<div class="card"><div class="empty">${isMesAtual
+      ? 'Este mês ainda não foi fechado. O ranking oficial aparece depois do fechamento mensal (Gestão de Pessoas → Desempenho → Fechar período do mês).'
+      : 'Nenhum fechamento encontrado para este mês.'}</div></div>`;
+  }
+
+  const top3=linhas.slice(0,3);
   const podio = top3.length ? `<div class="card" style="margin-bottom:20px">
     <div class="card-head"><div class="card-title">Pódio <span class="muted">· ${periodTitle}</span></div></div>
     <div style="display:flex;align-items:flex-end;gap:16px;padding:10px 10px 0">
@@ -5159,41 +5157,39 @@ function rankingHTML(ranking, periodTitle){
       ${top3[2]?podioCardHTML(top3[2],3):'<div style="flex:1"></div>'}
     </div>
   </div>` : '';
-  const rows = resto.map((r,i)=>`<tr>
-      <td class="strong">${i+4}º</td>
-      <td><div class="cell-user">${avatarHTML(r.colaborador.nome,r.colaborador.foto)}<div class="strong">${r.colaborador.nome}</div></div></td>
-      <td>${r.prodPts}</td><td>${r.avCount}</td><td>${r.semanasLimpas}</td>
-      <td class="strong" style="color:var(--accent)">${r.total} pts</td>
-    </tr>`).join('') || '';
-  const allRows = ranking.map((r,i)=>`<tr>
+
+  const rows = linhas.map((r,i)=>`<tr>
       <td class="strong">${i+1}º</td>
-      <td><div class="cell-user">${avatarHTML(r.colaborador.nome,r.colaborador.foto)}<div class="strong">${r.colaborador.nome}</div></div></td>
-      <td>${r.prodPts}</td><td>${r.avCount}</td><td>${r.semanasLimpas}</td>
-      <td class="strong" style="color:var(--accent)">${r.total} pts</td>
+      <td><div class="cell-user">${avatarHTML(r.nome,r.foto)}<div class="strong">${r.nome}</div></div></td>
+      <td>${r.funcao}</td>
+      <td>${r.total_nucleo}</td>
+      <td>${r.minimo_funcao}</td>
+      <td>${r.apto_bonificacao?'<span class="badge" style="color:#27C28B;background:#27C28B18">Apto</span>':'<span class="badge" style="color:#FF3D57;background:#FF3D5718">Não apto</span>'}</td>
+      <td>${r.pontos_extra}</td>
+      <td class="strong" style="color:var(--accent)">${r.total_ranking} pts</td>
     </tr>`).join('');
+
   return podio + `<div class="card">
     <div class="card-head"><div class="card-title">Classificação completa</div></div>
-    <div class="table-wrapper"><table><thead><tr><th>#</th><th>Colaborador</th><th>Produzido</th><th>Avarias</th><th>Sem. limpas</th><th>Pontos</th></tr></thead>
-    <tbody>${allRows}</tbody></table></div>
+    <div class="table-wrapper"><table><thead><tr><th>#</th><th>Colaborador</th><th>Função</th><th>Núcleo</th><th>Mínimo</th><th>Status</th><th>Extra</th><th>Total</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>
     <div style="font-size:11.5px;color:var(--text-3);margin-top:14px;line-height:1.6">
-      Pontuação: +1 por camisa produzida (líquido) · −1 por avaria · +5 de bônus por semana trabalhada sem nenhuma avaria.
+      Ranking mensal: pontos de produção/apontamentos + metas cumpridas + velocidade + frequência (núcleo), comparado ao mínimo da função, mais a Bonificação Extra (tarefas, organização e ideias do Kanban de Sugestões de Melhorias).
     </div>
   </div>`;
 }
-function renderRankSemana(){
-  const wk=weekRange(rankSemOff);
-  const ranking=calcRanking(wk.ini,wk.fim);
-  $('#rankBody').innerHTML = periodNav(dBR(wk.ini)+' — '+dBR(wk.fim),'rankSemOff','renderRankSemana') + rankingHTML(ranking, dBR(wk.ini)+' — '+dBR(wk.fim));
-}
-function renderRankMes(){
-  const mo=monthRange(rankMesOff);
-  const ranking=calcRanking(mo.ini,mo.fim);
-  $('#rankBody').innerHTML = periodNav(mo.label,'rankMesOff','renderRankMes') + rankingHTML(ranking, mo.label);
-}
-function renderRankAno(){
-  const yr=yearRange(rankAnoOff);
-  const ranking=calcRanking(yr.ini,yr.fim);
-  $('#rankBody').innerHTML = periodNav(String(yr.y),'rankAnoOff','renderRankAno') + rankingHTML(ranking, String(yr.y));
+function podioCardHTML(r,pos){
+  const medalha={1:['#FFD54A','1º'],2:['#C8CDD6','2º'],3:['#D69A5C','3º']}[pos];
+  const h = pos===1?150:pos===2?120:100;
+  return `<div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1">
+    <div style="position:relative">
+      ${avatarHTML(r.nome, r.foto, 'podio-av')}
+      <div style="position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);background:${medalha[0]};color:#1a1a1a;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap">${medalha[1]}</div>
+    </div>
+    <div class="strong" style="text-align:center;font-size:13.5px;margin-top:6px">${r.nome}</div>
+    <div style="color:var(--accent);font-weight:700;font-size:18px">${r.total_ranking} pts</div>
+    <div style="width:100%;background:linear-gradient(180deg,${medalha[0]}33,transparent);border:1px solid ${medalha[0]}55;border-radius:12px 12px 0 0;height:${h}px"></div>
+  </div>`;
 }
 
 /* =====================================================================
@@ -5776,7 +5772,66 @@ const I18N_ZH = {
   'Meta do Período':'周期目标','Total Avarias':'总次品','Hora Homem Total':'总人工工时','Hora Máquina Total':'总机器工时',
   'Hora Extra Total':'总加班工时','% Avaria':'次品率','Melhor colaborador':'最佳员工','Maior avaria':'最高次品',
   'Produção/hora':'每小时产量','Assinatura':'签名','Diário':'每日',
-  'Nenhum registro ainda':'暂无记录','Nenhum histórico ainda':'暂无历史','+ Novo usuário':'+ 新用户'
+  'Nenhum registro ainda':'暂无记录','Nenhum histórico ainda':'暂无历史','+ Novo usuário':'+ 新用户',
+  // Gestão de Pessoas — navegação e sub-abas
+  'Gestão de Pessoas':'人事管理','Funcionários, metas, frequência e bonificações':'员工、目标、考勤与奖金',
+  'Minhas Tarefas':'我的任务','Suas tarefas, feedbacks e sugestões de melhoria':'你的任务、反馈与改进建议',
+  'Funcionários':'员工','Frequência':'考勤','Metas Individuais':'个人目标','Desempenho':'绩效',
+  'Tarefas':'任务','Bonificação Extra':'额外奖金','Sugestões de Melhorias':'改进建议','Usuários':'用户',
+  // Gestão de Pessoas — Dashboard
+  'Colaboradores ativos':'在职员工','Analistas':'分析员','Fechamentos do mês':'本月结算',
+  'Aptos à bonificação':'符合奖金资格','Tarefas pendentes':'待办任务','Faltas injustificadas (mês)':'本月旷工',
+  'Ideias em aberto':'待处理建议','Resumo por função':'按职能汇总','Mínimo de bonificação':'最低奖金门槛',
+  // funções de colaborador
+  'Auxiliar':'助理','Operador':'操作员','Supervisor':'主管','Líder':'领班','Costureira':'缝纫工',
+  'Cortador':'裁剪工','Acabamento':'整理工','Estamparia':'印花工','Revisão':'质检','Embalagem':'包装','Analista':'分析员',
+  // Perfis de Embalagem
+  'Perfis de Embalagem':'包装组别','Nome do perfil':'组别名称','Descrição':'描述',
+  // Card do Funcionário — dados pessoais
+  'Dados pessoais':'个人信息','Data de nascimento':'出生日期','Estado civil':'婚姻状况','E-mail':'邮箱',
+  'Telefone':'电话','Endereço':'地址','Contato de emergência':'紧急联系人','Perfil de Embalagem':'包装组别',
+  'Meta diária (unidades)':'每日目标（件）',
+  'Solteiro(a)':'单身','Casado(a)':'已婚','União estável':'同居关系','Divorciado(a)':'离异','Viúvo(a)':'丧偶',
+  // status do colaborador e ações
+  'Férias':'休假','Afastado':'停职','Desligado':'离职','Colocar de férias':'安排休假',
+  'Afastar':'停职处理','Desligar':'办理离职','Reativar':'重新启用',
+  // Frequência
+  'Registrar falta':'登记缺勤','Justificada':'有理由','Injustificada':'无理由',
+  'Resumo do mês por colaborador':'按员工汇总本月','Faltas justificadas':'有理由缺勤','Faltas injustificadas':'无理由缺勤',
+  'Pontuação de frequência':'考勤得分','Registros do mês':'本月记录','Todos':'全部',
+  // Metas Individuais
+  'Meta diária (Q base)':'每日目标（基准 Q）','Peças no mês':'本月件数','Velocidade adequada (+3)':'速度达标（+3）',
+  'Apontamentos diários':'每日记录',
+  // Desempenho / Fechamento Mensal
+  'Fechamento Mensal':'月度结算','Fechar período do mês':'结算本月','Núcleo':'核心分','Mínimo':'最低标准',
+  'Apto':'达标','Não apto':'未达标','Extra':'额外分','Reabrir':'重新开放','Motivo da reabertura':'重开原因',
+  // Tarefas
+  'Nova tarefa':'新任务','Tarefa':'任务','Concluída em':'完成于','Marcar concluída':'标记完成',
+  'Pendente':'待处理','Concluída':'已完成','Nenhuma tarefa concluída para este colaborador':'该员工没有已完成的任务',
+  // Feedback
+  'Novo feedback':'新反馈','Positivo':'正面','A melhorar':'待改进','Geral':'一般','Meu Feedback':'我的反馈',
+  'Nenhum feedback registrado ainda':'暂无反馈记录','Nenhum feedback registrado':'暂无反馈记录',
+  // Bonificação Extra
+  'Novo lançamento':'新增记录','Tarefa cumprida (proatividade) — +3':'完成任务（主动性）— +3',
+  'Organização — +3':'条理性 — +3','Tarefa concluída vinculada':'关联的已完成任务','Origem':'来源',
+  'Manual':'手动','Kanban':'看板','Justificativa':'说明',
+  // Sugestões de Melhorias (Kanban)
+  'Ideias':'想法','Avaliando':'评估中','Executando':'执行中','Inviável':'不可行','Sugerir ideia':'提交想法',
+  'Descrição da ideia':'想法描述','Área de melhoria':'改进领域','Impacto produtivo':'生产影响',
+  'Impacto em custos':'成本影响','Impacto na rotina':'日常影响','Mover para':'移动到',
+  'Sugestões de Melhoria':'改进建议','Ideia':'想法',
+  // Configurações de Gestão de Pessoas
+  'Configurações de Gestão de Pessoas':'人事管理设置',
+  'Eficiência mínima para "Velocidade adequada" (+3 pts automáticos)':'"速度达标"最低效率（自动 +3 分）',
+  'Mínimo de caracteres na justificativa da Bonificação Extra':'额外奖金说明的最少字数',
+  // Ranking mensal (novo)
+  'Pódio':'领奖台','Classificação completa':'完整排名',
+  'Este mês ainda não foi fechado. O ranking oficial aparece depois do fechamento mensal (Gestão de Pessoas → Desempenho → Fechar período do mês).':'本月尚未结算。正式排名将在月度结算后显示（人事管理 → 绩效 → 结算本月）。',
+  'Nenhum fechamento encontrado para este mês.':'未找到本月的结算记录。',
+  // marca SutoData
+  'Bem-vindo ao SutoData':'欢迎使用 SutoData','Bem-vindo ao SutoData!':'欢迎使用 SutoData！',
+  'Criar conta SutoData':'创建 SutoData 账户','Instalar SutoData':'安装 SutoData',
+  'Carregando SutoData...':'正在加载 SutoData...','Como instalar o SutoData no seu dispositivo':'如何在您的设备上安装 SutoData'
 };
 
 (function(){
