@@ -3770,7 +3770,7 @@ RENDER.prodequipe = function(){
   const visiveis=gpTabsVisiveis(cu);
   if(!visiveis.includes(equipeSubtab)) equipeSubtab=visiveis[0];
   $('#page-prodequipe').innerHTML=`
-    <div class="subtabs" style="display:flex;gap:8px;margin-bottom:18px;border-bottom:1px solid var(--border);overflow-x:auto">
+    <div class="subtabs" style="display:flex;flex-wrap:nowrap;gap:6px;margin-bottom:18px;padding-bottom:8px;overflow-x:auto">
       ${GP_TABS.filter(t=>visiveis.includes(t[0])).map(t=>eqTab(t[0],t[1])).join('')}
     </div>
     <div id="equipeBody"></div>`;
@@ -3778,13 +3778,17 @@ RENDER.prodequipe = function(){
 };
 function eqTab(k,label){
   const on=equipeSubtab===k;
-  return `<button onclick="equipeSubtab='${k}';renderEquipeBody()" class="eqtab-${k}" style="white-space:nowrap;background:none;border:none;padding:11px 4px;margin-right:18px;font-family:inherit;font-weight:600;font-size:14px;color:${on?'var(--accent)':'var(--text-3)'};border-bottom:2px solid ${on?'var(--accent)':'transparent'};cursor:pointer">${label}</button>`;
+  return `<button onclick="equipeSubtab='${k}';renderEquipeBody()" class="eqtab-${k}" style="flex-shrink:0;white-space:nowrap;background:${on?'var(--accent-soft)':'var(--surface)'};border:1px solid ${on?'var(--border-blue)':'var(--border)'};border-radius:20px;padding:6px 12px;font-family:inherit;font-weight:600;font-size:12px;color:${on?'var(--accent)':'var(--text-2)'};cursor:pointer">${label}</button>`;
 }
 function renderEquipeBody(){
   RENDER.prodequipe._skip=true;
   const body=document.getElementById('equipeBody')||(()=>{RENDER.prodequipe._skip=false;RENDER.prodequipe();return document.getElementById('equipeBody');})();
   GP_TABS.forEach(([k])=>{
-    const b=document.querySelector('.eqtab-'+k); if(b){const on=equipeSubtab===k;b.style.color=on?'var(--accent)':'var(--text-3)';b.style.borderBottom='2px solid '+(on?'var(--accent)':'transparent');}
+    const b=document.querySelector('.eqtab-'+k); if(b){const on=equipeSubtab===k;
+      b.style.background=on?'var(--accent-soft)':'var(--surface)';
+      b.style.borderColor=on?'var(--border-blue)':'var(--border)';
+      b.style.color=on?'var(--accent)':'var(--text-2)';
+    }
   });
   const map={
     gpdash: gpDashboardHTML,
@@ -4687,16 +4691,28 @@ function fechamentoMensalHTML(){
   }
   const lista=fechamentoMensalHTML._lista;
   const nomeDe=id=>{const c=prod.colaboradores.find(x=>x.id===id);return c?c.nome:'—';};
-  const rows=(lista||[]).map(f=>`
+  const funcaoDe=id=>{const c=prod.colaboradores.find(x=>x.id===id);return c?c.funcao:'';};
+  const subLine='font-size:10.5px;color:var(--text-3);margin-top:3px;line-height:1.6;white-space:nowrap';
+  const rows=(lista||[]).map(f=>{
+    const ehAnalista = funcaoDe(f.colaborador_id)==='Analista';
+    const metaQ = ehAnalista ? null : Math.max(0,(+f.minimo_funcao||0)-13);
+    return `
     <tr>
       <td class="strong">${nomeDe(f.colaborador_id)}</td>
-      <td>${f.total_nucleo}</td>
-      <td>${f.minimo_funcao}</td>
+      <td>
+        <div class="strong">${f.total_nucleo}</div>
+        <div style="${subLine}"><span class="i18n-inline">Produção</span> <b>${f.pontos_producao}</b> · <span class="i18n-inline">Meta</span> <b>${f.pontos_metas_cumpridas>0?'+5':'0'}</b> · <span class="i18n-inline">Velocidade</span> <b>${f.pontos_velocidade>0?'+3':'0'}</b> · <span class="i18n-inline">Frequência</span> <b>${f.pontos_frequencia>0?'+5':'0'}</b></div>
+      </td>
+      <td>
+        <div class="strong">${f.minimo_funcao}</div>
+        <div style="${subLine}">${ehAnalista?'<span class="i18n-inline">Mínimo fixo do Analista</span>':`<span class="i18n-inline">Meta do mês</span> <b>${metaQ}</b> + 13`}</div>
+      </td>
       <td>${f.apto_bonificacao?'<span class="badge" style="color:#27C28B;background:#27C28B18">Apto</span>':'<span class="badge" style="color:#FF3D57;background:#FF3D5718">Não apto</span>'}</td>
       <td>${f.pontos_extra}</td>
       <td class="strong">${f.total_ranking}</td>
       <td>${f.reaberto?'<span class="badge" style="color:#F5A623;background:#F5A62318">Reaberto</span>':`<button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="abrirReaberturaModal('${f.colaborador_id}')">Reabrir</button>`}</td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
   return `<div class="card" style="margin-bottom:20px">
     <div class="card-head">
       <div class="card-title">Fechamento Mensal <span class="muted">· competência ${mesIni.slice(0,7)}</span></div>
@@ -5242,16 +5258,27 @@ function rankingMensalHTML(lista, periodTitle, oficial){
     </div>
   </div>` : '';
 
-  const rows = linhas.map((r,i)=>`<tr>
+  const subLine='font-size:10.5px;color:var(--text-3);margin-top:3px;line-height:1.6;white-space:nowrap';
+  const rows = linhas.map((r,i)=>{
+    const ehAnalista = r.funcao==='Analista';
+    const metaQ = ehAnalista ? null : Math.max(0,(+r.minimo_funcao||0)-13);
+    return `<tr>
       <td class="strong">${i+1}º</td>
       <td><div class="cell-user">${avatarHTML(r.nome,r.foto)}<div class="strong">${r.nome}</div></div></td>
       <td>${r.funcao}</td>
-      <td>${r.total_nucleo}</td>
-      <td>${r.minimo_funcao}</td>
+      <td>
+        <div class="strong">${r.total_nucleo} pts</div>
+        <div style="${subLine}"><span class="i18n-inline">Produção</span> <b>${r.pontos_producao}</b> · <span class="i18n-inline">Meta</span> <b>${r.pontos_metas_cumpridas>0?'+5':'0'}</b> · <span class="i18n-inline">Velocidade</span> <b>${r.pontos_velocidade>0?'+3':'0'}</b> · <span class="i18n-inline">Frequência</span> <b>${r.pontos_frequencia>0?'+5':'0'}</b></div>
+      </td>
+      <td>
+        <div class="strong">${r.minimo_funcao} pts</div>
+        <div style="${subLine}">${ehAnalista?'<span class="i18n-inline">Mínimo fixo do Analista</span>':`<span class="i18n-inline">Meta do mês</span> <b>${metaQ}</b> + 13`}</div>
+      </td>
       <td>${r.apto_bonificacao?'<span class="badge" style="color:#27C28B;background:#27C28B18">Apto</span>':'<span class="badge" style="color:#FF3D57;background:#FF3D5718">Não apto</span>'}</td>
       <td>${r.pontos_extra}</td>
       <td class="strong" style="color:var(--accent)">${r.total_ranking} pts</td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 
   return aviso + podio + `<div class="card">
     <div class="card-head"><div class="card-title">Classificação completa</div></div>
@@ -6032,6 +6059,7 @@ const I18N_ZH = {
   // Desempenho / Fechamento Mensal
   'Fechamento Mensal':'月度结算','Fechar período do mês':'结算本月','Núcleo':'核心分','Mínimo':'最低标准',
   'Apto':'达标','Não apto':'未达标','Extra':'额外分','Reabrir':'重新开放','Motivo da reabertura':'重开原因',
+  'Velocidade':'速度','Meta do mês':'本月目标','Mínimo fixo do Analista':'分析员固定最低分',
   // Tarefas
   'Nova tarefa':'新任务','Tarefa':'任务','Concluída em':'完成于','Marcar concluída':'标记完成',
   'Pendente':'待处理','Concluída':'已完成','Nenhuma tarefa concluída para este colaborador':'该员工没有已完成的任务',
@@ -6090,7 +6118,7 @@ const I18N_ZH = {
         p.dataset.bi='1';
         // Botões ficam com a tradução na mesma linha, para não dobrar de altura
         // nem estourar a largura do contêiner quando há vários lado a lado.
-        const inline = p.nodeName==='BUTTON' || p.closest('button');
+        const inline = p.nodeName==='BUTTON' || p.closest('button') || (p.classList && p.classList.contains('i18n-inline'));
         const s=document.createElement('span'); s.className=inline?'zh-sub-inline':'zh-sub'; s.textContent=zh; p.appendChild(s);
       });
     }catch(e){}
