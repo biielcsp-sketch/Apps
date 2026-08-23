@@ -525,6 +525,7 @@ table input::-webkit-calendar-picker-indicator{filter:invert(.7)}
   .charts-row{grid-template-columns:1fr!important}
   .bottom-row{grid-template-columns:1fr!important}
   .fin-grid{grid-template-columns:1fr!important}
+  .exec-2col{grid-template-columns:1fr!important}
   .field-row{grid-template-columns:1fr}
   #toast-wrap{left:16px;right:16px;top:calc(16px + env(safe-area-inset-top))}
   .toast{min-width:0;max-width:none}
@@ -696,6 +697,7 @@ table input::-webkit-calendar-picker-indicator{filter:invert(.7)}
       <section class="page" id="page-prodmeudesempenho"></section>
       <section class="page" id="page-prodgeral"></section>
       <section class="page" id="page-prodminhastarefas"></section>
+      <section class="page" id="page-execdash"></section>
       <section class="page" id="page-prodrel"></section>
       <section class="page" id="page-prodconfig"></section>
       <section class="page" id="page-vendas"></section>
@@ -854,7 +856,7 @@ const fmtK = n => n>=1000 ? 'R$ '+(n/1000).toFixed(1).replace('.',',')+'k' : fmt
 const today = () => new Date().toISOString().slice(0,10);
 const dBR = s => { if(!s)return''; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; };
 const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-const PERFIL_LABEL = {admin:'Administrador',operador:'Auxiliar',supervisor:'Líder',analista:'Analista',colaborador:'Colaborador'};
+const PERFIL_LABEL = {admin:'Administrador',operador:'Auxiliar',supervisor:'Líder',analista:'Analista',colaborador:'Colaborador',proprietaria:'总经理'};
 const initials = n => n.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 const $ = s => document.querySelector(s);
 function avatarHTML(nome, foto, cls, extraStyle){
@@ -984,6 +986,7 @@ const TITLES = {
   prodgeral:['Desempenho Geral','Indicadores gerais da produção da fábrica'],
   prodequipe: ['Gestão de Pessoas','Funcionários, metas, frequência e bonificações'],
   prodminhastarefas:['Minhas Tarefas','Suas tarefas, feedbacks e sugestões de melhoria'],
+  execdash:['总经理仪表板','公司关键指标与经营决策信息'],
   prodrel:    ['Relatórios','Relatórios de produção em PDF'],
   prodconfig: ['Configurações','Empresa, módulos, metas e turnos'],
   dashboard:  ['Dashboard','Visão geral do seu negócio'],
@@ -1005,6 +1008,7 @@ function go(page){
   const cu=currentUser();
   if(cu && cu.perfil==='operador' && !OPERADOR_PAGES.includes(page)) page='prodmeudesempenho';
   if(cu && (cu.perfil==='supervisor'||cu.perfil==='analista') && !SUPERVISOR_PAGES.includes(page)) page='proddash';
+  if(cu && cu.perfil==='proprietaria' && !EXECUTIVO_PAGES.includes(page)) page='execdash';
   const pageEl = $('#page-'+page); if(!pageEl) return;
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.page===page));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -2046,7 +2050,7 @@ function updateSidebarUser(){
   }
   if(nm) nm.textContent=cu.nome;
   const perfilLabel=PERFIL_LABEL[cu.perfil]||'Colaborador';
-  if(rl) rl.textContent=u.cargo||perfilLabel;
+  if(rl) rl.textContent=(cu.perfil==='proprietaria')?perfilLabel:(u.cargo||perfilLabel);
 }
 
 /* --- MEU PERFIL (foto + senha, disponível para qualquer login) --- */
@@ -2121,6 +2125,7 @@ async function formNovoUsuario(){
           <option value="supervisor">Líder</option>
           <option value="analista">Analista</option>
           <option value="admin">Administrador</option>
+          <option value="proprietaria">总经理 (painel executivo, somente leitura)</option>
         </select>
       </div>
     </div>
@@ -2162,6 +2167,7 @@ function editUser(id){
           <option value="supervisor" ${u.perfil==='supervisor'?'selected':''}>Líder</option>
           <option value="analista" ${u.perfil==='analista'?'selected':''}>Analista</option>
           <option value="admin" ${u.perfil==='admin'?'selected':''}>Administrador</option>
+          <option value="proprietaria" ${u.perfil==='proprietaria'?'selected':''}>总经理 (painel executivo, somente leitura)</option>
         </select>
       </div>
     </div>
@@ -2477,6 +2483,7 @@ const NAV_ICONS = {
   prodmeudesempenho:'<path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>',
   prodgeral:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
   prodminhastarefas:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+  execdash:'<path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>',
   dashboard: '<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',
   vendas:    '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
   funil:     '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
@@ -2496,7 +2503,12 @@ function navItem(page,label){
 }
 const OPERADOR_PAGES = ['prodmeudesempenho','prodgeral','prodranking','prodminhastarefas'];
 const SUPERVISOR_PAGES = ['proddash','prodlanc','prodavarias','proddevol','prodequipe','prodranking','prodrel'];
-function defaultPageFor(cu){ return (cu && cu.perfil==='operador') ? 'prodmeudesempenho' : 'proddash'; }
+const EXECUTIVO_PAGES = ['execdash'];
+function defaultPageFor(cu){
+  if(cu && cu.perfil==='operador') return 'prodmeudesempenho';
+  if(cu && cu.perfil==='proprietaria') return 'execdash';
+  return 'proddash';
+}
 function buildSidebar(){
   const cu=currentUser();
   if(cu && cu.perfil==='operador'){
@@ -2506,6 +2518,20 @@ function buildSidebar(){
     ho+=navItem('prodranking','Ranking');
     ho+=navItem('prodminhastarefas','Minhas Tarefas');
     $('#sidebarNav').innerHTML=ho;
+    document.querySelectorAll('#sidebarNav [data-page]').forEach(item=>{
+      item.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); go(this.dataset.page); });
+      item.addEventListener('touchend', function(e){ e.preventDefault(); go(this.dataset.page); }, {passive:false});
+    });
+    const cur=(location.hash||'#'+defaultPageFor(cu)).slice(1);
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===cur));
+    return;
+  }
+  if(cu && cu.perfil==='proprietaria'){
+    let he=`<div class="nav-label">经营管理</div>`;
+    he+=navItem('execdash','仪表板');
+    $('#sidebarNav').innerHTML=he;
+    const gs=$('#globalSearch'); if(gs) gs.placeholder='搜索...';
+    const tb=$('#themeBtn'); if(tb) tb.title='切换深色/浅色模式';
     document.querySelectorAll('#sidebarNav [data-page]').forEach(item=>{
       item.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); go(this.dataset.page); });
       item.addEventListener('touchend', function(e){ e.preventDefault(); go(this.dataset.page); }, {passive:false});
@@ -5430,6 +5456,149 @@ function salvarSugestaoIdeia(){
     coluna:'ideias', criado_por:cu.id, criado_em:new Date().toISOString(), atualizado_em:new Date().toISOString()};
   prod.ideias.push(obj); prodSave(); sbUpProd('ideias_melhoria',obj);
   closeModal(); RENDER.prodminhastarefas(); Toast('Ideia enviada! +3 pontos de bonificação extra.','sucesso');
+}
+
+/* =====================================================================
+   === NOVO: 总经理仪表板 (perfil "proprietaria" — somente leitura, 100% em chinês) ===
+   ===================================================================== */
+function mesLabelZH(off){
+  const now=new Date(); const d=new Date(now.getFullYear(), now.getMonth()+off, 1);
+  return d.getFullYear()+'年'+(d.getMonth()+1)+'月';
+}
+const CATEGORIA_LABEL_ZH={producao:'生产',embalagem:'包装',analista:'分析'};
+const STATUS_COLAB_ZH={ativo:'在职',ferias:'休假',afastado:'停职',desligado:'离职'};
+let execMesOff=0, execReqId=0;
+RENDER.execdash=function(){ renderExecDash(); };
+function renderExecDash(){
+  const mo=monthRange(execMesOff);
+  $('#page-execdash').innerHTML = periodNav(mesLabelZH(execMesOff),'execMesOff','renderExecDash') + `<div id="execBody"><div class="empty">加载中...</div></div>`;
+  renderExecBody(mo);
+}
+async function renderExecBody(mo){
+  const myId = ++execReqId;
+  let lista=[], oficial=true;
+  try{
+    const oficialLista = await gpFechamentosList(mo.ini);
+    if(Array.isArray(oficialLista) && oficialLista.length){ lista=oficialLista; }
+    else { oficial=false; const previa=await gpRankingPreview(mo.ini); lista=Array.isArray(previa)?previa:[]; }
+  }catch(e){ lista=[]; oficial=false; }
+  if(myId!==execReqId) return;
+  const body=document.getElementById('execBody'); if(!body) return;
+  body.innerHTML = execDashboardHTML(mo, lista, oficial);
+  setTimeout(()=>drawExecChart(mo), 40);
+}
+function execKpiZH(label,val,sub,col){
+  return `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value"${col?` style="color:${col}"`:''}>${val}</div>${sub?`<div class="kpi-trend" style="color:var(--text-3);background:transparent;padding-left:0">${sub}</div>`:''}</div>`;
+}
+function execDashboardHTML(mo, listaRanking, oficial){
+  const regsMes=prod.producao.filter(r=>r.data>=mo.ini && r.data<=mo.fim);
+  const a=aggReg(regsMes);
+  const avMax=+prod.metasGlobais.avaria_max_pct||3;
+
+  const ativos=prod.colaboradores.filter(c=>c.status==='ativo');
+  const ferias=prod.colaboradores.filter(c=>c.status==='ferias');
+  const afastados=prod.colaboradores.filter(c=>c.status==='afastado');
+  const desligadosMes=prod.colaboradores.filter(c=>c.status==='desligado' && c.data_desligamento && c.data_desligamento>=mo.ini && c.data_desligamento<=mo.fim);
+  const porCat={producao:0,embalagem:0,analista:0}; ativos.forEach(c=>porCat[categoriaColab(c)]++);
+
+  const linhas=listaRanking.map(f=>{
+    const c=prod.colaboradores.find(x=>x.id===f.colaborador_id);
+    return {...f, nome:c?c.nome:'—', funcao:c?c.funcao:'—', foto:c?c.foto:null};
+  }).sort((a,b)=>b.total_ranking-a.total_ranking);
+  const aptos=linhas.filter(r=>r.apto_bonificacao).length;
+  const naoAptos=linhas.length-aptos;
+
+  const faltasInjMes=prod.frequencia.filter(f=>f.data>=mo.ini && f.data<=mo.fim && f.tipo==='falta_injustificada').length;
+  const tarefasPendentes=prod.tarefasProducao.filter(t=>t.status==='pendente').length;
+  const ideiasAbertas=prod.ideias.filter(i=>i.coluna!=='concluida' && i.coluna!=='inviavel').length;
+  const feedbacksRecentes=prod.feedbacks.filter(f=>f.criado_em && (Date.now()-new Date(f.criado_em).getTime())<30*86400000).length;
+
+  const avariasEventosMes=(prod.avarias||[]).filter(x=>x.data>=mo.ini && x.data<=mo.fim);
+  const porMotivo={}; avariasEventosMes.forEach(x=>{const k=(x.motivo||'其他').trim()||'其他'; porMotivo[k]=(porMotivo[k]||0)+1;});
+  const topMotivos=Object.entries(porMotivo).sort((x,y)=>y[1]-x[1]).slice(0,5);
+
+  const kpis=`<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px">
+    ${execKpiZH('本月产量', a.prodTot+' 件')}
+    ${execKpiZH('次品率', a.taxaAv.toFixed(1)+'%', '上限 '+avMax+'%', a.taxaAv>avMax?'#FF3D57':'#27C28B')}
+    ${execKpiZH('平均效率', a.ef.toFixed(0)+'%')}
+    ${execKpiZH('在职员工', ativos.length+' 人')}
+    ${execKpiZH('符合奖金资格', aptos+' / '+linhas.length+' 人', undefined, naoAptos>0?'#F5A623':'#27C28B')}
+    ${execKpiZH('本月旷工', faltasInjMes+' 次', undefined, faltasInjMes>0?'#FF3D57':undefined)}
+  </div>`;
+
+  const statusBadge = oficial
+    ? `<span class="badge" style="color:#27C28B;background:#27C28B18">正式结算</span>`
+    : `<span class="badge" style="color:#F5A623;background:#F5A62318">预览 · 每日更新</span>`;
+
+  const chartCard=`<div class="card" style="margin-bottom:20px">
+    <div class="card-head"><div class="card-title">本月生产趋势 ${statusBadge}</div></div>
+    <div style="height:260px"><canvas id="execChart"></canvas></div>
+  </div>`;
+
+  const catRows=Object.entries(porCat).map(([k,v])=>`<tr><td class="strong">${CATEGORIA_LABEL_ZH[k]}</td><td>${v} 人</td></tr>`).join('');
+  const catCard=`<div class="card" style="margin-bottom:20px">
+    <div class="card-head"><div class="card-title">按职能分布</div></div>
+    <div class="table-wrapper"><table><thead><tr><th>职能</th><th>在职人数</th></tr></thead><tbody>${catRows||'<tr><td colspan="2"><div class="empty">暂无数据</div></td></tr>'}</tbody></table></div>
+  </div>`;
+
+  const rankRows=linhas.map((r,i)=>`<tr>
+      <td class="strong">${i+1}</td>
+      <td><div class="cell-user">${avatarHTML(r.nome,r.foto)}<div class="strong">${r.nome}</div></div></td>
+      <td>${CATEGORIA_LABEL_ZH[categoriaColabPorFuncao(r.funcao)]||r.funcao}</td>
+      <td>${r.total_nucleo}</td>
+      <td>${r.apto_bonificacao?'<span class="badge" style="color:#27C28B;background:#27C28B18">达标</span>':'<span class="badge" style="color:#FF3D57;background:#FF3D5718">未达标</span>'}</td>
+      <td class="strong" style="color:var(--accent)">${r.total_ranking} 分</td>
+    </tr>`).join('');
+  const rankCard=`<div class="card" style="margin-bottom:20px">
+    <div class="card-head"><div class="card-title">排名与奖金资格</div></div>
+    <div class="table-wrapper"><table><thead><tr><th>#</th><th>员工</th><th>职能</th><th>核心分</th><th>状态</th><th>总分</th></tr></thead>
+    <tbody>${rankRows||'<tr><td colspan="6"><div class="empty">本月暂无积分记录</div></td></tr>'}</tbody></table></div>
+  </div>`;
+
+  const foraNomes = ferias.concat(afastados).map(c=>`${c.nome}（${STATUS_COLAB_ZH[c.status]}）`).join('、');
+  const equipeCard=`<div class="card" style="margin-bottom:20px">
+    <div class="card-head"><div class="card-title">人员状态</div></div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:${foraNomes?'12px':'0'}">
+      ${execKpiZH('在职', ativos.length)}
+      ${execKpiZH('休假', ferias.length)}
+      ${execKpiZH('停职', afastados.length)}
+      ${execKpiZH('本月离职', desligadosMes.length)}
+    </div>
+    ${foraNomes?`<div style="font-size:12.5px;color:var(--text-3)">当前休假/停职：${foraNomes}</div>`:''}
+  </div>`;
+
+  const pendCard=`<div class="card" style="margin-bottom:20px">
+    <div class="card-head"><div class="card-title">待处理事项（实时）</div></div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
+      ${execKpiZH('待处理任务', tarefasPendentes, undefined, tarefasPendentes>0?'#F5A623':undefined)}
+      ${execKpiZH('待评估改进建议', ideiasAbertas)}
+      ${execKpiZH('近30天反馈', feedbacksRecentes)}
+    </div>
+  </div>`;
+
+  const motivoRows=topMotivos.map(([m,n])=>`<tr><td class="strong">${m}</td><td>${n} 次</td></tr>`).join('');
+  const motivoCard=`<div class="card">
+    <div class="card-head"><div class="card-title">本月次品主要原因</div></div>
+    <div class="table-wrapper"><table><thead><tr><th>原因</th><th>次数</th></tr></thead>
+    <tbody>${motivoRows||'<tr><td colspan="2"><div class="empty">本月无次品记录</div></td></tr>'}</tbody></table></div>
+  </div>`;
+
+  return kpis + chartCard + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" class="exec-2col">${catCard}${equipeCard}</div>` + rankCard + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" class="exec-2col">${pendCard}${motivoCard}</div>`;
+}
+function categoriaColabPorFuncao(funcao){
+  if(funcao==='Embalagem') return 'embalagem';
+  if(funcao==='Analista') return 'analista';
+  return 'producao';
+}
+function drawExecChart(mo){
+  const el=document.getElementById('execChart'); if(!el||typeof Chart==='undefined')return;
+  const regs=prod.producao.filter(r=>r.data>=mo.ini && r.data<=mo.fim);
+  const byDay=mo.dias.map(d=>regs.filter(r=>r.data===d).reduce((s,r)=>s+(+r.produzido_liquido||0),0));
+  const metaDia=+prod.metasGlobais.meta_diaria_fabrica||0;
+  drawDashChart('execChart','line',mo.dias.map(d=>d.slice(8,10)+'日'),[
+    {label:'产量',data:byDay,borderColor:'#2979FF',backgroundColor:'rgba(41,121,255,.15)',fill:true,tension:.3,pointRadius:0},
+    {label:'目标',data:byDay.map(()=>metaDia),borderColor:'rgba(150,150,160,.8)',borderDash:[6,4],pointRadius:0,fill:false}
+  ]);
 }
 
 /* =====================================================================
