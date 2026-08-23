@@ -3702,6 +3702,7 @@ async function gpReabrirPeriodo(colabId,competencia,motivo){ return rpcT('rpc_re
 async function gpApontamento(colabId,data,descricao){ return rpcT('rpc_apontamento_registrar',{p_colaborador_id:colabId,p_data:data,p_descricao:descricao||null}); }
 async function gpBonificacaoCriar(colabId,tipo,justificativa,tarefaId){ return rpcT('rpc_bonificacao_extra_criar',{p_colaborador_id:colabId,p_tipo:tipo,p_justificativa:justificativa,p_tarefa_id:tarefaId||null}); }
 async function gpFechamentosList(competencia){ return rpcT('rpc_fechamentos_list',{p_competencia:competencia||null}); }
+async function gpRankingPreview(competencia){ return rpcT('rpc_ranking_preview',{p_competencia:competencia}); }
 async function gpLancamentosList(colabId,ini,fim){ return rpcT('rpc_lancamentos_list',{p_colaborador_id:colabId||null,p_ini:ini||null,p_fim:fim||null}); }
 async function gpBonificacoesList(colabId,competencia){ return rpcT('rpc_bonificacoes_extra_list',{p_colaborador_id:colabId||null,p_competencia:competencia||null}); }
 async function gpConfigGet(){ return rpcT('rpc_config_gestao_get',{}); }
@@ -5132,21 +5133,29 @@ function renderRankMensal(){
   const competencia=mo.ini;
   $('#page-prodranking').innerHTML = periodNav(mo.label,'rankMesOff','renderRankMensal') + `<div id="rankBody"><div class="empty">Carregando...</div></div>`;
   gpFechamentosList(competencia).then(lista=>{
-    $('#rankBody').innerHTML = rankingMensalHTML(Array.isArray(lista)?lista:[], mo.label, competencia);
+    if(Array.isArray(lista) && lista.length){
+      $('#rankBody').innerHTML = rankingMensalHTML(lista, mo.label, true);
+      return;
+    }
+    return gpRankingPreview(competencia).then(previa=>{
+      $('#rankBody').innerHTML = rankingMensalHTML(Array.isArray(previa)?previa:[], mo.label, false);
+    });
   }).catch(()=>{ $('#rankBody').innerHTML = '<div class="card"><div class="empty">Não foi possível carregar o ranking deste mês.</div></div>'; });
 }
-function rankingMensalHTML(lista, periodTitle, competencia){
+function rankingMensalHTML(lista, periodTitle, oficial){
   const linhas = lista.map(f=>{
     const c=prod.colaboradores.find(x=>x.id===f.colaborador_id);
     return {...f, nome:c?c.nome:'—', foto:c?c.foto:null, funcao:c?c.funcao:'—'};
   }).sort((a,b)=>b.total_ranking-a.total_ranking);
 
   if(!linhas.length){
-    const isMesAtual = competencia===mesAtualISO();
-    return `<div class="card"><div class="empty">${isMesAtual
-      ? 'Este mês ainda não foi fechado. O ranking oficial aparece depois do fechamento mensal (Gestão de Pessoas → Desempenho → Fechar período do mês).'
-      : 'Nenhum fechamento encontrado para este mês.'}</div></div>`;
+    return `<div class="card"><div class="empty">Nenhum colaborador ativo com pontuação neste mês.</div></div>`;
   }
+
+  const aviso = oficial ? '' : `<div class="card" style="margin-bottom:16px;background:var(--accent-soft);border-color:var(--border-blue)">
+    <div style="font-size:13px;color:var(--text-2)"><b>Prévia do mês</b></div>
+    <div style="font-size:12.5px;color:var(--text-3);margin-top:2px">Atualizada diariamente com base nos lançamentos até agora. Ainda não é o ranking oficial — os valores podem mudar até o fechamento mensal.</div>
+  </div>`;
 
   const top3=linhas.slice(0,3);
   const podio = top3.length ? `<div class="card" style="margin-bottom:20px">
@@ -5169,12 +5178,12 @@ function rankingMensalHTML(lista, periodTitle, competencia){
       <td class="strong" style="color:var(--accent)">${r.total_ranking} pts</td>
     </tr>`).join('');
 
-  return podio + `<div class="card">
+  return aviso + podio + `<div class="card">
     <div class="card-head"><div class="card-title">Classificação completa</div></div>
     <div class="table-wrapper"><table><thead><tr><th>#</th><th>Colaborador</th><th>Função</th><th>Núcleo</th><th>Mínimo</th><th>Status</th><th>Extra</th><th>Total</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
     <div style="font-size:11.5px;color:var(--text-3);margin-top:14px;line-height:1.6">
-      Ranking mensal: pontos de produção/apontamentos + metas cumpridas + velocidade + frequência (núcleo), comparado ao mínimo da função, mais a Bonificação Extra (tarefas, organização e ideias do Kanban de Sugestões de Melhorias).
+      <b>${oficial?'Ranking oficial':'Prévia — ainda não fechada'}</b> · Pontos de produção/apontamentos + metas cumpridas + velocidade + frequência (núcleo), comparado ao mínimo da função, mais a Bonificação Extra (tarefas, organização e ideias do Kanban de Sugestões de Melhorias).
     </div>
   </div>`;
 }
@@ -5831,7 +5840,13 @@ const I18N_ZH = {
   // marca SutoData
   'Bem-vindo ao SutoData':'欢迎使用 SutoData','Bem-vindo ao SutoData!':'欢迎使用 SutoData！',
   'Criar conta SutoData':'创建 SutoData 账户','Instalar SutoData':'安装 SutoData',
-  'Carregando SutoData...':'正在加载 SutoData...','Como instalar o SutoData no seu dispositivo':'如何在您的设备上安装 SutoData'
+  'Carregando SutoData...':'正在加载 SutoData...','Como instalar o SutoData no seu dispositivo':'如何在您的设备上安装 SutoData',
+  // Ranking — prévia diária
+  'Prévia do mês':'本月预览',
+  'Atualizada diariamente com base nos lançamentos até agora. Ainda não é o ranking oficial — os valores podem mudar até o fechamento mensal.':'每日根据最新记录更新。尚非正式排名——数值可能在月度结算前变动。',
+  'Ranking oficial':'正式排名','Prévia — ainda não fechada':'预览 — 尚未结算',
+  'Nenhum colaborador ativo com pontuação neste mês.':'本月没有在职员工的积分记录。',
+  '· Pontos de produção/apontamentos + metas cumpridas + velocidade + frequência (núcleo), comparado ao mínimo da função, mais a Bonificação Extra (tarefas, organização e ideias do Kanban de Sugestões de Melhorias).':'· 生产/记录积分 + 达成目标 + 速度 + 考勤（核心分），与职能最低标准比较，再加上额外奖金（任务、条理性与看板改进建议的想法）。'
 };
 
 (function(){
