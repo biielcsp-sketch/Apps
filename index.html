@@ -247,7 +247,7 @@ td .strong{color:var(--text);font-weight:600}
 .modal-close{background:var(--surface-2);border:none;color:var(--text-2);width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
 .modal-close:hover{color:var(--text)}
 .modal-body{padding:24px}
-.modal-foot{padding:18px 24px;border-top:1px solid var(--border);display:flex;gap:12px;justify-content:flex-end}
+.modal-foot{padding:18px 24px;border-top:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 .field{margin-bottom:16px}
 .field label{display:block;font-size:12.5px;font-weight:600;color:var(--text-2);margin-bottom:7px}
 .field input,.field select,.field textarea{
@@ -2109,6 +2109,31 @@ function colabLinkOptions(selectedId){
     .concat((prod.colaboradores||[]).map(c=>`<option value="${c.id}" ${selectedId===c.id?'selected':''}>${c.nome}</option>`));
   return opts.join('');
 }
+function campoPerfilInner(prefix, colabId, perfilAtual, disabled){
+  const colab = colabId ? prod.colaboradores.find(c=>c.id===colabId) : null;
+  if(colab){
+    const p = perfilDaFuncao(colab.funcao);
+    return `<label>Perfil de acesso</label>
+      <div style="padding:10px 14px;background:var(--surface-2);border-radius:10px;font-size:14px;color:var(--text-2)">${PERFIL_LABEL[p]||p} <span style="color:var(--text-3);font-size:12px">— definido pela função (${colab.funcao}) em Funcionários</span></div>
+      <input type="hidden" id="${prefix}Perfil" value="${p}">`;
+  }
+  const opts=[['colaborador','Colaborador'],['admin','Administrador'],['proprietaria','总经理 (painel executivo, somente leitura)']];
+  if(perfilAtual && ['operador','supervisor','analista'].includes(perfilAtual)){
+    opts.push([perfilAtual, (PERFIL_LABEL[perfilAtual]||perfilAtual)+' (sem colaborador vinculado)']);
+  }
+  return `<label>Perfil de acesso</label>
+    <select id="${prefix}Perfil" ${disabled?'disabled':''}>${opts.map(([v,l])=>`<option value="${v}" ${perfilAtual===v?'selected':''}>${l}</option>`).join('')}</select>`;
+}
+function atualizarCampoPerfil(prefix){
+  const sel=document.getElementById(prefix+'ColabId');
+  const wrap=document.getElementById(prefix+'PerfilWrap');
+  if(!sel||!wrap)return;
+  wrap.innerHTML = campoPerfilInner(prefix, sel.value||null, null);
+}
+function refreshUsuariosView(){
+  if(typeof equipeSubtab!=='undefined' && document.getElementById('equipeBody')) renderEquipeBody();
+  else if(RENDER.config) RENDER.config();
+}
 async function formNovoUsuario(){
   openModal('Novo Usuário',`
     <div class="field"><label>Nome completo</label><input id="uNome" placeholder="Nome do usuário"></div>
@@ -2116,21 +2141,12 @@ async function formNovoUsuario(){
       <div class="field"><label>Login</label><input id="uLogin" placeholder="ex: joao.silva"></div>
       <div class="field"><label>Senha</label><input type="password" id="uSenha" placeholder="Mínimo 6 caracteres"></div>
     </div>
-    <div class="field-row">
-      <div class="field"><label>Cargo / Função</label><input id="uCargo" placeholder="ex: Vendedor, Gerente..."></div>
-      <div class="field"><label>Perfil de acesso</label>
-        <select id="uPerfil">
-          <option value="colaborador">Colaborador</option>
-          <option value="operador">Auxiliar (acesso restrito)</option>
-          <option value="supervisor">Líder</option>
-          <option value="analista">Analista</option>
-          <option value="admin">Administrador</option>
-          <option value="proprietaria">总经理 (painel executivo, somente leitura)</option>
-        </select>
-      </div>
+    <div class="field"><label>Vincular a colaborador <span style="color:var(--text-3);font-weight:400">(a função dele define o perfil de acesso)</span></label>
+      <select id="uColabId" onchange="atualizarCampoPerfil('u')">${colabLinkOptions(null)}</select>
     </div>
-    <div class="field"><label>Vincular a colaborador <span style="color:var(--text-3);font-weight:400">(opcional — liga a foto e o ranking a esse login)</span></label>
-      <select id="uColabId">${colabLinkOptions(null)}</select>
+    <div class="field-row">
+      <div class="field"><label>Cargo <span style="color:var(--text-3);font-weight:400">(opcional)</span></label><input id="uCargo" placeholder="ex: Vendedor, Gerente..."></div>
+      <div class="field" id="uPerfilWrap">${campoPerfilInner('u', null, 'colaborador')}</div>
     </div>
   `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
      <button class="btn btn-primary" onclick="saveNovoUsuario()">Criar usuário</button>`);
@@ -2146,33 +2162,25 @@ async function saveNovoUsuario(){
     const res=await rpcT('rpc_user_create',{p_nome:nome,p_login:login,p_senha:senha,p_cargo:$('#uCargo').value.trim()||'Colaborador',p_perfil:$('#uPerfil').value,p_colaborador_id:$('#uColabId').value||null});
     if(!res||!res.ok){Toast((res&&res.erro)||'Não foi possível criar','erro');return;}
     await refreshUsers();
-    closeModal(); RENDER.config(); Toast('Usuário criado com sucesso!','sucesso');
+    closeModal(); refreshUsuariosView(); Toast('Usuário criado com sucesso!','sucesso');
   }catch(e){ Toast('Erro: '+(e.message||e),'erro'); }
 }
 function editUser(id){
   const users=loadUsers(); const u=users.find(x=>x.id===id); if(!u)return;
   const cu=currentUser();
+  const isOnlyAdmin = u.id===cu?.id && users.filter(x=>x.perfil==='admin').length<=1;
   openModal('Editar Usuário',`
     <div class="field"><label>Nome completo</label><input id="euNome" value="${u.nome}"></div>
     <div class="field-row">
       <div class="field"><label>Login</label><input id="euLogin" value="${u.login}"></div>
       <div class="field"><label>Nova senha <span style="color:var(--text-3);font-weight:400">(em branco = manter)</span></label><input type="password" id="euSenha" placeholder="Nova senha"></div>
     </div>
-    <div class="field-row">
-      <div class="field"><label>Cargo / Função</label><input id="euCargo" value="${u.cargo||''}" placeholder="ex: Vendedor..."></div>
-      <div class="field"><label>Perfil</label>
-        <select id="euPerfil" ${u.id===cu?.id&&users.filter(x=>x.perfil==='admin').length<=1?'disabled':''}>
-          <option value="colaborador" ${u.perfil==='colaborador'?'selected':''}>Colaborador</option>
-          <option value="operador" ${u.perfil==='operador'?'selected':''}>Auxiliar (acesso restrito)</option>
-          <option value="supervisor" ${u.perfil==='supervisor'?'selected':''}>Líder</option>
-          <option value="analista" ${u.perfil==='analista'?'selected':''}>Analista</option>
-          <option value="admin" ${u.perfil==='admin'?'selected':''}>Administrador</option>
-          <option value="proprietaria" ${u.perfil==='proprietaria'?'selected':''}>总经理 (painel executivo, somente leitura)</option>
-        </select>
-      </div>
+    <div class="field"><label>Vincular a colaborador <span style="color:var(--text-3);font-weight:400">(a função dele define o perfil de acesso)</span></label>
+      <select id="euColabId" onchange="atualizarCampoPerfil('eu')" ${isOnlyAdmin?'disabled':''}>${colabLinkOptions(u.colaborador_id||null)}</select>
     </div>
-    <div class="field"><label>Vincular a colaborador <span style="color:var(--text-3);font-weight:400">(opcional)</span></label>
-      <select id="euColabId">${colabLinkOptions(u.colaborador_id||null)}</select>
+    <div class="field-row">
+      <div class="field"><label>Cargo</label><input id="euCargo" value="${u.cargo||''}" placeholder="ex: Vendedor..."></div>
+      <div class="field" id="euPerfilWrap">${campoPerfilInner('eu', u.colaborador_id||null, u.perfil, isOnlyAdmin)}</div>
     </div>
   `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
      <button class="btn btn-primary" onclick="saveEditUser('${id}')">Salvar</button>`);
@@ -2193,7 +2201,7 @@ async function saveEditUser(id){
     await refreshUsers();
     const cu=currentUser();
     if(cu&&cu.id===id) setSession({...cu,nome,login,perfil,cargo});
-    updateSidebarUser(); closeModal(); RENDER.config(); Toast('Usuário atualizado!','sucesso');
+    updateSidebarUser(); closeModal(); refreshUsuariosView(); Toast('Usuário atualizado!','sucesso');
   }catch(e){ Toast('Erro: '+(e.message||e),'erro'); }
 }
 async function delUser(id){
@@ -2204,7 +2212,7 @@ async function delUser(id){
     const res=await rpcT('rpc_user_delete',{p_id:id});
     if(!res||!res.ok){Toast((res&&res.erro)||'Não foi possível excluir','erro');return;}
     await refreshUsers();
-    RENDER.config(); Toast('Usuário excluído','info');
+    refreshUsuariosView(); Toast('Usuário excluído','info');
   }catch(e){ Toast('Erro: '+(e.message||e),'erro'); }
 }
 
@@ -4072,7 +4080,7 @@ function feedbackHTML(){
         <span class="badge" style="color:${cor[f.tipo]||'#2979FF'};background:${(cor[f.tipo]||'#2979FF')}18">${label[f.tipo]||'Geral'}</span>
       </div>
       <div style="margin:8px 0;color:var(--text-2)">${f.texto}</div>
-      <div class="row-between"><span style="font-size:11.5px;color:var(--text-3)">${f.criado_em?dBR(f.criado_em.slice(0,10)):''}</span>${podeCriar?`<button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="delFeedback('${f.id}')">Excluir</button>`:''}</div>
+      <div class="row-between"><span style="font-size:11.5px;color:var(--text-3)">${f.criado_em?dBR(f.criado_em.slice(0,10)):''}</span>${podeCriar?`<span style="display:flex;gap:8px"><button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="formFeedback('${f.id}')">Editar</button><button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="delFeedback('${f.id}')">Excluir</button></span>`:''}</div>
     </div>`).join('');
   return `
     <div class="row-between" style="margin-bottom:16px">
@@ -4081,21 +4089,33 @@ function feedbackHTML(){
     </div>
     ${cards||'<div class="card"><div class="empty">Nenhum feedback registrado</div></div>'}`;
 }
-function formFeedback(){
-  const opts=prod.colaboradores.filter(c=>c.status==='ativo').map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
-  openModal('Novo Feedback',`
+function formFeedback(id){
+  const f=id?prod.feedbacks.find(x=>x.id===id):null;
+  const opts=prod.colaboradores.filter(c=>c.status==='ativo'||c.id===(f&&f.colaborador_id)).map(c=>`<option value="${c.id}" ${f&&f.colaborador_id===c.id?'selected':''}>${c.nome}</option>`).join('');
+  openModal(f?'Editar Feedback':'Novo Feedback',`
     <div class="field"><label>Colaborador</label><select id="fbColab">${opts}</select></div>
-    <div class="field"><label>Tipo</label><select id="fbTipo"><option value="positivo">Positivo</option><option value="negativo">A melhorar</option><option value="geral">Geral</option></select></div>
-    <div class="field"><label>Mensagem</label><input id="fbTexto" placeholder="Escreva o feedback"></div>
-  `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarFeedback()">Salvar</button>`);
+    <div class="field"><label>Tipo</label><select id="fbTipo">
+      <option value="positivo" ${f&&f.tipo==='positivo'?'selected':''}>Positivo</option>
+      <option value="negativo" ${f&&f.tipo==='negativo'?'selected':''}>A melhorar</option>
+      <option value="geral" ${!f||f.tipo==='geral'?'selected':''}>Geral</option>
+    </select></div>
+    <div class="field"><label>Mensagem</label><input id="fbTexto" value="${f?f.texto.replace(/"/g,'&quot;'):''}" placeholder="Escreva o feedback"></div>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="salvarFeedback('${id||''}')">Salvar</button>`);
 }
-function salvarFeedback(){
+function salvarFeedback(id){
   const texto=$('#fbTexto').value.trim();
   if(!texto){Toast('Escreva a mensagem do feedback','erro');return;}
   const cu=currentUser();
-  const obj={id:'fb-'+uid(),colaborador_id:$('#fbColab').value,tipo:$('#fbTipo').value,texto,criado_por:cu.id,criado_em:new Date().toISOString()};
-  prod.feedbacks.push(obj); prodSave(); sbUpProd('feedbacks_individuais',obj);
-  closeModal(); renderEquipeBody(); Toast('Feedback registrado!','sucesso');
+  if(id){
+    const i=prod.feedbacks.findIndex(x=>x.id===id); if(i<0)return;
+    const obj={...prod.feedbacks[i],colaborador_id:$('#fbColab').value,tipo:$('#fbTipo').value,texto};
+    prod.feedbacks[i]=obj; prodSave(); sbUpProd('feedbacks_individuais',obj);
+    closeModal(); renderEquipeBody(); Toast('Feedback atualizado!','sucesso');
+  } else {
+    const obj={id:'fb-'+uid(),colaborador_id:$('#fbColab').value,tipo:$('#fbTipo').value,texto,criado_por:cu.id,criado_em:new Date().toISOString()};
+    prod.feedbacks.push(obj); prodSave(); sbUpProd('feedbacks_individuais',obj);
+    closeModal(); renderEquipeBody(); Toast('Feedback registrado!','sucesso');
+  }
 }
 function delFeedback(id){
   if(!confirm('Excluir este feedback?'))return;
@@ -4293,15 +4313,31 @@ async function salvarCargoUsuario(id){
   }catch(e){ Toast('Erro: '+(e.message||e),'erro'); }
 }
 
-const FUNCOES=['Auxiliar','Operador','Supervisor','Líder','Costureira','Cortador','Acabamento','Estamparia','Revisão','Embalagem'];
+const FUNCOES=['Auxiliar','Costureira','Cortador','Acabamento','Estamparia','Revisão','Embalagem','Analista','Líder'];
+const FUNCOES_PRODUCAO=['Auxiliar','Costureira','Cortador','Acabamento','Estamparia','Revisão','Líder'];
+// Fonte única de verdade: a função do colaborador é quem decide o nível de acesso do login dele.
+// Auxiliar, Costureira, Cortador, Acabamento, Estamparia, Revisão e Embalagem → Auxiliar (operador).
+function perfilDaFuncao(funcao){
+  if(funcao==='Líder'||funcao==='Supervisor') return 'supervisor';
+  if(funcao==='Analista') return 'analista';
+  return 'operador';
+}
 const STATUS_COLAB={ativo:{l:'Ativo',c:'#27C28B'},ferias:{l:'Férias',c:'#F5A623'},afastado:{l:'Afastado',c:'#FF3D57'},desligado:{l:'Desligado',c:'#8b8b95'}};
 let mostrarDesligados=false;
 
+let funcionariosCat='producao';
+const FUNCIONARIOS_CATS=[['producao','Produção'],['embalagem','Embalagem'],['analista','Analista']];
 function colaboradoresHTML(){
   const cu=currentUser();
   const podeGerenciar = cu.perfil==='admin'||cu.perfil==='supervisor';
-  const desligados=prod.colaboradores.filter(c=>c.status==='desligado');
-  const visiveis=mostrarDesligados?prod.colaboradores:prod.colaboradores.filter(c=>c.status!=='desligado');
+  const doCat=c=>categoriaColab(c)===funcionariosCat;
+  const ativosCat=prod.colaboradores.filter(c=>c.status!=='desligado' && doCat(c));
+  const desligadosCat=prod.colaboradores.filter(c=>c.status==='desligado' && doCat(c));
+  const visiveis=mostrarDesligados?ativosCat.concat(desligadosCat):ativosCat;
+  const catTabs=FUNCIONARIOS_CATS.map(([k,l])=>{
+    const on=funcionariosCat===k;
+    return `<button onclick="funcionariosCat='${k}';renderEquipeBody()" style="background:none;border:none;padding:9px 4px;margin-right:18px;font-family:inherit;font-weight:600;font-size:13.5px;color:${on?'var(--accent)':'var(--text-3)'};border-bottom:2px solid ${on?'var(--accent)':'transparent'};cursor:pointer">${l}</button>`;
+  }).join('');
   const cards=visiveis.map(c=>{
     const st=STATUS_COLAB[c.status]||STATUS_COLAB.ativo;
     return `<div class="card" style="cursor:pointer" onclick="abrirColab('${c.id}')">
@@ -4320,18 +4356,19 @@ function colaboradoresHTML(){
     </div>`;
   }).join('');
   return `
+    <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap">${catTabs}</div>
     <div class="row-between" style="margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <div style="display:flex;gap:10px;align-items:center">
         <span class="chip">${visiveis.length} colaboradores</span>
-        ${desligados.length?`<label style="font-size:12px;color:var(--text-3);cursor:pointer;display:flex;align-items:center;gap:5px"><input type="checkbox" ${mostrarDesligados?'checked':''} onchange="mostrarDesligados=this.checked;renderEquipeBody()">Mostrar desligados (${desligados.length})</label>`:''}
+        ${desligadosCat.length?`<label style="font-size:12px;color:var(--text-3);cursor:pointer;display:flex;align-items:center;gap:5px"><input type="checkbox" ${mostrarDesligados?'checked':''} onchange="mostrarDesligados=this.checked;renderEquipeBody()">Mostrar desligados (${desligadosCat.length})</label>`:''}
       </div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-ghost" onclick="gerenciarPerfisEmbalagem()">Perfis de Embalagem</button>
         ${podeGerenciar?`<button class="btn btn-ghost" onclick="configGestaoModal()">Configurações</button>`:''}
-        <button class="btn btn-primary" onclick="formColab()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo Colaborador</button>
+        <button class="btn btn-primary" onclick="formColab(null,'${funcionariosCat}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo Colaborador</button>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">${cards||'<div class="card"><div class="empty">Nenhum colaborador cadastrado</div></div>'}</div>`;
+    ${funcionariosCat==='embalagem'?perfisEmbalagemInlineHTML():''}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">${cards||'<div class="card"><div class="empty">Nenhum colaborador cadastrado nesta categoria</div></div>'}</div>`;
 }
 function configGestaoModal(){
   const cfg=prod.configGestao||{velocidadeMinima:90,justificativaMinChars:20};
@@ -4358,7 +4395,7 @@ async function salvarConfigGestao(){
   }catch(e){ Toast('Erro: '+(e.message||e),'erro'); }
 }
 function perfilEmbalagemNome(id){ const p=(prod.perfisEmbalagem||[]).find(x=>x.id===id); return p?p.nome:'—'; }
-function gerenciarPerfisEmbalagem(){
+function perfisEmbalagemInlineHTML(){
   const rows=(prod.perfisEmbalagem||[]).map(p=>`
     <tr>
       <td class="strong">${p.nome}</td>
@@ -4366,35 +4403,36 @@ function gerenciarPerfisEmbalagem(){
       <td>${p.ativo!==false?'<span class="badge" style="color:#27C28B;background:#27C28B18">Ativo</span>':'<span class="badge" style="color:var(--text-3);background:var(--surface-2)">Inativo</span>'}</td>
       <td><button class="btn btn-ghost" style="padding:5px 10px;font-size:12px" onclick="delPerfilEmbalagem('${p.id}')">Excluir</button></td>
     </tr>`).join('');
-  openModal('Perfis de Embalagem',`
-    <div style="font-size:12.5px;color:var(--text-3);margin-bottom:14px">Perfis organizacionais da função Embalagem. Não alteram a fórmula de pontos — servem para atribuição de tarefas.</div>
+  return `<div class="card" style="margin-bottom:16px">
+    <div class="card-head"><div class="card-title">Perfis de Embalagem <span class="muted">· grupos de trabalho dentro da função Embalagem, não mudam a fórmula de pontos</span></div></div>
     <div class="field-row">
       <div class="field"><label>Nome do perfil</label><input id="peNome" placeholder="Ex: Bipagem, Dobra, Etiquetagem..."></div>
       <div class="field"><label>Descrição</label><input id="peDesc" placeholder="Opcional"></div>
     </div>
-    <button class="btn btn-primary" style="margin-bottom:16px" onclick="addPerfilEmbalagem()">Adicionar</button>
+    <button class="btn btn-primary" style="margin-bottom:14px" onclick="addPerfilEmbalagem()">Adicionar</button>
     <div class="table-wrapper"><table><thead><tr><th>Nome</th><th>Descrição</th><th>Status</th><th></th></tr></thead>
     <tbody>${rows||emptyRow(4)}</tbody></table></div>
-  `,`<button class="btn btn-primary" onclick="closeModal()">Fechar</button>`);
+  </div>`;
 }
 function addPerfilEmbalagem(){
   const nome=$('#peNome').value.trim(); if(!nome){Toast('Informe o nome do perfil','erro');return;}
   const obj={id:'pe-'+uid(),nome,descricao:$('#peDesc').value.trim()||null,ativo:true};
   prod.perfisEmbalagem=prod.perfisEmbalagem||[]; prod.perfisEmbalagem.push(obj);
   prodSave(); sbUpProd('perfil_embalagem',obj);
-  gerenciarPerfisEmbalagem(); Toast('Perfil adicionado!','sucesso');
+  renderEquipeBody(); Toast('Perfil adicionado!','sucesso');
 }
 function delPerfilEmbalagem(id){
   if(!confirm('Excluir este perfil de embalagem?'))return;
   prod.perfisEmbalagem=(prod.perfisEmbalagem||[]).filter(x=>x.id!==id);
   prodSave(); sbDelProd('perfil_embalagem',id);
-  gerenciarPerfisEmbalagem(); Toast('Perfil excluído','info');
+  renderEquipeBody(); Toast('Perfil excluído','info');
 }
 function turnoLabel(t){return {manha:'Manhã',tarde:'Tarde',noite:'Noite',integral:'Integral'}[t]||t;}
 
-function formColab(id){
+function formColab(id, categoriaDefault){
   const c=id?prod.colaboradores.find(x=>x.id===id):null;
-  const funcOpts=FUNCOES.map(f=>`<option ${c&&c.funcao===f?'selected':''}>${f}</option>`).join('');
+  const funcaoPadrao = categoriaDefault==='embalagem'?'Embalagem':(categoriaDefault==='analista'?'Analista':'Auxiliar');
+  const funcOpts=FUNCOES.map(f=>`<option value="${f}" ${c?(c.funcao===f?'selected':''):(f===funcaoPadrao?'selected':'')}>${f}</option>`).join('');
   const turnoOpts=[['manha','Manhã'],['tarde','Tarde'],['noite','Noite'],['integral','Integral']].map(([v,l])=>`<option value="${v}" ${c&&c.turno===v?'selected':''}>${l}</option>`).join('');
   const stOpts=[['ativo','Ativo'],['ferias','Férias'],['afastado','Afastado']].map(([v,l])=>`<option value="${v}" ${c&&c.status===v?'selected':''}>${l}</option>`).join('');
   const civilOpts=[['','—'],['solteiro','Solteiro(a)'],['casado','Casado(a)'],['uniao_estavel','União estável'],['divorciado','Divorciado(a)'],['viuvo','Viúvo(a)']].map(([v,l])=>`<option value="${v}" ${c&&c.estado_civil===v?'selected':''}>${l}</option>`).join('');
@@ -4465,7 +4503,18 @@ function salvarColab(id){
   if(id){ const i=prod.colaboradores.findIndex(x=>x.id===id); if(i>=0)prod.colaboradores[i]=obj; }
   else prod.colaboradores.push(obj);
   prodSave(); sbUpProd('colaboradores',obj);
+  sincronizarPerfilColaborador(obj.id, obj.funcao);
   closeModal(); renderEquipeBody(); Toast('Colaborador salvo!','sucesso');
+}
+async function sincronizarPerfilColaborador(colabId, novaFuncao){
+  const novoPerfil = perfilDaFuncao(novaFuncao);
+  const vinculados = loadUsers().filter(u=>u.colaborador_id===colabId && u.perfil!==novoPerfil && ['operador','supervisor','analista'].includes(u.perfil));
+  if(!vinculados.length) return;
+  for(const u of vinculados){
+    try{ await rpcT('rpc_user_update',{p_id:u.id,p_nome:u.nome,p_login:u.login,p_cargo:u.cargo,p_perfil:novoPerfil,p_ativo:u.ativo!==false,p_colaborador_id:colabId}); }
+    catch(e){ console.error('sincronizarPerfilColaborador',e.message); }
+  }
+  await refreshUsers();
 }
 function abrirColab(id){
   const c=prod.colaboradores.find(x=>x.id===id); if(!c)return;
@@ -5987,7 +6036,7 @@ const I18N_ZH = {
   'Nova tarefa':'新任务','Tarefa':'任务','Concluída em':'完成于','Marcar concluída':'标记完成',
   'Pendente':'待处理','Concluída':'已完成','Nenhuma tarefa concluída para este colaborador':'该员工没有已完成的任务',
   // Feedback
-  'Novo feedback':'新反馈','Positivo':'正面','A melhorar':'待改进','Geral':'一般','Meu Feedback':'我的反馈',
+  'Novo feedback':'新反馈','Editar Feedback':'编辑反馈','Positivo':'正面','A melhorar':'待改进','Geral':'一般','Meu Feedback':'我的反馈',
   'Nenhum feedback registrado ainda':'暂无反馈记录','Nenhum feedback registrado':'暂无反馈记录',
   // Bonificação Extra
   'Novo lançamento':'新增记录','Tarefa cumprida (proatividade) — +3':'完成任务（主动性）— +3',
@@ -6015,12 +6064,13 @@ const I18N_ZH = {
   'Atualizada diariamente com base nos lançamentos até agora. Ainda não é o ranking oficial — os valores podem mudar até o fechamento mensal.':'每日根据最新记录更新。尚非正式排名——数值可能在月度结算前变动。',
   'Ranking oficial':'正式排名','Prévia — ainda não fechada':'预览 — 尚未结算',
   'Nenhum colaborador ativo com pontuação neste mês.':'本月没有在职员工的积分记录。',
+  'Nenhum colaborador cadastrado nesta categoria':'该类别暂无员工',
   '· Pontos de produção/apontamentos + metas cumpridas + velocidade + frequência (núcleo), comparado ao mínimo da função, mais a Bonificação Extra (tarefas, organização e ideias do Kanban de Sugestões de Melhorias).':'· 生产/记录积分 + 达成目标 + 速度 + 考勤（核心分），与职能最低标准比较，再加上额外奖金（任务、条理性与看板改进建议的想法）。'
 };
 
 (function(){
   if(typeof document==='undefined') return;
-  try{ document.head.insertAdjacentHTML('beforeend','<style>.zh-sub{display:block;font-size:.72em;line-height:1.18;opacity:.65;font-weight:400;letter-spacing:0}</style>'); }catch(e){}
+  try{ document.head.insertAdjacentHTML('beforeend','<style>.zh-sub{display:block;font-size:.72em;line-height:1.18;opacity:.65;font-weight:400;letter-spacing:0}.zh-sub-inline{font-size:.78em;opacity:.7;font-weight:400;margin-left:5px}</style>'); }catch(e){}
 
   function aplicarBilingue(){
     try{
@@ -6038,7 +6088,10 @@ const I18N_ZH = {
         const p=n.parentNode; const t=n.nodeValue.trim(); const zh=I18N_ZH[t];
         if(p.nodeName==='OPTION'){ p.textContent=t+' / '+zh; p.dataset.bi='1'; return; }
         p.dataset.bi='1';
-        const s=document.createElement('span'); s.className='zh-sub'; s.textContent=zh; p.appendChild(s);
+        // Botões ficam com a tradução na mesma linha, para não dobrar de altura
+        // nem estourar a largura do contêiner quando há vários lado a lado.
+        const inline = p.nodeName==='BUTTON' || p.closest('button');
+        const s=document.createElement('span'); s.className=inline?'zh-sub-inline':'zh-sub'; s.textContent=zh; p.appendChild(s);
       });
     }catch(e){}
   }
