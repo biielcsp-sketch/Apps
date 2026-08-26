@@ -1,0 +1,85 @@
+import Link from "next/link";
+import { Plus } from "lucide-react";
+import {
+  listParticipants,
+  listActiveLeadersForSelect,
+  listGroupsForSelect,
+} from "@/lib/services/participants.service";
+import { ParticipantsFilters } from "@/components/participantes/participants-filters";
+import { ParticipantsTable } from "@/components/participantes/participants-table";
+import { computeAttentionAlerts } from "@/lib/services/followup.service";
+import type { Enums } from "@/types/database.types";
+
+type SearchParams = {
+  search?: string;
+  leaderId?: string;
+  region?: string;
+  status?: string;
+  groupId?: string;
+  enrolledFrom?: string;
+  enrolledTo?: string;
+};
+
+export default async function ParticipantesPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const [participants, leaders, groups] = await Promise.all([
+    listParticipants({
+      search: params.search,
+      leaderId: params.leaderId,
+      region: params.region,
+      status: params.status as Enums<"participant_status"> | undefined,
+      groupId: params.groupId,
+      enrolledFrom: params.enrolledFrom,
+      enrolledTo: params.enrolledTo,
+    }),
+    listActiveLeadersForSelect(),
+    listGroupsForSelect(),
+  ]);
+  const alertsMap = await computeAttentionAlerts(
+    participants.map((p) => ({ id: p.id, status: p.status })),
+  );
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Participantes</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{participants.length} encontradas</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/participantes/aguardando-distribuicao"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            Aguardando distribuição
+          </Link>
+          <Link
+            href="/participantes/solicitacoes-exclusao"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            Solicitações de exclusão
+          </Link>
+          <Link
+            href="/participantes/novo"
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
+          >
+            <Plus size={16} />
+            Nova participante
+          </Link>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <ParticipantsFilters variant="admin" leaders={leaders} groups={groups} defaults={params} />
+      </div>
+
+      <div className="mt-4">
+        <ParticipantsTable participants={participants} basePath="/participantes" alertsMap={alertsMap} />
+      </div>
+    </div>
+  );
+}
