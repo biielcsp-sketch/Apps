@@ -17,6 +17,18 @@ export async function listMeetings() {
   return data ?? [];
 }
 
+export async function listGroupMeetings(groupId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("meetings")
+    .select("*")
+    .eq("group_id", groupId)
+    .order("date", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
 export async function getMeeting(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase

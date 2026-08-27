@@ -31,6 +31,20 @@ export const ParticipantPersonalSchema = z.object({
 });
 export type ParticipantPersonalInput = z.infer<typeof ParticipantPersonalSchema>;
 
+// Campos que a própria participante pode alterar no seu autoatendimento.
+// Reforçado pelo trigger guard_participant_self_update no banco — este
+// schema é só a camada de validação/UX, não a barreira de segurança.
+export const ParticipantSelfEditSchema = z.object({
+  phone: z.string().trim().optional().nullable(),
+  whatsapp: z.string().trim().optional().nullable(),
+  address: z.string().trim().optional().nullable(),
+  availability_days: z.array(z.enum(AVAILABILITY_DAYS)).optional().nullable(),
+  availability_period: z.array(z.enum(AVAILABILITY_PERIODS)).optional().nullable(),
+  location_preference: z.string().trim().optional().nullable(),
+  home_meeting_ok: z.boolean().optional(),
+});
+export type ParticipantSelfEditInput = z.infer<typeof ParticipantSelfEditSchema>;
+
 // Campos administrativos — só admin pode enviar/alterar.
 export const ParticipantAdminSchema = z.object({
   admin_notes: z.string().trim().optional().nullable(),

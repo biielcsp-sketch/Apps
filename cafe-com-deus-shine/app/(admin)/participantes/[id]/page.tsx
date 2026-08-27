@@ -17,6 +17,7 @@ import { FollowUpForm } from "@/components/acompanhamento/followup-form";
 import { FollowUpsList } from "@/components/acompanhamento/followups-list";
 import { AttentionBadge } from "@/components/acompanhamento/attention-badge";
 import { listFollowUps, computeAttentionAlerts } from "@/lib/services/followup.service";
+import { CreateAccountForm } from "@/components/participantes/create-account-form";
 
 export default async function ParticipantePage({
   params,
@@ -89,6 +90,19 @@ export default async function ParticipantePage({
             <Info label="Endereço" value={participant.address} />
             <Info label="Data de inscrição" value={new Date(participant.enrollment_date).toLocaleDateString("pt-BR")} />
           </dl>
+        </Card>
+      )}
+
+      {!participant.anonymized_at && (
+        <Card className="p-6">
+          <p className="mb-3 text-sm font-semibold text-foreground">Acesso ao sistema</p>
+          {participant.profile_id ? (
+            <p className="text-sm text-muted-foreground">
+              Acesso ativo — {participant.account?.email ?? "e-mail não encontrado"}
+            </p>
+          ) : (
+            <CreateAccountForm participantId={id} fullName={participant.full_name} />
+          )}
         </Card>
       )}
 

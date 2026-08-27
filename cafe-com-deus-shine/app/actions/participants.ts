@@ -6,12 +6,16 @@ import {
   ParticipantCreateSchema,
   ParticipantPersonalSchema,
   ParticipantAdminSchema,
+  ParticipantSelfEditSchema,
 } from "@/lib/validators/participant.schema";
 import {
   createParticipant,
   updateParticipantPersonal,
   updateParticipantAdminFields,
   changeParticipantStatus,
+  createParticipantAccount,
+  updateMyParticipantProfile,
+  getCurrentParticipant,
 } from "@/lib/services/participants.service";
 import { requestErasure, processErasure } from "@/lib/services/erasure.service";
 import { getCurrentProfile } from "@/lib/services/profiles.service";
@@ -176,4 +180,64 @@ export async function processErasureAction(requestId: string) {
 
   await processErasure(requestId);
   revalidatePath("/participantes/solicitacoes-exclusao");
+}
+
+export async function createParticipantAccountAction(
+  participantId: string,
+  fullName: string,
+  _state: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const profile = await getCurrentProfile();
+  if (profile?.role !== "admin") {
+    return { error: "Apenas administradoras podem criar o acesso da participante." };
+  }
+
+  const email = readOptionalString(formData, "email");
+  if (!email) return { error: "Informe o e-mail da participante." };
+
+  try {
+    await createParticipantAccount(participantId, email, fullName);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Erro ao criar o acesso." };
+  }
+
+  revalidatePath(`/participantes/${participantId}`);
+  return { success: true };
+}
+
+export async function updateMyParticipantProfileAction(
+  _state: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const profile = await getCurrentProfile();
+  if (profile?.role !== "participante") {
+    return { error: "Apenas a própria participante pode editar estes dados." };
+  }
+
+  const participant = await getCurrentParticipant();
+  if (!participant) return { error: "Cadastro de participante não encontrado." };
+
+  const validated = ParticipantSelfEditSchema.safeParse({
+    phone: readOptionalString(formData, "phone"),
+    whatsapp: readOptionalString(formData, "whatsapp"),
+    address: readOptionalString(formData, "address"),
+    availability_days: readArray(formData, "availability_days"),
+    availability_period: readArray(formData, "availability_period"),
+    location_preference: readOptionalString(formData, "location_preference"),
+    home_meeting_ok: formData.get("home_meeting_ok") === "on",
+  });
+
+  if (!validated.success) {
+    return { error: validated.error.issues[0]?.message ?? "Verifique os campos do formulário." };
+  }
+
+  try {
+    await updateMyParticipantProfile(participant.id, validated.data);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Erro ao salvar." };
+  }
+
+  revalidatePath("/minha-jornada");
+  redirect("/minha-jornada");
 }

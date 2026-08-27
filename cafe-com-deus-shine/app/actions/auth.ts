@@ -39,6 +39,9 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
   if (profile?.role === "admin") {
     redirect("/dashboard");
   }
+  if (profile?.role === "participante") {
+    redirect("/minha-jornada");
+  }
   redirect("/inicio");
 }
 

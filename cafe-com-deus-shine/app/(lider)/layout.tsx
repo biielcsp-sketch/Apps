@@ -7,6 +7,7 @@ export default async function LiderLayout({ children }: { children: React.ReactN
 
   if (!profile) redirect("/login");
   if (profile.role === "admin") redirect("/dashboard");
+  if (profile.role === "participante") redirect("/minha-jornada");
 
   return <LiderShell userName={profile.full_name}>{children}</LiderShell>;
 }

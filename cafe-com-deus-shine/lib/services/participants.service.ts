@@ -1,8 +1,13 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/services/audit.service";
 import type { Tables, TablesInsert, Enums } from "@/types/database.types";
-import type { ParticipantCreateInput, ParticipantPersonalInput } from "@/lib/validators/participant.schema";
+import type {
+  ParticipantCreateInput,
+  ParticipantPersonalInput,
+  ParticipantSelfEditInput,
+} from "@/lib/validators/participant.schema";
 
 export type ParticipantRow = Tables<"participants">;
 
@@ -74,7 +79,7 @@ export async function getParticipant(id: string) {
   const { data, error } = await supabase
     .from("participants")
     .select(
-      "*, leader:leaders!participants_current_leader_id_fkey(id, profile:profiles(full_name)), group:groups!participants_current_group_id_fkey(id, name)",
+      "*, leader:leaders!participants_current_leader_id_fkey(id, profile:profiles(full_name)), group:groups!participants_current_group_id_fkey(id, name), account:profiles!participants_profile_id_fkey(email)",
     )
     .eq("id", id)
     .single();
@@ -313,5 +318,74 @@ export async function listGroupsForSelect() {
   const { data, error } = await supabase.from("groups").select("id, name").order("name");
   if (error) throw new Error(error.message);
   return data ?? [];
+}
+
+// ── Acesso próprio da participante ──────────────────────────────────────
+
+// Cria o login da participante (convite por e-mail via Supabase Auth) e
+// vincula o profile criado ao registro já existente em `participants`.
+// Usa service_role — só chame a partir de uma Server Action que já
+// validou que quem está pedindo é admin.
+export async function createParticipantAccount(participantId: string, email: string, fullName: string) {
+  const admin = createAdminClient();
+  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
+    data: { full_name: fullName },
+  });
+  if (inviteError || !invited.user) {
+    throw new Error(inviteError?.message ?? "Não foi possível convidar a participante.");
+  }
+
+  // app_handle_new_user já criou o profile com role 'lider' por padrão;
+  // corrige para 'participante' e vincula ao registro existente.
+  const { error: roleError } = await admin
+    .from("profiles")
+    .update({ role: "participante" })
+    .eq("id", invited.user.id);
+  if (roleError) throw new Error(roleError.message);
+
+  const { error: linkError } = await admin
+    .from("participants")
+    .update({ profile_id: invited.user.id })
+    .eq("id", participantId);
+  if (linkError) throw new Error(linkError.message);
+
+  await logAuditEvent({
+    action: "participant.create_account",
+    entity: "participants",
+    entityId: participantId,
+    after: { email },
+  });
+}
+
+export async function getCurrentParticipant() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("participants")
+    .select(
+      "*, leader:leaders!participants_current_leader_id_fkey(id, profile:profiles(full_name, phone, whatsapp)), group:groups!participants_current_group_id_fkey(id, name, address, meeting_time)",
+    )
+    .eq("profile_id", user.id)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function updateMyParticipantProfile(id: string, input: ParticipantSelfEditInput) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("participants")
+    .update(input)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
 }
 

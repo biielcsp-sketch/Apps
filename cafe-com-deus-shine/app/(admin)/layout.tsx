@@ -6,6 +6,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const profile = await getCurrentProfile();
 
   if (!profile) redirect("/login");
+  if (profile.role === "participante") redirect("/minha-jornada");
   if (profile.role !== "admin") redirect("/inicio");
 
   return <AdminShell userName={profile.full_name}>{children}</AdminShell>;
