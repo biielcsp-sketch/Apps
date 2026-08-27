@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { getGroup } from "@/lib/services/groups.service";
-import { listActiveLeadersForSelect } from "@/lib/services/participants.service";
+import { listActiveLeadersForSelect, listParticipants } from "@/lib/services/participants.service";
 import { GroupForm } from "@/components/grupos/group-form";
+import { ParticipantsTable } from "@/components/participantes/participants-table";
 
 export default async function GrupoPage({
   params,
@@ -10,7 +11,11 @@ export default async function GrupoPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [group, leaders] = await Promise.all([getGroup(id), listActiveLeadersForSelect()]);
+  const [group, leaders, participants] = await Promise.all([
+    getGroup(id),
+    listActiveLeadersForSelect(),
+    listParticipants({ groupId: id }),
+  ]);
   if (!group) notFound();
 
   return (
@@ -19,6 +24,13 @@ export default async function GrupoPage({
       <Card className="mt-4 p-6">
         <GroupForm group={group} leaders={leaders} />
       </Card>
+
+      <div className="mt-6">
+        <p className="mb-3 text-sm font-semibold text-foreground">
+          Participantes do grupo ({participants.length})
+        </p>
+        <ParticipantsTable participants={participants} basePath="/participantes" />
+      </div>
     </div>
   );
 }
