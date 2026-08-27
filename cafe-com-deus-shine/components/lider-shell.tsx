@@ -30,8 +30,8 @@ export function LiderShell({
   return (
     <div className="flex min-h-screen flex-1">
       {/* Sidebar — desktop */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card px-4 py-6 md:flex">
-        <div className="mb-6 px-2">
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-logo-panel px-4 py-6 md:flex">
+        <div className="mb-6 flex justify-center px-2">
           <Image src="/icons/logo-official.png" alt="Café com Deus Shine" width={876} height={866} className="h-14 w-auto" />
         </div>
         <nav className="flex flex-1 flex-col gap-1">

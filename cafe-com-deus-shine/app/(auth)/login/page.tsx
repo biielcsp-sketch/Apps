@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/Card";
 export default function LoginPage() {
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-sm p-8">
+      <Card className="w-full max-w-sm bg-logo-panel p-8">
         <div className="mb-8 flex flex-col items-center text-center">
           <Image
             src="/icons/logo-official.png"

@@ -37,8 +37,8 @@ export function AdminShell({
   return (
     <div className="flex min-h-screen flex-1">
       {/* Sidebar — desktop */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card px-4 py-6 md:flex">
-        <div className="mb-6 px-2">
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-logo-panel px-4 py-6 md:flex">
+        <div className="mb-6 flex justify-center px-2">
           <Image src="/icons/logo-official.png" alt="Café com Deus Shine" width={876} height={866} className="h-14 w-auto" />
         </div>
         <nav className="flex flex-1 flex-col gap-1">
@@ -68,9 +68,9 @@ export function AdminShell({
             className="absolute inset-0 bg-black/40"
             onClick={() => setMenuOpen(false)}
           />
-          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col bg-card px-4 py-6">
+          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col bg-logo-panel px-4 py-6">
             <div className="mb-6 flex items-center justify-between px-2">
-              <Image src="/icons/logo-official.png" alt="Café com Deus Shine" width={876} height={866} className="h-12 w-auto" />
+              <Image src="/icons/logo-official.png" alt="Café com Deus Shine" width={876} height={866} className="mx-auto h-12 w-auto" />
               <button aria-label="Fechar menu" onClick={() => setMenuOpen(false)}>
                 <X size={20} />
               </button>
