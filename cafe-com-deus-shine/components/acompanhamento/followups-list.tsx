@@ -16,11 +16,13 @@ export function FollowUpsList({ followUps }: { followUps: FollowUpRow[] }) {
     <ul className="flex flex-col gap-3">
       {followUps.map((f) => (
         <li key={f.id} className="rounded-lg border border-border p-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-foreground">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <span className="min-w-0 truncate text-sm font-medium text-foreground">
               {new Date(`${f.date}T00:00:00`).toLocaleDateString("pt-BR")} · {FOLLOW_UP_TYPE_LABELS[f.type]}
             </span>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[f.status]}`}>
+            <span
+              className={`self-start rounded-full px-2 py-0.5 text-xs font-medium sm:shrink-0 ${STATUS_BADGE[f.status]}`}
+            >
               {f.status === "normal" ? "Normal" : f.status === "atencao" ? "Atenção" : "Acompanhamento necessário"}
             </span>
           </div>

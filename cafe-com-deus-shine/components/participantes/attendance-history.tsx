@@ -19,11 +19,11 @@ export function AttendanceHistory({
   return (
     <ul className="flex flex-col gap-2">
       {history.map((a) => (
-        <li key={a.id} className="flex items-center justify-between text-sm">
-          <span className="text-foreground">
+        <li key={a.id} className="flex flex-col gap-0.5 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <span className="min-w-0 truncate text-foreground">
             {a.meeting?.title} — {new Date(`${a.meeting?.date}T00:00:00`).toLocaleDateString("pt-BR")}
           </span>
-          <span className="text-muted-foreground">{STATUS_LABELS[a.status]}</span>
+          <span className="shrink-0 text-muted-foreground">{STATUS_LABELS[a.status]}</span>
         </li>
       ))}
     </ul>

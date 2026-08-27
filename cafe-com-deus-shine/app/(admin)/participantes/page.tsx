@@ -8,6 +8,7 @@ import {
 import { ParticipantsFilters } from "@/components/participantes/participants-filters";
 import { ParticipantsTable } from "@/components/participantes/participants-table";
 import { computeAttentionAlerts } from "@/lib/services/followup.service";
+import { PageHeader } from "@/components/ui/PageHeader";
 import type { Enums } from "@/types/database.types";
 
 type SearchParams = {
@@ -45,12 +46,15 @@ export default async function ParticipantesPage({
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Participantes</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{participants.length} encontradas</p>
-        </div>
-        <div className="flex items-center gap-3">
+      <PageHeader title="Participantes" description={`${participants.length} encontradas`}>
+        <Link
+          href="/participantes/novo"
+          className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
+        >
+          <Plus size={16} />
+          Nova participante
+        </Link>
+        <div className="flex items-center justify-center gap-4 sm:gap-3">
           <Link
             href="/participantes/aguardando-distribuicao"
             className="text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -63,15 +67,8 @@ export default async function ParticipantesPage({
           >
             Solicitações de exclusão
           </Link>
-          <Link
-            href="/participantes/novo"
-            className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
-          >
-            <Plus size={16} />
-            Nova participante
-          </Link>
         </div>
-      </div>
+      </PageHeader>
 
       <div className="mt-4">
         <ParticipantsFilters variant="admin" leaders={leaders} groups={groups} defaults={params} />

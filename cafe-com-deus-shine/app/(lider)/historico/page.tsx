@@ -44,10 +44,10 @@ export default async function HistoricoPage() {
           <Link
             key={h.id}
             href={`/minhas-participantes/${h.participant?.id}`}
-            className="flex items-center justify-between rounded-xl border border-border bg-card p-4 hover:bg-muted"
+            className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4 hover:bg-muted"
           >
-            <p className="text-sm font-medium text-foreground">{h.participant?.full_name}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="min-w-0 truncate text-sm font-medium text-foreground">{h.participant?.full_name}</p>
+            <p className="shrink-0 text-xs text-muted-foreground">
               {new Date(h.start_date).toLocaleDateString("pt-BR")} —{" "}
               {h.end_date ? new Date(h.end_date).toLocaleDateString("pt-BR") : "atual"}
             </p>

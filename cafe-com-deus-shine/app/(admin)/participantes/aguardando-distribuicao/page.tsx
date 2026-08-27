@@ -20,15 +20,15 @@ export default async function AguardandoDistribuicaoPage() {
           <Link
             key={p.id}
             href={`/participantes/aguardando-distribuicao/${p.id}`}
-            className="flex items-center justify-between rounded-xl border border-border bg-card p-4 hover:bg-muted"
+            className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4 hover:bg-muted"
           >
-            <div>
-              <p className="text-sm font-medium text-foreground">{p.full_name}</p>
-              <p className="text-xs text-muted-foreground">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-foreground">{p.full_name}</p>
+              <p className="truncate text-xs text-muted-foreground">
                 {[p.city, p.neighborhood].filter(Boolean).join(" / ") || "Localização não informada"}
               </p>
             </div>
-            <span className="text-xs text-muted-foreground">
+            <span className="shrink-0 text-right text-xs text-muted-foreground">
               Inscrita em {new Date(p.enrollment_date).toLocaleDateString("pt-BR")}
             </span>
           </Link>
