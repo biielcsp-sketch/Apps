@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import {
   ParticipantCreateSchema,
   ParticipantPersonalSchema,
@@ -21,7 +22,9 @@ import { requestErasure, processErasure } from "@/lib/services/erasure.service";
 import { getCurrentProfile } from "@/lib/services/profiles.service";
 import type { Enums } from "@/types/database.types";
 
-export type FormActionState = { error?: string; success?: boolean } | undefined;
+export type FormActionState =
+  | { error?: string; success?: boolean; inviteLink?: string }
+  | undefined;
 
 function readArray(formData: FormData, key: string) {
   const values = formData.getAll(key).map(String).filter(Boolean);
@@ -196,14 +199,20 @@ export async function createParticipantAccountAction(
   const email = readOptionalString(formData, "email");
   if (!email) return { error: "Informe o e-mail da participante." };
 
+  const headersList = await headers();
+  const host = headersList.get("host");
+  const protocol = host?.startsWith("localhost") ? "http" : "https";
+  const redirectTo = `${protocol}://${host}/definir-senha`;
+
+  let inviteLink: string;
   try {
-    await createParticipantAccount(participantId, email, fullName);
+    inviteLink = await createParticipantAccount(participantId, email, fullName, redirectTo);
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Erro ao criar o acesso." };
   }
 
   revalidatePath(`/participantes/${participantId}`);
-  return { success: true };
+  return { success: true, inviteLink };
 }
 
 export async function updateMyParticipantProfileAction(

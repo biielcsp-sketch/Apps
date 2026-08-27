@@ -322,17 +322,25 @@ export async function listGroupsForSelect() {
 
 // ── Acesso próprio da participante ──────────────────────────────────────
 
-// Cria o login da participante (convite por e-mail via Supabase Auth) e
-// vincula o profile criado ao registro já existente em `participants`.
-// Usa service_role — só chame a partir de uma Server Action que já
-// validou que quem está pedindo é admin.
-export async function createParticipantAccount(participantId: string, email: string, fullName: string) {
+// Gera o link de convite da participante (sem depender do envio de
+// e-mail automático do Supabase — a admin copia e manda pelo canal que
+// quiser, ex.: WhatsApp) e vincula o profile criado ao registro já
+// existente em `participants`. Usa service_role — só chame a partir de
+// uma Server Action que já validou que quem está pedindo é admin.
+export async function createParticipantAccount(
+  participantId: string,
+  email: string,
+  fullName: string,
+  redirectTo: string,
+) {
   const admin = createAdminClient();
-  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: { full_name: fullName },
+  const { data, error: inviteError } = await admin.auth.admin.generateLink({
+    type: "invite",
+    email,
+    options: { data: { full_name: fullName }, redirectTo },
   });
-  if (inviteError || !invited.user) {
-    throw new Error(inviteError?.message ?? "Não foi possível convidar a participante.");
+  if (inviteError || !data.user) {
+    throw new Error(inviteError?.message ?? "Não foi possível gerar o link de convite.");
   }
 
   // app_handle_new_user já criou o profile com role 'lider' por padrão;
@@ -340,12 +348,12 @@ export async function createParticipantAccount(participantId: string, email: str
   const { error: roleError } = await admin
     .from("profiles")
     .update({ role: "participante" })
-    .eq("id", invited.user.id);
+    .eq("id", data.user.id);
   if (roleError) throw new Error(roleError.message);
 
   const { error: linkError } = await admin
     .from("participants")
-    .update({ profile_id: invited.user.id })
+    .update({ profile_id: data.user.id })
     .eq("id", participantId);
   if (linkError) throw new Error(linkError.message);
 
@@ -355,6 +363,8 @@ export async function createParticipantAccount(participantId: string, email: str
     entityId: participantId,
     after: { email },
   });
+
+  return data.properties.action_link;
 }
 
 export async function getCurrentParticipant() {

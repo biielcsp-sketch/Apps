@@ -1,0 +1,24 @@
+import Image from "next/image";
+import { SetPasswordForm } from "@/components/set-password-form";
+import { Card } from "@/components/ui/Card";
+
+export default function DefinirSenhaPage() {
+  return (
+    <div className="flex flex-1 items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-sm bg-logo-panel p-8">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <Image
+            src="/icons/logo-official.png"
+            alt="Café com Deus Shine"
+            width={876}
+            height={866}
+            className="h-40 w-auto"
+            priority
+          />
+          <p className="mt-3 text-sm text-muted-foreground">Defina sua senha para acessar</p>
+        </div>
+        <SetPasswordForm />
+      </Card>
+    </div>
+  );
+}
