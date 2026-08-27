@@ -57,7 +57,6 @@ export async function createParticipantAction(
     enrollment_source: readOptionalString(formData, "enrollment_source"),
     current_leader_id: readOptionalString(formData, "current_leader_id"),
     consent_accepted: formData.get("consent_accepted") === "on",
-    consent_method: formData.get("consent_method"),
   });
 
   if (!validated.success) {

@@ -12,12 +12,6 @@ export const AVAILABILITY_DAYS = [
 
 export const AVAILABILITY_PERIODS = ["manha", "tarde", "noite"] as const;
 
-export const CONSENT_METHODS = [
-  "formulario_presencial",
-  "autocadastro",
-  "termo_assinado",
-] as const;
-
 // Campos que tanto admin quanto líder (dentro do seu vínculo) podem editar.
 export const ParticipantPersonalSchema = z.object({
   full_name: z.string().trim().min(2, { error: "Informe o nome completo." }),
@@ -47,9 +41,8 @@ export type ParticipantAdminInput = z.infer<typeof ParticipantAdminSchema>;
 
 export const ConsentSchema = z.object({
   consent_accepted: z.literal(true, {
-    error: "É necessário aceitar o termo para cadastrar a participante.",
+    error: "É necessário marcar que a participante concordou em ser contatada.",
   }),
-  consent_method: z.enum(CONSENT_METHODS, { error: "Selecione como o consentimento foi obtido." }),
 });
 export type ConsentInput = z.infer<typeof ConsentSchema>;
 
@@ -72,10 +65,4 @@ export const AVAILABILITY_PERIOD_LABELS: Record<(typeof AVAILABILITY_PERIODS)[nu
   manha: "Manhã",
   tarde: "Tarde",
   noite: "Noite",
-};
-
-export const CONSENT_METHOD_LABELS: Record<(typeof CONSENT_METHODS)[number], string> = {
-  formulario_presencial: "Formulário presencial",
-  autocadastro: "Autocadastro",
-  termo_assinado: "Termo assinado",
 };

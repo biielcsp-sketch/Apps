@@ -148,7 +148,6 @@ export async function createParticipant(input: ParticipantCreateInput) {
 
   const {
     consent_accepted,
-    consent_method,
     availability_days,
     availability_period,
     email,
@@ -162,7 +161,6 @@ export async function createParticipant(input: ParticipantCreateInput) {
     availability_period: availability_period ?? null,
     status: "nova_inscricao",
     consent_accepted_at: consent_accepted ? new Date().toISOString() : null,
-    consent_method,
   };
 
   // consent_version referencia a versão vigente do termo no momento do cadastro
