@@ -17,7 +17,7 @@ import { FollowUpForm } from "@/components/acompanhamento/followup-form";
 import { FollowUpsList } from "@/components/acompanhamento/followups-list";
 import { AttentionBadge } from "@/components/acompanhamento/attention-badge";
 import { listFollowUps, computeAttentionAlerts } from "@/lib/services/followup.service";
-import { CreateAccountForm } from "@/components/participantes/create-account-form";
+import { CopySignupLink } from "@/components/participantes/copy-signup-link";
 
 export default async function ParticipantePage({
   params,
@@ -100,8 +100,22 @@ export default async function ParticipantePage({
             <p className="text-sm text-muted-foreground">
               Acesso ativo — {participant.account?.email ?? "e-mail não encontrado"}
             </p>
+          ) : participant.email ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-muted-foreground">
+                Ela ainda não tem acesso. Peça para acessar o link abaixo e criar a própria senha
+                usando o e-mail cadastrado: <span className="font-medium text-foreground">{participant.email}</span>.
+              </p>
+              <CopySignupLink />
+            </div>
           ) : (
-            <CreateAccountForm participantId={id} fullName={participant.full_name} />
+            <p className="text-sm text-muted-foreground">
+              Esta participante não tem e-mail cadastrado.{" "}
+              <Link href={`/participantes/${id}/editar`} className="font-medium text-primary">
+                Adicione um e-mail
+              </Link>{" "}
+              antes de pedir para ela criar o acesso.
+            </p>
           )}
         </Card>
       )}

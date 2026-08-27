@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { z } from "zod";
 import {
   ParticipantCreateSchema,
   ParticipantPersonalSchema,
@@ -14,17 +14,16 @@ import {
   updateParticipantPersonal,
   updateParticipantAdminFields,
   changeParticipantStatus,
-  createParticipantAccount,
+  claimParticipantAccount,
   updateMyParticipantProfile,
   getCurrentParticipant,
 } from "@/lib/services/participants.service";
 import { requestErasure, processErasure } from "@/lib/services/erasure.service";
 import { getCurrentProfile } from "@/lib/services/profiles.service";
+import { createClient } from "@/lib/supabase/server";
 import type { Enums } from "@/types/database.types";
 
-export type FormActionState =
-  | { error?: string; success?: boolean; inviteLink?: string }
-  | undefined;
+export type FormActionState = { error?: string; success?: boolean } | undefined;
 
 function readArray(formData: FormData, key: string) {
   const values = formData.getAll(key).map(String).filter(Boolean);
@@ -185,34 +184,49 @@ export async function processErasureAction(requestId: string) {
   revalidatePath("/participantes/solicitacoes-exclusao");
 }
 
-export async function createParticipantAccountAction(
-  participantId: string,
-  fullName: string,
+const ClaimAccountSchema = z
+  .object({
+    email: z.email({ error: "Informe um e-mail válido." }),
+    password: z.string().min(6, { error: "A senha precisa ter pelo menos 6 caracteres." }),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    error: "As senhas não coincidem.",
+    path: ["confirmPassword"],
+  });
+
+// A própria participante cria o acesso informando o e-mail que já está
+// no cadastro dela. Não exige estar logada nem ser admin — é assim que
+// ela ganha o primeiro acesso.
+export async function claimParticipantAccountAction(
   _state: FormActionState,
   formData: FormData,
 ): Promise<FormActionState> {
-  const profile = await getCurrentProfile();
-  if (profile?.role !== "admin") {
-    return { error: "Apenas administradoras podem criar o acesso da participante." };
+  const validated = ClaimAccountSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+
+  if (!validated.success) {
+    return { error: validated.error.issues[0]?.message ?? "Verifique os campos do formulário." };
   }
 
-  const email = readOptionalString(formData, "email");
-  if (!email) return { error: "Informe o e-mail da participante." };
+  const { email, password } = validated.data;
 
-  const headersList = await headers();
-  const host = headersList.get("host");
-  const protocol = host?.startsWith("localhost") ? "http" : "https";
-  const redirectTo = `${protocol}://${host}/definir-senha`;
-
-  let inviteLink: string;
   try {
-    inviteLink = await createParticipantAccount(participantId, email, fullName, redirectTo);
+    await claimParticipantAccount(email, password);
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Erro ao criar o acesso." };
   }
 
-  revalidatePath(`/participantes/${participantId}`);
-  return { success: true, inviteLink };
+  const supabase = await createClient();
+  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+  if (signInError) {
+    redirect("/login");
+  }
+
+  redirect("/minha-jornada");
 }
 
 export async function updateMyParticipantProfileAction(

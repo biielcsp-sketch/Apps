@@ -322,25 +322,41 @@ export async function listGroupsForSelect() {
 
 // ── Acesso próprio da participante ──────────────────────────────────────
 
-// Gera o link de convite da participante (sem depender do envio de
-// e-mail automático do Supabase — a admin copia e manda pelo canal que
-// quiser, ex.: WhatsApp) e vincula o profile criado ao registro já
-// existente em `participants`. Usa service_role — só chame a partir de
-// uma Server Action que já validou que quem está pedindo é admin.
-export async function createParticipantAccount(
-  participantId: string,
-  email: string,
-  fullName: string,
-  redirectTo: string,
-) {
+// A própria participante cria o acesso: informa o e-mail que já está no
+// cadastro dela (feito pela admin/líder no momento da inscrição) e uma
+// senha à sua escolha. O e-mail é o elo que garante que só quem tem um
+// cadastro de participante existente consegue criar login — por isso a
+// busca abaixo, não um formulário onde a admin digita o e-mail por ela.
+// Usa service_role — só chame a partir de uma Server Action pública que
+// não pede papel nenhum (é a própria participante, ainda sem login).
+export async function claimParticipantAccount(email: string, password: string) {
   const admin = createAdminClient();
-  const { data, error: inviteError } = await admin.auth.admin.generateLink({
-    type: "invite",
+
+  const { data: participant, error: findError } = await admin
+    .from("participants")
+    .select("id, full_name, profile_id")
+    .ilike("email", email)
+    .is("deleted_at", null)
+    .is("anonymized_at", null)
+    .maybeSingle();
+  if (findError) throw new Error(findError.message);
+  if (!participant) {
+    throw new Error(
+      "Não encontramos esse e-mail no nosso cadastro. Confirme com sua líder se o e-mail está certo.",
+    );
+  }
+  if (participant.profile_id) {
+    throw new Error("Este e-mail já tem acesso criado. Faça login normalmente.");
+  }
+
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
     email,
-    options: { data: { full_name: fullName }, redirectTo },
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: participant.full_name },
   });
-  if (inviteError || !data.user) {
-    throw new Error(inviteError?.message ?? "Não foi possível gerar o link de convite.");
+  if (createError || !created.user) {
+    throw new Error(createError?.message ?? "Não foi possível criar o acesso.");
   }
 
   // app_handle_new_user já criou o profile com role 'lider' por padrão;
@@ -348,23 +364,21 @@ export async function createParticipantAccount(
   const { error: roleError } = await admin
     .from("profiles")
     .update({ role: "participante" })
-    .eq("id", data.user.id);
+    .eq("id", created.user.id);
   if (roleError) throw new Error(roleError.message);
 
   const { error: linkError } = await admin
     .from("participants")
-    .update({ profile_id: data.user.id })
-    .eq("id", participantId);
+    .update({ profile_id: created.user.id })
+    .eq("id", participant.id);
   if (linkError) throw new Error(linkError.message);
 
   await logAuditEvent({
     action: "participant.create_account",
     entity: "participants",
-    entityId: participantId,
+    entityId: participant.id,
     after: { email },
   });
-
-  return data.properties.action_link;
 }
 
 export async function getCurrentParticipant() {
