@@ -98,11 +98,11 @@ export function AdminShell({
 
       <div className="flex flex-1 flex-col">
         {/* Top bar — mobile */}
-        <header className="flex items-center justify-between border-b border-border bg-card px-4 py-3 md:hidden">
-          <Image src="/icons/logo-official.png" alt="Café com Deus Shine" width={876} height={866} className="h-10 w-auto" />
+        <header className="flex items-center gap-3 border-b border-border bg-logo-panel px-4 py-3 md:hidden">
           <button aria-label="Abrir menu" onClick={() => setMenuOpen(true)}>
             <Menu size={22} />
           </button>
+          <Image src="/icons/logo-official.png" alt="Café com Deus Shine" width={876} height={866} className="h-10 w-auto" />
         </header>
 
         <main className="flex-1 p-4 md:p-8">{children}</main>

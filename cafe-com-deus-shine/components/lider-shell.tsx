@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import {
   Home,
@@ -7,6 +8,8 @@ import {
   CalendarDays,
   HeartHandshake,
   History,
+  Menu,
+  X,
   LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/nav-link";
@@ -27,6 +30,8 @@ export function LiderShell({
   userName: string;
   children: React.ReactNode;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <div className="flex min-h-screen flex-1">
       {/* Sidebar — desktop */}
@@ -53,25 +58,52 @@ export function LiderShell({
         </div>
       </aside>
 
+      {/* Drawer — mobile */}
+      {menuOpen && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <button
+            aria-label="Fechar menu"
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setMenuOpen(false)}
+          />
+          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col bg-logo-panel px-4 py-6">
+            <div className="mb-6 flex items-center justify-between px-2">
+              <Image src="/icons/logo-official.png" alt="Café com Deus Shine" width={876} height={866} className="mx-auto h-12 w-auto" />
+              <button aria-label="Fechar menu" onClick={() => setMenuOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <nav className="flex flex-1 flex-col gap-1">
+              {NAV_ITEMS.map((item) => (
+                <NavLink key={item.href} {...item} onNavigate={() => setMenuOpen(false)} />
+              ))}
+            </nav>
+            <div className="mt-4 border-t border-border pt-4">
+              <p className="truncate px-2 text-sm text-muted-foreground">{userName}</p>
+              <form action={logout}>
+                <button
+                  type="submit"
+                  className="mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted"
+                >
+                  <LogOut size={18} />
+                  Sair
+                </button>
+              </form>
+            </div>
+          </aside>
+        </div>
+      )}
+
       <div className="flex flex-1 flex-col">
         {/* Top bar — mobile */}
-        <header className="flex items-center justify-between border-b border-border bg-card px-4 py-3 md:hidden">
-          <p className="text-base font-semibold text-foreground">Olá, {userName.split(" ")[0]} 🌷</p>
-          <form action={logout}>
-            <button aria-label="Sair" type="submit" className="text-muted-foreground">
-              <LogOut size={20} />
-            </button>
-          </form>
+        <header className="flex items-center gap-3 border-b border-border bg-logo-panel px-4 py-3 md:hidden">
+          <button aria-label="Abrir menu" onClick={() => setMenuOpen(true)}>
+            <Menu size={22} />
+          </button>
+          <Image src="/icons/logo-official.png" alt="Café com Deus Shine" width={876} height={866} className="h-10 w-auto" />
         </header>
 
-        <main className="flex-1 p-4 pb-20 md:p-8 md:pb-8">{children}</main>
-
-        {/* Tab bar — mobile */}
-        <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-card md:hidden">
-          {NAV_ITEMS.map((item) => (
-            <NavLink key={item.href} {...item} variant="tab" />
-          ))}
-        </nav>
+        <main className="flex-1 p-4 md:p-8">{children}</main>
       </div>
     </div>
   );
