@@ -96,11 +96,18 @@ export function LiderShell({
 
       <div className="flex flex-1 flex-col">
         {/* Top bar — mobile */}
-        <header className="flex items-center gap-3 border-b border-border bg-logo-panel px-4 py-3 md:hidden">
-          <button aria-label="Abrir menu" onClick={() => setMenuOpen(true)}>
+        <header className="relative flex items-center border-b border-border bg-logo-panel px-4 py-3 md:hidden">
+          <button aria-label="Abrir menu" onClick={() => setMenuOpen(true)} className="relative z-10">
             <Menu size={22} />
           </button>
-          <Image src="/icons/logo-official.png" alt="Café com Deus Shine" width={876} height={866} className="h-10 w-auto" />
+          <Image
+            src="/icons/logo-header-mobile.png"
+            alt="Café com Deus Shine"
+            width={1702}
+            height={630}
+            className="absolute left-1/2 h-12 w-auto -translate-x-1/2"
+            priority
+          />
         </header>
 
         <main className="flex-1 p-4 md:p-8">{children}</main>
