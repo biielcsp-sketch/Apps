@@ -31,9 +31,8 @@ export function LiderShell({
     <div className="flex min-h-screen flex-1">
       {/* Sidebar — desktop */}
       <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card px-4 py-6 md:flex">
-        <div className="mb-6 flex items-center gap-2 px-2">
-          <Image src="/icons/icon-192.png" alt="" width={28} height={28} className="rounded-lg" />
-          <p className="text-lg font-semibold text-foreground">Café com Deus Shine</p>
+        <div className="mb-6 px-2">
+          <Image src="/icons/logo-official.png" alt="Café com Deus Shine" width={876} height={866} className="h-14 w-auto" />
         </div>
         <nav className="flex flex-1 flex-col gap-1">
           {NAV_ITEMS.map((item) => (
@@ -57,10 +56,7 @@ export function LiderShell({
       <div className="flex flex-1 flex-col">
         {/* Top bar — mobile */}
         <header className="flex items-center justify-between border-b border-border bg-card px-4 py-3 md:hidden">
-          <div className="flex items-center gap-2">
-            <Image src="/icons/icon-192.png" alt="" width={24} height={24} className="rounded-lg" />
-            <p className="text-base font-semibold text-foreground">Olá, {userName.split(" ")[0]}</p>
-          </div>
+          <p className="text-base font-semibold text-foreground">Olá, {userName.split(" ")[0]} 🌷</p>
           <form action={logout}>
             <button aria-label="Sair" type="submit" className="text-muted-foreground">
               <LogOut size={20} />

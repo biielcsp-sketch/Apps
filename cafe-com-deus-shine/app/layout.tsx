@@ -40,6 +40,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center opacity-[0.06]"
+          style={{ backgroundImage: "url(/background.jpg)" }}
+        />
         {children}
         <InstallPrompt />
         <ServiceWorkerRegister />

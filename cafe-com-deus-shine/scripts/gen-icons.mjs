@@ -2,7 +2,7 @@ import sharp from "sharp";
 import { mkdirSync } from "fs";
 import { fileURLToPath } from "url";
 
-const src = fileURLToPath(new URL("../public/icons/logo-original.png", import.meta.url));
+const src = fileURLToPath(new URL("../public/icons/logo-official.png", import.meta.url));
 const outDirUrl = new URL("../public/icons/", import.meta.url);
 const outDir = fileURLToPath(outDirUrl);
 mkdirSync(outDir, { recursive: true });

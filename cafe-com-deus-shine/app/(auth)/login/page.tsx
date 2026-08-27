@@ -8,15 +8,14 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm p-8">
         <div className="mb-8 flex flex-col items-center text-center">
           <Image
-            src="/icons/icon-512.png"
-            alt="Café com Deus"
-            width={72}
-            height={72}
-            className="rounded-2xl"
+            src="/icons/logo-official.png"
+            alt="Café com Deus Shine"
+            width={876}
+            height={866}
+            className="h-40 w-auto"
             priority
           />
-          <h1 className="mt-3 text-xl font-semibold text-foreground">Café com Deus</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
+          <p className="mt-3 text-sm text-muted-foreground">
             Entre com sua conta para continuar
           </p>
         </div>
