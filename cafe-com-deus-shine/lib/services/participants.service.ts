@@ -288,6 +288,28 @@ export async function listActiveLeadersForSelect() {
   return (data ?? []).map((l) => ({ id: l.id, full_name: l.profile?.full_name ?? "" }));
 }
 
+// Histórico de vínculos da líder atual (participantes que são ou já foram
+// dela) — usado na tela "Histórico" do perfil da líder.
+export async function getLeaderAssignmentHistory(leaderId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("participant_leader_history")
+    .select("id, start_date, end_date, reason, participant:participants(id, full_name, anonymized_at)")
+    .eq("leader_id", leaderId)
+    .order("start_date", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => ({
+    ...row,
+    participant: row.participant
+      ? {
+          id: row.participant.id,
+          full_name: row.participant.anonymized_at ? "Participante removida (LGPD)" : row.participant.full_name,
+        }
+      : null,
+  }));
+}
+
 export async function listGroupsForSelect() {
   const supabase = await createClient();
   const { data, error } = await supabase.from("groups").select("id, name").order("name");

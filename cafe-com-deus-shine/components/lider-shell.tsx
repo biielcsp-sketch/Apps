@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   Home,
   Users,
@@ -15,7 +16,7 @@ const NAV_ITEMS = [
   { href: "/inicio", label: "Início", icon: Home },
   { href: "/minhas-participantes", label: "Participantes", icon: Users },
   { href: "/meus-encontros", label: "Encontros", icon: CalendarDays },
-  { href: "/acompanhamentos", label: "Acompanhar", icon: HeartHandshake },
+  { href: "/meus-acompanhamentos", label: "Acompanhar", icon: HeartHandshake },
   { href: "/historico", label: "Histórico", icon: History },
 ];
 
@@ -30,7 +31,10 @@ export function LiderShell({
     <div className="flex min-h-screen flex-1">
       {/* Sidebar — desktop */}
       <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card px-4 py-6 md:flex">
-        <p className="mb-6 px-2 text-lg font-semibold text-foreground">Café com Deus Shine</p>
+        <div className="mb-6 flex items-center gap-2 px-2">
+          <Image src="/icons/icon-192.png" alt="" width={28} height={28} className="rounded-lg" />
+          <p className="text-lg font-semibold text-foreground">Café com Deus Shine</p>
+        </div>
         <nav className="flex flex-1 flex-col gap-1">
           {NAV_ITEMS.map((item) => (
             <NavLink key={item.href} {...item} />
@@ -53,7 +57,10 @@ export function LiderShell({
       <div className="flex flex-1 flex-col">
         {/* Top bar — mobile */}
         <header className="flex items-center justify-between border-b border-border bg-card px-4 py-3 md:hidden">
-          <p className="text-base font-semibold text-foreground">Olá, {userName.split(" ")[0]}</p>
+          <div className="flex items-center gap-2">
+            <Image src="/icons/icon-192.png" alt="" width={24} height={24} className="rounded-lg" />
+            <p className="text-base font-semibold text-foreground">Olá, {userName.split(" ")[0]}</p>
+          </div>
           <form action={logout}>
             <button aria-label="Sair" type="submit" className="text-muted-foreground">
               <LogOut size={20} />
