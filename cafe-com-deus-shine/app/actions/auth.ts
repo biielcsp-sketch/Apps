@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminRole } from "@/lib/services/profiles.service";
+import { checkLoginRateLimit } from "@/lib/rate-limit";
 
 const LoginSchema = z.object({
   email: z.email({ error: "Informe um e-mail válido." }),
@@ -22,6 +23,11 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
 
   if (!validated.success) {
     return { error: "Verifique o e-mail e a senha informados." };
+  }
+
+  const allowed = await checkLoginRateLimit(validated.data.email);
+  if (!allowed) {
+    return { error: "Muitas tentativas de login. Aguarde alguns minutos e tente novamente." };
   }
 
   const supabase = await createClient();

@@ -768,11 +768,42 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_events: {
+        Row: {
+          created_at: string
+          id: number
+          key: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          key: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          key?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      app_check_claim_account_rate_limit: {
+        Args: { p_key: string }
+        Returns: boolean
+      }
+      app_check_erasure_rate_limit: {
+        Args: { p_key: string }
+        Returns: boolean
+      }
+      app_check_login_rate_limit: { Args: { p_key: string }; Returns: boolean }
+      app_check_participant_write_rate_limit: {
+        Args: { p_key: string }
+        Returns: boolean
+      }
       app_current_leader_id: { Args: never; Returns: string }
       app_current_participant_id: { Args: never; Returns: string }
       app_is_admin: { Args: never; Returns: boolean }
@@ -789,6 +820,10 @@ export type Database = {
           p_entity_id: string
         }
         Returns: undefined
+      }
+      app_rate_limit_hit: {
+        Args: { p_key: string; p_max: number; p_window_seconds: number }
+        Returns: boolean
       }
     }
     Enums: {

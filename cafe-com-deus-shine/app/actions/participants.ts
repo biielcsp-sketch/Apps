@@ -21,6 +21,11 @@ import {
 import { requestErasure, processErasure } from "@/lib/services/erasure.service";
 import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
 import { createClient } from "@/lib/supabase/server";
+import {
+  checkClaimAccountRateLimit,
+  checkErasureRateLimit,
+  checkParticipantWriteRateLimit,
+} from "@/lib/rate-limit";
 import type { Enums } from "@/types/database.types";
 
 export type FormActionState = { error?: string; success?: boolean } | undefined;
@@ -42,6 +47,11 @@ export async function createParticipantAction(
   const profile = await getCurrentProfile();
   if (!isAdminRole(profile?.role)) {
     return { error: "Apenas administradoras podem cadastrar participantes." };
+  }
+
+  const allowed = await checkParticipantWriteRateLimit(profile!.id);
+  if (!allowed) {
+    return { error: "Muitas alterações em pouco tempo. Aguarde um minuto e tente novamente." };
   }
 
   const validated = ParticipantCreateSchema.safeParse({
@@ -86,6 +96,14 @@ export async function updateParticipantPersonalAction(
   _state: FormActionState,
   formData: FormData,
 ): Promise<FormActionState> {
+  const profile = await getCurrentProfile();
+  if (!profile) return { error: "Sessão expirada. Faça login novamente." };
+
+  const allowed = await checkParticipantWriteRateLimit(profile.id);
+  if (!allowed) {
+    return { error: "Muitas alterações em pouco tempo. Aguarde um minuto e tente novamente." };
+  }
+
   const validated = ParticipantPersonalSchema.safeParse({
     full_name: formData.get("full_name"),
     preferred_name: readOptionalString(formData, "preferred_name"),
@@ -127,6 +145,11 @@ export async function updateParticipantAdminAction(
     return { error: "Apenas administradoras podem editar estes campos." };
   }
 
+  const allowed = await checkParticipantWriteRateLimit(profile!.id);
+  if (!allowed) {
+    return { error: "Muitas alterações em pouco tempo. Aguarde um minuto e tente novamente." };
+  }
+
   const validated = ParticipantAdminSchema.pick({ admin_notes: true, enrollment_source: true }).safeParse({
     admin_notes: readOptionalString(formData, "admin_notes"),
     enrollment_source: readOptionalString(formData, "enrollment_source"),
@@ -165,6 +188,14 @@ export async function requestErasureAction(
 ): Promise<FormActionState> {
   const reason = readOptionalString(formData, "reason");
   if (!reason) return { error: "Informe o motivo da solicitação." };
+
+  const profile = await getCurrentProfile();
+  if (!profile) return { error: "Sessão expirada. Faça login novamente." };
+
+  const allowed = await checkErasureRateLimit(profile.id);
+  if (!allowed) {
+    return { error: "Muitas solicitações de exclusão em pouco tempo. Aguarde e tente novamente." };
+  }
 
   try {
     await requestErasure(participantId, reason);
@@ -213,6 +244,11 @@ export async function claimParticipantAccountAction(
   }
 
   const { email, password } = validated.data;
+
+  const allowed = await checkClaimAccountRateLimit(email);
+  if (!allowed) {
+    return { error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." };
+  }
 
   try {
     await claimParticipantAccount(email, password);
