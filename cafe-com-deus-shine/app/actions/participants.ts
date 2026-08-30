@@ -19,7 +19,7 @@ import {
   getCurrentParticipant,
 } from "@/lib/services/participants.service";
 import { requestErasure, processErasure } from "@/lib/services/erasure.service";
-import { getCurrentProfile } from "@/lib/services/profiles.service";
+import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
 import { createClient } from "@/lib/supabase/server";
 import type { Enums } from "@/types/database.types";
 
@@ -40,7 +40,7 @@ export async function createParticipantAction(
   formData: FormData,
 ): Promise<FormActionState> {
   const profile = await getCurrentProfile();
-  if (profile?.role !== "admin") {
+  if (!isAdminRole(profile?.role)) {
     return { error: "Apenas administradoras podem cadastrar participantes." };
   }
 
@@ -123,7 +123,7 @@ export async function updateParticipantAdminAction(
   formData: FormData,
 ): Promise<FormActionState> {
   const profile = await getCurrentProfile();
-  if (profile?.role !== "admin") {
+  if (!isAdminRole(profile?.role)) {
     return { error: "Apenas administradoras podem editar estes campos." };
   }
 
@@ -147,7 +147,7 @@ export async function updateParticipantAdminAction(
 
 export async function changeParticipantStatusAction(id: string, formData: FormData) {
   const profile = await getCurrentProfile();
-  if (profile?.role !== "admin") throw new Error("Apenas administradoras podem alterar o status.");
+  if (!isAdminRole(profile?.role)) throw new Error("Apenas administradoras podem alterar o status.");
 
   const status = formData.get("status") as Enums<"participant_status"> | null;
   const note = readOptionalString(formData, "note") ?? null;
@@ -178,7 +178,7 @@ export async function requestErasureAction(
 
 export async function processErasureAction(requestId: string) {
   const profile = await getCurrentProfile();
-  if (profile?.role !== "admin") throw new Error("Apenas administradoras podem processar exclusões.");
+  if (!isAdminRole(profile?.role)) throw new Error("Apenas administradoras podem processar exclusões.");
 
   await processErasure(requestId);
   revalidatePath("/participantes/solicitacoes-exclusao");

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { LeaderCreateSchema, LeaderUpdateSchema } from "@/lib/validators/leader.schema";
 import { createLeaderAccount, updateLeader, setLeaderStatus } from "@/lib/services/leaders.service";
-import { getCurrentProfile } from "@/lib/services/profiles.service";
+import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
 import type { FormActionState } from "@/app/actions/participants";
 
 function readOptionalString(formData: FormData, key: string) {
@@ -17,7 +17,7 @@ export async function createLeaderAction(
   formData: FormData,
 ): Promise<FormActionState> {
   const profile = await getCurrentProfile();
-  if (profile?.role !== "admin") return { error: "Apenas administradoras podem cadastrar líderes." };
+  if (!isAdminRole(profile?.role)) return { error: "Apenas administradoras podem cadastrar líderes." };
 
   const validated = LeaderCreateSchema.safeParse({
     full_name: formData.get("full_name"),
@@ -76,7 +76,7 @@ export async function updateLeaderAction(
 
 export async function toggleLeaderStatusAction(id: string, currentStatus: "ativa" | "inativa") {
   const profile = await getCurrentProfile();
-  if (profile?.role !== "admin") throw new Error("Apenas administradoras podem inativar líderes.");
+  if (!isAdminRole(profile?.role)) throw new Error("Apenas administradoras podem inativar líderes.");
 
   await setLeaderStatus(id, currentStatus === "ativa" ? "inativa" : "ativa");
   revalidatePath("/liderancas");

@@ -4,11 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { confirmDistribution } from "@/lib/services/distribution.service";
 import { transferParticipant } from "@/lib/services/transfer.service";
-import { getCurrentProfile } from "@/lib/services/profiles.service";
+import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
 
 export async function confirmDistributionAction(participantId: string, formData: FormData) {
   const profile = await getCurrentProfile();
-  if (profile?.role !== "admin") throw new Error("Apenas administradoras podem distribuir participantes.");
+  if (!isAdminRole(profile?.role)) throw new Error("Apenas administradoras podem distribuir participantes.");
 
   const leaderId = formData.get("leader_id") as string | null;
   const groupId = (formData.get("group_id") as string | null) || null;
@@ -22,7 +22,7 @@ export async function confirmDistributionAction(participantId: string, formData:
 
 export async function transferParticipantAction(participantId: string, formData: FormData) {
   const profile = await getCurrentProfile();
-  if (profile?.role !== "admin") throw new Error("Apenas administradoras podem transferir participantes.");
+  if (!isAdminRole(profile?.role)) throw new Error("Apenas administradoras podem transferir participantes.");
 
   const leaderId = formData.get("leader_id") as string | null;
   const groupId = (formData.get("group_id") as string | null) || null;

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getCurrentProfile } from "@/lib/services/profiles.service";
+import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
 import { AdminShell } from "@/components/admin-shell";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -7,7 +7,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (!profile) redirect("/login");
   if (profile.role === "participante") redirect("/minha-jornada");
-  if (profile.role !== "admin" && profile.role !== "desenvolvedor") redirect("/inicio");
+  if (!isAdminRole(profile.role)) redirect("/inicio");
 
   return (
     <AdminShell userName={profile.full_name} isDeveloper={profile.role === "desenvolvedor"}>

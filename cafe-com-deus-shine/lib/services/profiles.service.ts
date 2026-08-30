@@ -4,6 +4,15 @@ import type { Tables } from "@/types/database.types";
 
 export type CurrentProfile = Tables<"profiles">;
 
+// Único ponto de verdade para "nível administrativo": admin e desenvolvedor
+// têm acesso idêntico (RLS via app_is_admin() já trata os dois como um só
+// portão) — toda checagem redundante de papel em Server Action deve usar
+// isto em vez de comparar com "admin" diretamente, senão o desenvolvedor
+// fica bloqueado em ações que a RLS já libera para ele.
+export function isAdminRole(role: CurrentProfile["role"] | undefined | null) {
+  return role === "admin" || role === "desenvolvedor";
+}
+
 export async function getCurrentProfile(): Promise<CurrentProfile | null> {
   const supabase = await createClient();
   const {

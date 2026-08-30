@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/services/audit.service";
+import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
 import type { Tables, TablesUpdate } from "@/types/database.types";
 
 export type LeaderRow = Tables<"leaders">;
@@ -69,6 +70,15 @@ export type CreateLeaderAccountInput = {
 // registro em `leaders`. Usa service_role — só chame a partir de uma
 // Server Action que já validou que quem está pedindo é admin.
 export async function createLeaderAccount(input: CreateLeaderAccountInput) {
+  // Checagem redundante: a Server Action que chama isto já valida admin, mas
+  // service_role ignora RLS — repetimos a checagem aqui (defesa em
+  // profundidade) para que um futuro caller desprotegido não vire um convite
+  // de líder disparado por qualquer usuário autenticado.
+  const profile = await getCurrentProfile();
+  if (!isAdminRole(profile?.role)) {
+    throw new Error("Apenas administradoras podem cadastrar líderes.");
+  }
+
   if (input.max_capacity <= 0) throw new Error("A capacidade máxima precisa ser maior que zero.");
 
   const admin = createAdminClient();

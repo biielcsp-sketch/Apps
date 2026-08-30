@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getCurrentProfile } from "@/lib/services/profiles.service";
+import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
 
 export default async function RootPage() {
   const profile = await getCurrentProfile();
@@ -7,7 +7,7 @@ export default async function RootPage() {
   if (!profile) {
     redirect("/login");
   }
-  if (profile.role === "admin") {
+  if (isAdminRole(profile.role)) {
     redirect("/dashboard");
   }
   redirect("/inicio");

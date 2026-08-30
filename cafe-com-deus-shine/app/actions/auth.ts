@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { isAdminRole } from "@/lib/services/profiles.service";
 
 const LoginSchema = z.object({
   email: z.email({ error: "Informe um e-mail válido." }),
@@ -36,7 +37,7 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
     .eq("id", data.user.id)
     .single();
 
-  if (profile?.role === "admin" || profile?.role === "desenvolvedor") {
+  if (isAdminRole(profile?.role)) {
     redirect("/dashboard");
   }
   if (profile?.role === "participante") {
