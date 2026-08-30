@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -774,6 +774,7 @@ export type Database = {
     }
     Functions: {
       app_current_leader_id: { Args: never; Returns: string }
+      app_current_participant_id: { Args: never; Returns: string }
       app_is_admin: { Args: never; Returns: boolean }
       app_is_responsible_for_participant: {
         Args: { p_participant_id: string }
@@ -811,7 +812,7 @@ export type Database = {
         | "ativa"
         | "acompanhamento"
         | "inativa"
-      user_role: "admin" | "lider" | "participante"
+      user_role: "admin" | "lider" | "participante" | "desenvolvedor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -961,7 +962,7 @@ export const Constants = {
         "acompanhamento",
         "inativa",
       ],
-      user_role: ["admin", "lider", "participante"],
+      user_role: ["admin", "lider", "participante", "desenvolvedor"],
     },
   },
 } as const

@@ -9,6 +9,7 @@ import {
   Home,
   CalendarDays,
   HeartHandshake,
+  ShieldCheck,
   Menu,
   X,
   LogOut,
@@ -25,14 +26,19 @@ const NAV_ITEMS = [
   { href: "/acompanhamentos", label: "Acompanhamentos", icon: HeartHandshake },
 ];
 
+const DEVELOPER_NAV_ITEM = { href: "/contas/nova", label: "Criar conta direta", icon: ShieldCheck };
+
 export function AdminShell({
   userName,
+  isDeveloper = false,
   children,
 }: {
   userName: string;
+  isDeveloper?: boolean;
   children: React.ReactNode;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const navItems = isDeveloper ? [...NAV_ITEMS, DEVELOPER_NAV_ITEM] : NAV_ITEMS;
 
   return (
     <div className="flex min-h-screen flex-1">
@@ -42,12 +48,15 @@ export function AdminShell({
           <Image src="/icons/logo-official.png" alt="Café com Deus Shine" width={876} height={866} className="h-14 w-auto" />
         </div>
         <nav className="flex flex-1 flex-col gap-1">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <NavLink key={item.href} {...item} />
           ))}
         </nav>
         <div className="mt-4 border-t border-border pt-4">
           <p className="truncate px-2 text-sm text-muted-foreground">{userName}</p>
+          {isDeveloper && (
+            <p className="px-2 text-xs font-medium text-primary">Desenvolvedor</p>
+          )}
           <form action={logout}>
             <button
               type="submit"
@@ -76,12 +85,15 @@ export function AdminShell({
               </button>
             </div>
             <nav className="flex flex-1 flex-col gap-1">
-              {NAV_ITEMS.map((item) => (
+              {navItems.map((item) => (
                 <NavLink key={item.href} {...item} onNavigate={() => setMenuOpen(false)} />
               ))}
             </nav>
             <div className="mt-4 border-t border-border pt-4">
               <p className="truncate px-2 text-sm text-muted-foreground">{userName}</p>
+              {isDeveloper && (
+                <p className="px-2 text-xs font-medium text-primary">Desenvolvedor</p>
+              )}
               <form action={logout}>
                 <button
                   type="submit"

@@ -6,7 +6,7 @@ export default async function ParticipanteLayout({ children }: { children: React
   const profile = await getCurrentProfile();
 
   if (!profile) redirect("/login");
-  if (profile.role === "admin") redirect("/dashboard");
+  if (profile.role === "admin" || profile.role === "desenvolvedor") redirect("/dashboard");
   if (profile.role === "lider") redirect("/inicio");
 
   return <ParticipanteShell userName={profile.full_name}>{children}</ParticipanteShell>;

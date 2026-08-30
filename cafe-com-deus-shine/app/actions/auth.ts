@@ -36,7 +36,7 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
     .eq("id", data.user.id)
     .single();
 
-  if (profile?.role === "admin") {
+  if (profile?.role === "admin" || profile?.role === "desenvolvedor") {
     redirect("/dashboard");
   }
   if (profile?.role === "participante") {
