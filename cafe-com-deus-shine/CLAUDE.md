@@ -44,6 +44,19 @@ alternativa. `cafe-com-deus-shine-especificacao-mvp.md` é a especificação de 
 - Nenhum componente de página do Next.js chama o Supabase diretamente. Toda leitura/escrita
   passa por funções em `/lib/services`.
 
+## Regra fixa: consultar os apps de referência antes de implementar
+Sempre que o usuário pedir uma funcionalidade nova (ou pedir para corrigir/estender uma já
+existente), antes de desenhar a solução do zero, consulte o código-fonte real dos apps de
+referência, nesta ordem: primeiro **Consolidação** (`consolidacao-lagoinha-alphaville`,
+clonado localmente — branch padrão `gc-manager-foundation`), depois o **GC** (app de
+referência separado — repositório ainda não confirmado; enquanto não tiver o código-fonte
+real dele, um build de produção/`dist` minificado NÃO substitui isso, avise o usuário e peça
+o repositório ou um zip do projeto-fonte). Se a funcionalidade já existe pronta lá, **copie o
+código original e adapte** ao schema/stack daqui — não desenhe uma solução paralela do zero
+quando já existe uma pronta para copiar. Ajustes pontuais (nomes de tabela, tipos, papéis,
+integração com o resto do projeto) são esperados; o que não deve acontecer é redesenhar algo
+que já está pronto lá, mesmo que sua própria ideia pareça mais simples.
+
 ## Cuidado com o scaffold do Next.js
 `next dev`/`next build` re-escreve `AGENTS.md` automaticamente (bloco entre marcadores) e,
 se `AGENTS.md` não existir ou não tiver o bloco, também sobrescreve este `CLAUDE.md` para
