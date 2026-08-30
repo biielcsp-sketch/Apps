@@ -132,3 +132,176 @@ export async function createDirectAccount(input: {
 
   return created.user.id;
 }
+
+// Cria a conta de uma líder com senha já definida (em vez do convite por
+// e-mail de createLeaderAccount) — mesmo efeito final (profile + linha em
+// `leaders`), só muda como a senha chega até ela.
+export async function createDirectLeaderAccount(input: {
+  email: string;
+  password: string;
+  fullName: string;
+  phone?: string | null;
+  whatsapp?: string | null;
+  city?: string | null;
+  neighborhood?: string | null;
+  meetingAddress?: string | null;
+  region?: string | null;
+  maxCapacity: number;
+}) {
+  const profile = await getCurrentProfile();
+  assertDeveloper(profile?.role);
+
+  if (input.maxCapacity <= 0) throw new Error("A capacidade máxima precisa ser maior que zero.");
+
+  const admin = createAdminClient();
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
+    email: input.email,
+    password: input.password,
+    email_confirm: true,
+    user_metadata: { full_name: input.fullName },
+  });
+  if (createError || !created.user) {
+    throw new Error(createError?.message ?? "Não foi possível criar a conta.");
+  }
+
+  // app_handle_new_user já criou o profile com role 'lider' (padrão do
+  // trigger) e full_name vindo do user_metadata; ajusta telefone/whatsapp.
+  await admin
+    .from("profiles")
+    .update({ phone: input.phone ?? null, whatsapp: input.whatsapp ?? null })
+    .eq("id", created.user.id);
+
+  const { error: leaderError } = await admin.from("leaders").insert({
+    profile_id: created.user.id,
+    city: input.city ?? null,
+    neighborhood: input.neighborhood ?? null,
+    meeting_address: input.meetingAddress ?? null,
+    region: input.region ?? null,
+    max_capacity: input.maxCapacity,
+    status: "ativa",
+  });
+  if (leaderError) throw new Error(leaderError.message);
+
+  await logAuditEvent({
+    action: "account.create_direct_leader",
+    entity: "leaders",
+    entityId: created.user.id,
+    after: { email: input.email },
+  });
+
+  return created.user.id;
+}
+
+// Lista participantes que ainda não têm login (profile_id nulo) — só essas
+// podem ser vinculadas a uma conta nova. Não criamos participante do zero
+// aqui: o cadastro completo (com consentimento LGPD) é sempre feito em
+// /participantes/novo primeiro.
+export async function listUnclaimedParticipants() {
+  const profile = await getCurrentProfile();
+  assertDeveloper(profile?.role);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("participants")
+    .select("id, full_name, city")
+    .is("profile_id", null)
+    .is("deleted_at", null)
+    .is("anonymized_at", null)
+    .order("full_name");
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+// Cria a conta de uma participante já cadastrada (mesmo efeito de
+// claimParticipantAccount), mas iniciada pela Desenvolvedor com e-mail e
+// senha escolhidos por ela, não pela própria participante.
+export async function createDirectParticipantAccount(input: {
+  participantId: string;
+  email: string;
+  password: string;
+}) {
+  const profile = await getCurrentProfile();
+  assertDeveloper(profile?.role);
+
+  const admin = createAdminClient();
+  const { data: participant, error: findError } = await admin
+    .from("participants")
+    .select("id, full_name, profile_id")
+    .eq("id", input.participantId)
+    .maybeSingle();
+  if (findError) throw new Error(findError.message);
+  if (!participant) throw new Error("Participante não encontrada.");
+  if (participant.profile_id) throw new Error("Esta participante já tem uma conta.");
+
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
+    email: input.email,
+    password: input.password,
+    email_confirm: true,
+    user_metadata: { full_name: participant.full_name },
+  });
+  if (createError || !created.user) {
+    throw new Error(createError?.message ?? "Não foi possível criar a conta.");
+  }
+
+  await admin
+    .from("profiles")
+    .update({ role: "participante", full_name: participant.full_name })
+    .eq("id", created.user.id);
+
+  const { error: linkError } = await admin
+    .from("participants")
+    .update({ profile_id: created.user.id, email: input.email })
+    .eq("id", participant.id);
+  if (linkError) throw new Error(linkError.message);
+
+  await logAuditEvent({
+    action: "account.create_direct_participant",
+    entity: "participants",
+    entityId: participant.id,
+    after: { email: input.email },
+  });
+
+  return created.user.id;
+}
+
+// Edita nome e/ou papel de uma conta já existente. Trocar PARA ou DE
+// líder/participante fica de fora de propósito: essas contas têm registro
+// vinculado (leaders/participants) que essa tela não sabe criar nem
+// desfazer com segurança — só alterna entre admin e desenvolvedor, os dois
+// papéis "de sistema" sem tabela auxiliar.
+export async function updateAccount(
+  profileId: string,
+  input: { fullName: string; role: Extract<Enums<"user_role">, "admin" | "desenvolvedor"> },
+) {
+  const profile = await getCurrentProfile();
+  assertDeveloper(profile?.role);
+
+  const admin = createAdminClient();
+  const { data: current, error: currentError } = await admin
+    .from("profiles")
+    .select("role")
+    .eq("id", profileId)
+    .single();
+  if (currentError) throw new Error(currentError.message);
+
+  const isSystemRole = (r: Enums<"user_role">) => r === "admin" || r === "desenvolvedor";
+  if (input.role !== current.role && !isSystemRole(current.role)) {
+    throw new Error(
+      "Não é possível trocar o papel de uma conta de Líder ou Participante por aqui — use as telas de Líderes/Participantes.",
+    );
+  }
+
+  const { error } = await admin
+    .from("profiles")
+    .update({ full_name: input.fullName, role: input.role })
+    .eq("id", profileId);
+  if (error) throw new Error(error.message);
+
+  await logAuditEvent({
+    action: "account.update",
+    entity: "profiles",
+    entityId: profileId,
+    after: { full_name: input.fullName, role: input.role },
+  });
+}

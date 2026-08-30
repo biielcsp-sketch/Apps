@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { ResetPasswordForm } from "@/components/accounts/reset-password-form";
 import { UpdateEmailForm } from "@/components/accounts/update-email-form";
+import { EditAccountForm } from "@/components/accounts/edit-account-form";
 
 const ROLE_LABELS = {
   admin: "Admin",
@@ -36,6 +37,11 @@ export default async function ContaDetalhePage({
         title={account.full_name}
         description={`${account.email ?? "sem e-mail"} · ${ROLE_LABELS[account.role]}`}
       />
+
+      <Card className="max-w-md p-6">
+        <p className="mb-3 text-sm font-semibold text-foreground">Editar conta</p>
+        <EditAccountForm profileId={account.id} fullName={account.full_name} role={account.role} />
+      </Card>
 
       <Card className="max-w-md p-6">
         <p className="mb-3 text-sm font-semibold text-foreground">Redefinir senha</p>
