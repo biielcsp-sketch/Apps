@@ -43,9 +43,15 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, active")
     .eq("id", data.user.id)
     .single();
+
+  if (profile && !profile.active) {
+    await logAuthEvent("access_denied", data.user.id, { reason: "conta desativada" });
+    await supabase.auth.signOut();
+    return { error: "Esta conta foi desativada." };
+  }
 
   if (isAdminRole(profile?.role)) {
     redirect("/dashboard");

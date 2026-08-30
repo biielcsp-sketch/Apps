@@ -28,5 +28,11 @@ export async function getCurrentProfile(): Promise<CurrentProfile | null> {
     .single();
 
   if (error) return null;
+  // Conta desativada é tratada como sessão inválida em todo o app — todo
+  // layout (admin/líder/participante) já chama getCurrentProfile() e
+  // redireciona pra /login quando isso retorna null, então desativar aqui
+  // é o único ponto necessário pra derrubar o acesso de imediato, mesmo
+  // numa sessão já aberta (não precisa esperar o token expirar).
+  if (!data.active) return null;
   return data;
 }

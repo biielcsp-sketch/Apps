@@ -2,11 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { redirect } from "next/navigation";
 import {
   createDirectAccount,
   createDirectLeaderAccount,
   createDirectParticipantAccount,
   updateAccount,
+  setAccountActive,
+  deleteAccount,
   resetUserPassword,
   updateUserEmail,
 } from "@/lib/services/accounts.service";
@@ -121,12 +124,20 @@ export async function createAccountAction(
 
 const UpdateAccountSchema = z.object({
   fullName: z.string().trim().min(1, { error: "Informe o nome completo." }),
-  role: z.enum(["admin", "desenvolvedor"], { error: "Selecione um papel válido." }),
+  role: z.enum(["admin", "desenvolvedor", "lider", "participante"], {
+    error: "Selecione um papel válido.",
+  }),
+  city: z.string().trim().optional(),
+  neighborhood: z.string().trim().optional(),
+  meetingAddress: z.string().trim().optional(),
+  region: z.string().trim().optional(),
+  maxCapacity: z.coerce.number().int().positive().optional(),
+  participantId: z.uuid().optional(),
 });
 
-// Exclusiva do papel Desenvolvedor: edita nome e/ou papel de uma conta já
-// existente. Trocar para/de Líder ou Participante não é permitido aqui —
-// ver o porquê no comentário de updateAccount() no service.
+// Exclusiva do papel Desenvolvedor: edita nome e papel de uma conta já
+// existente — os 4 papéis, igual à criação (ver updateAccount() no
+// service para a lógica de quando líder/participante exigem dados extra).
 export async function updateAccountAction(
   profileId: string,
   _state: FormActionState,
@@ -140,13 +151,35 @@ export async function updateAccountAction(
   const validated = UpdateAccountSchema.safeParse({
     fullName: formData.get("fullName"),
     role: formData.get("role"),
+    city: readOptionalString(formData, "city"),
+    neighborhood: readOptionalString(formData, "neighborhood"),
+    meetingAddress: readOptionalString(formData, "meetingAddress"),
+    region: readOptionalString(formData, "region"),
+    maxCapacity: formData.get("maxCapacity") || undefined,
+    participantId: readOptionalString(formData, "participantId"),
   });
   if (!validated.success) {
     return { error: validated.error.issues[0]?.message ?? "Verifique os campos do formulário." };
   }
 
+  const { fullName, role, participantId, ...leaderFields } = validated.data;
+
   try {
-    await updateAccount(profileId, validated.data);
+    await updateAccount(profileId, {
+      fullName,
+      role,
+      participantId,
+      leader:
+        leaderFields.maxCapacity !== undefined
+          ? {
+              city: leaderFields.city ?? null,
+              neighborhood: leaderFields.neighborhood ?? null,
+              meetingAddress: leaderFields.meetingAddress ?? null,
+              region: leaderFields.region ?? null,
+              maxCapacity: leaderFields.maxCapacity,
+            }
+          : undefined,
+    });
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Erro ao salvar." };
   }
@@ -154,6 +187,33 @@ export async function updateAccountAction(
   revalidatePath(`/contas/${profileId}`);
   revalidatePath("/contas");
   return { success: true };
+}
+
+// Exclusiva do papel Desenvolvedor: ativa/desativa uma conta. Alternativa
+// segura à exclusão para contas com histórico vinculado (ver deleteAccount).
+export async function setAccountActiveAction(profileId: string, active: boolean) {
+  const profile = await getCurrentProfile();
+  if (profile?.role !== "desenvolvedor") {
+    throw new Error("Apenas o perfil Desenvolvedor pode ativar/desativar contas.");
+  }
+
+  await setAccountActive(profileId, active);
+  revalidatePath(`/contas/${profileId}`);
+  revalidatePath("/contas");
+}
+
+// Exclusiva do papel Desenvolvedor: exclui a conta (login) de verdade —
+// ver as duas travas de segurança no comentário de deleteAccount() no
+// service (líder nunca, conta com histórico vinculado nunca).
+export async function deleteAccountAction(profileId: string) {
+  const profile = await getCurrentProfile();
+  if (profile?.role !== "desenvolvedor") {
+    throw new Error("Apenas o perfil Desenvolvedor pode excluir contas.");
+  }
+
+  await deleteAccount(profileId);
+  revalidatePath("/contas");
+  redirect("/contas");
 }
 
 const ResetPasswordSchema = z.object({

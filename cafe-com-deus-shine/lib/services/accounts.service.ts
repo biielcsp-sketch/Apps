@@ -33,14 +33,14 @@ export async function getAccount(id: string) {
   assertDeveloper(profile?.role);
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, full_name, email, role, active, created_at")
-    .eq("id", id)
-    .single();
+  const [{ data, error }, { data: leaderRow }, { data: participantRow }] = await Promise.all([
+    supabase.from("profiles").select("id, full_name, email, role, active, created_at").eq("id", id).single(),
+    supabase.from("leaders").select("id").eq("profile_id", id).maybeSingle(),
+    supabase.from("participants").select("id").eq("profile_id", id).maybeSingle(),
+  ]);
 
   if (error) throw new Error(error.message);
-  return data;
+  return { ...data, hasLeaderRow: Boolean(leaderRow), hasParticipantRow: Boolean(participantRow) };
 }
 
 // Redefine a senha de QUALQUER conta diretamente — nos mesmos moldes da
@@ -265,14 +265,27 @@ export async function createDirectParticipantAccount(input: {
   return created.user.id;
 }
 
-// Edita nome e/ou papel de uma conta já existente. Trocar PARA ou DE
-// líder/participante fica de fora de propósito: essas contas têm registro
-// vinculado (leaders/participants) que essa tela não sabe criar nem
-// desfazer com segurança — só alterna entre admin e desenvolvedor, os dois
-// papéis "de sistema" sem tabela auxiliar.
+// Edita nome e papel de uma conta já existente — os 4 papéis, igual à
+// criação. Trocar PARA líder/participante exige os mesmos dados que a
+// criação direta pediria (capacidade da líder, ou a participante já
+// cadastrada a vincular), só quando a conta ainda não tem a linha
+// correspondente em `leaders`/`participants` — se ela já teve esse papel
+// antes (ex.: foi líder, virou admin, volta a ser líder), a linha antiga
+// continua lá e é só reaproveitada, sem pedir os dados de novo.
 export async function updateAccount(
   profileId: string,
-  input: { fullName: string; role: Extract<Enums<"user_role">, "admin" | "desenvolvedor"> },
+  input: {
+    fullName: string;
+    role: Enums<"user_role">;
+    leader?: {
+      city?: string | null;
+      neighborhood?: string | null;
+      meetingAddress?: string | null;
+      region?: string | null;
+      maxCapacity: number;
+    };
+    participantId?: string;
+  },
 ) {
   const profile = await getCurrentProfile();
   assertDeveloper(profile?.role);
@@ -285,11 +298,58 @@ export async function updateAccount(
     .single();
   if (currentError) throw new Error(currentError.message);
 
-  const isSystemRole = (r: Enums<"user_role">) => r === "admin" || r === "desenvolvedor";
-  if (input.role !== current.role && !isSystemRole(current.role)) {
-    throw new Error(
-      "Não é possível trocar o papel de uma conta de Líder ou Participante por aqui — use as telas de Líderes/Participantes.",
-    );
+  const changingRole = input.role !== current.role;
+
+  if (changingRole && input.role === "lider") {
+    const { data: existingLeader } = await admin
+      .from("leaders")
+      .select("id")
+      .eq("profile_id", profileId)
+      .maybeSingle();
+
+    if (!existingLeader) {
+      if (!input.leader || !(input.leader.maxCapacity > 0)) {
+        throw new Error("Informe a capacidade máxima para transformar esta conta em líder.");
+      }
+      const { error: leaderError } = await admin.from("leaders").insert({
+        profile_id: profileId,
+        city: input.leader.city ?? null,
+        neighborhood: input.leader.neighborhood ?? null,
+        meeting_address: input.leader.meetingAddress ?? null,
+        region: input.leader.region ?? null,
+        max_capacity: input.leader.maxCapacity,
+        status: "ativa",
+      });
+      if (leaderError) throw new Error(leaderError.message);
+    }
+  }
+
+  if (changingRole && input.role === "participante") {
+    const { data: alreadyLinked } = await admin
+      .from("participants")
+      .select("id")
+      .eq("profile_id", profileId)
+      .maybeSingle();
+
+    if (!alreadyLinked) {
+      if (!input.participantId) {
+        throw new Error("Selecione a participante já cadastrada para vincular a esta conta.");
+      }
+      const { data: participant, error: findError } = await admin
+        .from("participants")
+        .select("id, profile_id")
+        .eq("id", input.participantId)
+        .maybeSingle();
+      if (findError) throw new Error(findError.message);
+      if (!participant) throw new Error("Participante não encontrada.");
+      if (participant.profile_id) throw new Error("Esta participante já tem uma conta.");
+
+      const { error: linkError } = await admin
+        .from("participants")
+        .update({ profile_id: profileId })
+        .eq("id", participant.id);
+      if (linkError) throw new Error(linkError.message);
+    }
   }
 
   const { error } = await admin
@@ -303,5 +363,85 @@ export async function updateAccount(
     entity: "profiles",
     entityId: profileId,
     after: { full_name: input.fullName, role: input.role },
+  });
+}
+
+// Ativa/desativa uma conta — bloqueia login e derruba qualquer sessão já
+// aberta na próxima navegação (getCurrentProfile trata active=false como
+// "sem sessão"). Alternativa segura à exclusão para quem tem histórico
+// vinculado (audit_log, presença registrada etc.) e não pode ser excluído
+// de verdade — ver deleteAccount().
+export async function setAccountActive(profileId: string, active: boolean) {
+  const profile = await getCurrentProfile();
+  assertDeveloper(profile?.role);
+
+  if (profile!.id === profileId && !active) {
+    throw new Error("Você não pode desativar a própria conta.");
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin.from("profiles").update({ active }).eq("id", profileId);
+  if (error) throw new Error(error.message);
+
+  await logAuditEvent({
+    action: active ? "account.activate" : "account.deactivate",
+    entity: "profiles",
+    entityId: profileId,
+  });
+}
+
+// Exclui a conta (login) de verdade — não confundir com anonimização de
+// participante (que é sobre o CADASTRO dela, não o login). Duas travas
+// reais, não arbitrárias:
+// 1. Líder nunca pode ser excluída por aqui: leaders.profile_id é NOT NULL
+//    (schema), não dá pra desvincular sem deixar a linha órfã — a via seg-
+//    ura é inativar em /liderancas.
+// 2. Qualquer conta com histórico vinculado (audit_log, presença
+//    registrada, notificações etc.) tem FK "no action" pra profiles — o
+//    Postgres recusa a exclusão sozinho. Nesse caso, sugerimos desativar
+//    em vez de inventar uma forma de apagar o histórico.
+export async function deleteAccount(profileId: string) {
+  const profile = await getCurrentProfile();
+  assertDeveloper(profile?.role);
+
+  if (profile!.id === profileId) {
+    throw new Error("Você não pode excluir a própria conta.");
+  }
+
+  const admin = createAdminClient();
+  const { data: target, error: targetError } = await admin
+    .from("profiles")
+    .select("role")
+    .eq("id", profileId)
+    .single();
+  if (targetError) throw new Error(targetError.message);
+
+  if (target.role === "lider") {
+    throw new Error(
+      'Não é possível excluir uma conta de Líder — use "Inativar" na tela de Líderes. Excluir aqui deixaria o grupo sem responsável.',
+    );
+  }
+
+  if (target.role === "participante") {
+    // Desvincula o login do cadastro — o cadastro da participante (jornada,
+    // presença, acompanhamento) continua intacto, só perde o acesso.
+    await admin.from("participants").update({ profile_id: null }).eq("profile_id", profileId);
+  }
+
+  const { error: profileError } = await admin.from("profiles").delete().eq("id", profileId);
+  if (profileError) {
+    throw new Error(
+      "Esta conta tem histórico vinculado (ações registradas, presença, etc.) e não pode ser excluída sem perder esse histórico. Desative a conta em vez de excluir.",
+    );
+  }
+
+  const { error: authError } = await admin.auth.admin.deleteUser(profileId);
+  if (authError) throw new Error(authError.message);
+
+  await logAuditEvent({
+    action: "account.delete",
+    entity: "profiles",
+    entityId: profileId,
+    after: { role: target.role },
   });
 }
