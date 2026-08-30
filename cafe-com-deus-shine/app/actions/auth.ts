@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminRole } from "@/lib/services/profiles.service";
 import { checkLoginRateLimit } from "@/lib/rate-limit";
+import { logAuthEvent } from "@/lib/services/auth-audit.service";
 
 const LoginSchema = z.object({
   email: z.email({ error: "Informe um e-mail válido." }),
@@ -34,8 +35,11 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
   const { data, error } = await supabase.auth.signInWithPassword(validated.data);
 
   if (error || !data.user) {
+    await logAuthEvent("login_failed", null, { email: validated.data.email });
     return { error: "E-mail ou senha incorretos." };
   }
+
+  await logAuthEvent("login_success", data.user.id);
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -54,6 +58,10 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
 
 export async function logout() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) await logAuthEvent("logout", user.id);
   await supabase.auth.signOut();
   redirect("/login");
 }

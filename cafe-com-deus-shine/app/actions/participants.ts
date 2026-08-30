@@ -26,6 +26,7 @@ import {
   checkErasureRateLimit,
   checkParticipantWriteRateLimit,
 } from "@/lib/rate-limit";
+import { logAuthEvent, isRlsDenied } from "@/lib/services/auth-audit.service";
 import type { Enums } from "@/types/database.types";
 
 export type FormActionState = { error?: string; success?: boolean } | undefined;
@@ -83,6 +84,13 @@ export async function createParticipantAction(
   try {
     created = await createParticipant(validated.data);
   } catch (e) {
+    // Isto só dispara de verdade se alguém burlar a checagem de isAdminRole
+    // acima (ex.: chamando a Server Action diretamente) — RLS de INSERT em
+    // `participants` não tem policy para líder, então o insert seria negado
+    // pelo Postgres (42501), não pela nossa checagem de app.
+    if (isRlsDenied(e)) {
+      await logAuthEvent("access_denied", profile!.id, { action: "createParticipant" });
+    }
     return { error: e instanceof Error ? e.message : "Erro ao cadastrar participante." };
   }
 
@@ -200,6 +208,16 @@ export async function requestErasureAction(
   try {
     await requestErasure(participantId, reason);
   } catch (e) {
+    // Caso real (não só bypass): a RLS de INSERT em `data_erasure_requests`
+    // só libera líder para participantes sob a responsabilidade dela — uma
+    // líder tentando pedir exclusão de participante de outra líder cai
+    // exatamente aqui, via 42501 do Postgres, não por checagem de app.
+    if (isRlsDenied(e)) {
+      await logAuthEvent("access_denied", profile.id, {
+        action: "requestErasure",
+        participant_id: participantId,
+      });
+    }
     return { error: e instanceof Error ? e.message : "Erro ao solicitar exclusão." };
   }
 
