@@ -1,7 +1,12 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createDirectAccount } from "@/lib/services/accounts.service";
+import {
+  createDirectAccount,
+  resetUserPassword,
+  updateUserEmail,
+} from "@/lib/services/accounts.service";
 import { getCurrentProfile } from "@/lib/services/profiles.service";
 import type { FormActionState } from "@/app/actions/participants";
 
@@ -42,5 +47,67 @@ export async function createDirectAccountAction(
     return { error: e instanceof Error ? e.message : "Erro ao criar a conta." };
   }
 
+  return { success: true };
+}
+
+const ResetPasswordSchema = z.object({
+  password: z.string().min(6, { error: "A senha precisa ter pelo menos 6 caracteres." }),
+});
+
+// Exclusiva do papel Desenvolvedor: redefine a senha de QUALQUER conta
+// diretamente, sem passar pelo fluxo de "esqueci minha senha" por e-mail.
+export async function resetUserPasswordAction(
+  profileId: string,
+  _state: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const profile = await getCurrentProfile();
+  if (profile?.role !== "desenvolvedor") {
+    return { error: "Apenas o perfil Desenvolvedor pode redefinir senhas." };
+  }
+
+  const validated = ResetPasswordSchema.safeParse({ password: formData.get("password") });
+  if (!validated.success) {
+    return { error: validated.error.issues[0]?.message ?? "Verifique a senha informada." };
+  }
+
+  try {
+    await resetUserPassword(profileId, validated.data.password);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Erro ao redefinir a senha." };
+  }
+
+  return { success: true };
+}
+
+const UpdateEmailSchema = z.object({
+  email: z.email({ error: "Informe um e-mail válido." }),
+});
+
+// Exclusiva do papel Desenvolvedor: troca o e-mail de login de QUALQUER
+// conta diretamente, já confirmado (sem a usuária precisar clicar em link
+// de verificação).
+export async function updateUserEmailAction(
+  profileId: string,
+  _state: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const profile = await getCurrentProfile();
+  if (profile?.role !== "desenvolvedor") {
+    return { error: "Apenas o perfil Desenvolvedor pode alterar e-mails." };
+  }
+
+  const validated = UpdateEmailSchema.safeParse({ email: formData.get("email") });
+  if (!validated.success) {
+    return { error: validated.error.issues[0]?.message ?? "Verifique o e-mail informado." };
+  }
+
+  try {
+    await updateUserEmail(profileId, validated.data.email);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Erro ao alterar o e-mail." };
+  }
+
+  revalidatePath(`/contas/${profileId}`);
   return { success: true };
 }

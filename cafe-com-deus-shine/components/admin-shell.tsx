@@ -26,7 +26,7 @@ const NAV_ITEMS = [
   { href: "/acompanhamentos", label: "Acompanhamentos", icon: HeartHandshake },
 ];
 
-const DEVELOPER_NAV_ITEM = { href: "/contas/nova", label: "Criar conta direta", icon: ShieldCheck };
+const DEVELOPER_NAV_ITEM = { href: "/contas", label: "Contas", icon: ShieldCheck };
 
 export function AdminShell({
   userName,
