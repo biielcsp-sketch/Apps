@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Card } from "@/components/ui/Card";
+import { BackLink } from "@/components/ui/BackLink";
 import { getGroup } from "@/lib/services/groups.service";
 import { listActiveLeadersForSelect, listParticipants } from "@/lib/services/participants.service";
 import { GroupForm } from "@/components/grupos/group-form";
@@ -20,7 +21,8 @@ export default async function GrupoPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-foreground">{group.name}</h1>
+      <BackLink href="/grupos" label="Grupos" />
+      <h1 className="mt-3 text-2xl font-semibold text-foreground">{group.name}</h1>
       <Card className="mt-4 p-6">
         <GroupForm group={group} leaders={leaders} />
       </Card>

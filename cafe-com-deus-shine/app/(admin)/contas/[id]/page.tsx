@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/services/profiles.service";
 import { getAccount, listUnclaimedParticipants } from "@/lib/services/accounts.service";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { BackLink } from "@/components/ui/BackLink";
 import { Card } from "@/components/ui/Card";
 import { ResetPasswordForm } from "@/components/accounts/reset-password-form";
 import { UpdateEmailForm } from "@/components/accounts/update-email-form";
@@ -36,6 +37,7 @@ export default async function ContaDetalhePage({
 
   return (
     <div className="flex flex-col gap-6">
+      <BackLink href="/contas" label="Contas" />
       <PageHeader
         title={account.full_name}
         description={`${account.email ?? "sem e-mail"} · ${ROLE_LABELS[account.role]}${account.active ? "" : " · Inativa"}`}

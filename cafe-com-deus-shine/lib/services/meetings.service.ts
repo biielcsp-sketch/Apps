@@ -3,16 +3,50 @@ import { createClient } from "@/lib/supabase/server";
 import { logAuditEvent } from "@/lib/services/audit.service";
 import { AppError, dbError } from "@/lib/errors";
 import type { MeetingInput } from "@/lib/validators/meeting.schema";
-import type { Tables, TablesUpdate } from "@/types/database.types";
+import type { Tables, TablesUpdate, Enums } from "@/types/database.types";
 
 export type MeetingRow = Tables<"meetings">;
 
-export async function listMeetings() {
+export type MeetingFilters = {
+  search?: string;
+  status?: Enums<"meeting_status">;
+  leaderId?: string;
+  groupId?: string;
+  location?: string;
+  dateFrom?: string;
+  dateTo?: string;
+};
+
+export async function listMeetings(filters: MeetingFilters = {}) {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("meetings")
     .select("*, group:groups(id, name), leader:leaders(id, profile:profiles(full_name))")
     .order("date", { ascending: false });
+
+  if (filters.search) {
+    query = query.ilike("title", `%${filters.search}%`);
+  }
+  if (filters.status) {
+    query = query.eq("status", filters.status);
+  }
+  if (filters.leaderId) {
+    query = query.eq("leader_id", filters.leaderId);
+  }
+  if (filters.groupId) {
+    query = query.eq("group_id", filters.groupId);
+  }
+  if (filters.location) {
+    query = query.ilike("location", `%${filters.location}%`);
+  }
+  if (filters.dateFrom) {
+    query = query.gte("date", filters.dateFrom);
+  }
+  if (filters.dateTo) {
+    query = query.lte("date", filters.dateTo);
+  }
+
+  const { data, error } = await query;
 
   if (error) dbError(error, "meetings.list");
   return data ?? [];

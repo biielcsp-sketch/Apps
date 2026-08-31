@@ -17,8 +17,12 @@ function readOptionalString(formData: FormData, key: string) {
 }
 
 function readArray(formData: FormData, key: string) {
-  const values = formData.getAll(key).map(String).filter(Boolean);
-  return values.length > 0 ? values : undefined;
+  return formData.getAll(key).map(String).filter(Boolean);
+}
+
+function readString(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return typeof value === "string" ? value.trim() : "";
 }
 
 // Mesmo padrão de captura de IP do auth-audit.service.ts (S5) — usado aqui
@@ -41,10 +45,10 @@ export async function submitPublicEnrollmentAction(
     birth_date: readOptionalString(formData, "birth_date"),
     city: readOptionalString(formData, "city"),
     neighborhood: readOptionalString(formData, "neighborhood"),
-    address: readOptionalString(formData, "address"),
+    address: readString(formData, "address"),
     availability_days: readArray(formData, "availability_days"),
     availability_period: readArray(formData, "availability_period"),
-    location_preference: readOptionalString(formData, "location_preference"),
+    location_preference: readString(formData, "location_preference"),
     consent_accepted: formData.get("consent_accepted") === "on",
     code: formData.get("code"),
     website: readOptionalString(formData, "website"),

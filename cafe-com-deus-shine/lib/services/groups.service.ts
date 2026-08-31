@@ -2,16 +2,46 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { logAuditEvent } from "@/lib/services/audit.service";
 import { AppError, dbError } from "@/lib/errors";
-import type { Tables, TablesInsert, TablesUpdate } from "@/types/database.types";
+import type { Tables, TablesInsert, TablesUpdate, Enums } from "@/types/database.types";
 
 export type GroupRow = Tables<"groups">;
 
-export async function listGroups() {
+export type GroupFilters = {
+  search?: string;
+  status?: Enums<"group_status">;
+  leaderId?: string;
+  region?: string;
+  createdFrom?: string;
+  createdTo?: string;
+};
+
+export async function listGroups(filters: GroupFilters = {}) {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("groups")
     .select("*, leader:leaders(id, profile:profiles(full_name)), occupants:participants!participants_current_group_id_fkey(count)")
     .order("name");
+
+  if (filters.search) {
+    query = query.ilike("name", `%${filters.search}%`);
+  }
+  if (filters.status) {
+    query = query.eq("status", filters.status);
+  }
+  if (filters.leaderId) {
+    query = query.eq("leader_id", filters.leaderId);
+  }
+  if (filters.region) {
+    query = query.ilike("region", `%${filters.region}%`);
+  }
+  if (filters.createdFrom) {
+    query = query.gte("created_at", filters.createdFrom);
+  }
+  if (filters.createdTo) {
+    query = query.lte("created_at", `${filters.createdTo}T23:59:59`);
+  }
+
+  const { data, error } = await query;
 
   if (error) dbError(error, "groups.list");
 

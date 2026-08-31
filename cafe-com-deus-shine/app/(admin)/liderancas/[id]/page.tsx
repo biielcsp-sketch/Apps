@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Card } from "@/components/ui/Card";
+import { BackLink } from "@/components/ui/BackLink";
 import { getLeader } from "@/lib/services/leaders.service";
 import { listParticipants } from "@/lib/services/participants.service";
 import { LeaderEditForm } from "@/components/liderancas/leader-edit-form";
@@ -19,6 +20,7 @@ export default async function LiderancaPage({
 
   return (
     <div className="flex flex-col gap-6">
+      <BackLink href="/liderancas" label="Líderes" />
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">{leader.profile?.full_name}</h1>

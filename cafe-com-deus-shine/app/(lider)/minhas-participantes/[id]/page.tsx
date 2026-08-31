@@ -12,6 +12,7 @@ import { FollowUpForm } from "@/components/acompanhamento/followup-form";
 import { FollowUpsList } from "@/components/acompanhamento/followups-list";
 import { AttentionBadge } from "@/components/acompanhamento/attention-badge";
 import { listFollowUps, computeAttentionAlerts } from "@/lib/services/followup.service";
+import { BackLink } from "@/components/ui/BackLink";
 
 export default async function MinhaParticipantePage({
   params,
@@ -35,6 +36,7 @@ export default async function MinhaParticipantePage({
 
   return (
     <div className="flex flex-col gap-6">
+      <BackLink href="/minhas-participantes" label="Minhas participantes" />
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">

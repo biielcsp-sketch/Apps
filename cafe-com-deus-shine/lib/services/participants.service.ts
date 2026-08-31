@@ -27,7 +27,7 @@ export type ParticipantFilters = {
   enrolledTo?: string;
 };
 
-function displayName(row: Pick<ParticipantRow, "full_name" | "anonymized_at">) {
+export function displayName(row: Pick<ParticipantRow, "full_name" | "anonymized_at">) {
   return row.anonymized_at ? "Participante removida (LGPD)" : row.full_name;
 }
 

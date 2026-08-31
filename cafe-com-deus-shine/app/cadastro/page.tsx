@@ -1,8 +1,5 @@
 import Image from "next/image";
-import {
-  validateEnrollmentSource,
-  getActiveTermsForPublicEnrollment,
-} from "@/lib/services/public-enrollment.service";
+import { validateEnrollmentSource } from "@/lib/services/public-enrollment.service";
 import { PublicEnrollmentForm } from "@/components/cadastro-publico/public-enrollment-form";
 import { Card } from "@/components/ui/Card";
 
@@ -56,31 +53,11 @@ export default async function CadastroPage({
                   Deixe seus dados que nossa equipe entra em contato.
                 </p>
               </div>
-              <TermsNotice />
-              <div className="mt-5">
-                <PublicEnrollmentForm code={origem!} />
-              </div>
+              <PublicEnrollmentForm code={origem!} />
             </>
           )}
         </Card>
       </div>
     </div>
-  );
-}
-
-async function TermsNotice() {
-  // Mesma lógica de falha-fechado da validação de origem: se não conseguir
-  // buscar o texto, some com o aviso em vez de derrubar a tela inteira —
-  // a interessada ainda consegue se inscrever, só sem o texto visível.
-  const terms = await getActiveTermsForPublicEnrollment().catch(() => null);
-  if (!terms) return null;
-
-  return (
-    <details className="rounded-xl border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
-      <summary className="cursor-pointer font-medium text-foreground">
-        Como usamos seus dados
-      </summary>
-      <p className="mt-2 whitespace-pre-wrap">{terms.content}</p>
-    </details>
   );
 }

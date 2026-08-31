@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { getCurrentProfile } from "@/lib/services/profiles.service";
 import { listAllAccounts } from "@/lib/services/accounts.service";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { AccountsList } from "@/components/accounts/accounts-list";
+import { AccountsGrouped } from "@/components/accounts/accounts-grouped";
 
 export default async function ContasPage() {
   const profile = await getCurrentProfile();
@@ -26,7 +26,7 @@ export default async function ContasPage() {
           Criar conta direta
         </Link>
       </PageHeader>
-      <AccountsList accounts={accounts} />
+      <AccountsGrouped accounts={accounts} />
     </div>
   );
 }

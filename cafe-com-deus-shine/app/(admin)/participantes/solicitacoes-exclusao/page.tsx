@@ -1,13 +1,15 @@
 import { listPendingErasureRequests } from "@/lib/services/erasure.service";
 import { Card } from "@/components/ui/Card";
 import { ProcessErasureButton } from "@/components/participantes/process-erasure-button";
+import { BackLink } from "@/components/ui/BackLink";
 
 export default async function SolicitacoesExclusaoPage() {
   const requests = await listPendingErasureRequests();
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-foreground">Solicitações de exclusão (LGPD)</h1>
+      <BackLink href="/participantes" label="Participantes" />
+      <h1 className="mt-3 text-2xl font-semibold text-foreground">Solicitações de exclusão (LGPD)</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Revise antes de confirmar — a anonimização não pode ser desfeita.
       </p>

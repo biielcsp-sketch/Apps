@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { listAwaitingDistribution } from "@/lib/services/distribution.service";
 import { Card } from "@/components/ui/Card";
+import { BackLink } from "@/components/ui/BackLink";
 
 export default async function AguardandoDistribuicaoPage() {
   const participants = await listAwaitingDistribution();
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-foreground">Aguardando distribuição</h1>
+      <BackLink href="/participantes" label="Participantes" />
+      <h1 className="mt-3 text-2xl font-semibold text-foreground">Aguardando distribuição</h1>
       <p className="mt-1 text-sm text-muted-foreground">{participants.length} participantes</p>
 
       <div className="mt-4 flex flex-col gap-2">

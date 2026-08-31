@@ -1,88 +1,62 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
-import { logAuditEvent } from "@/lib/services/audit.service";
-import { AppError, dbError } from "@/lib/errors";
+import { displayName } from "@/lib/services/participants.service";
+import { dbError } from "@/lib/errors";
 import type { Tables } from "@/types/database.types";
 
 export type EnrollmentSourceRow = Tables<"enrollment_sources">;
 
-export async function listEnrollmentSources() {
+const DEFAULT_LABEL = "Cadastro público";
+const DEFAULT_CODE = "cadastro";
+
+// Um único QR fixo pro sistema inteiro (decisão do usuário — não mais uma
+// origem nomeada por evento). Se já existir alguma linha em
+// enrollment_sources (inclusive de quando a tela ainda permitia criar
+// várias), reaproveita a mais antiga como a canônica; só cria uma nova se
+// não existir nenhuma ainda. O código nunca muda depois de criado — é o
+// que fica impresso no QR.
+export async function getOrCreateDefaultEnrollmentSource(): Promise<EnrollmentSourceRow> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data: existing, error } = await supabase
     .from("enrollment_sources")
     .select("*")
-    .order("created_at", { ascending: false });
-  if (error) dbError(error, "enrollmentSources.list");
-  return data ?? [];
-}
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) dbError(error, "enrollmentSources.getDefault");
+  if (existing) return existing;
 
-export async function getEnrollmentSource(id: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.from("enrollment_sources").select("*").eq("id", id).single();
-  if (error) return null;
-  return data;
-}
-
-// Vira o `?origem=` na URL pública — sem acento, sem espaço, sem
-// maiúscula, só o que sobrevive numa URL sem precisar de encoding.
-function slugify(label: string) {
-  return label
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-export async function createEnrollmentSource(label: string, customCode?: string) {
-  const profile = await getCurrentProfile();
-  if (!isAdminRole(profile?.role)) {
-    throw new AppError("Apenas administradoras podem criar códigos de inscrição.");
-  }
-
-  const code = slugify(customCode?.trim() || label) || `origem-${Date.now()}`;
-
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data: created, error: createError } = await supabase
     .from("enrollment_sources")
-    .insert({ label: label.trim(), code, created_by: profile!.id })
+    .insert({ label: DEFAULT_LABEL, code: DEFAULT_CODE, active: true })
     .select()
     .single();
-
-  if (error) {
-    if (error.code === "23505") {
-      throw new AppError("Já existe um código de inscrição igual a esse — tente outro nome ou edite o código.");
-    }
-    dbError(error, "enrollmentSources.create");
-  }
-
-  await logAuditEvent({
-    action: "enrollment_source.create",
-    entity: "enrollment_sources",
-    entityId: data.id,
-    after: { label: data.label, code: data.code },
-  });
-
-  return data;
+  if (createError) dbError(createError, "enrollmentSources.createDefault");
+  return created;
 }
 
-// Desativar não apaga inscrições já recebidas por este código — só
-// impede novas (Q2 mostra "link expirado" pra quem escanear depois).
-export async function setEnrollmentSourceActive(id: string, active: boolean) {
-  const profile = await getCurrentProfile();
-  if (!isAdminRole(profile?.role)) {
-    throw new AppError("Apenas administradoras podem ativar/desativar códigos de inscrição.");
-  }
+export type EnrollmentRegistration = {
+  id: string;
+  full_name: string;
+  phone: string | null;
+  created_at: string;
+};
 
+// "Quem se cadastrou" — todo mundo que entrou pelo QR fixo, mais recente
+// primeiro.
+export async function listEnrollmentRegistrations(code: string): Promise<EnrollmentRegistration[]> {
   const supabase = await createClient();
-  const { error } = await supabase.from("enrollment_sources").update({ active }).eq("id", id);
-  if (error) dbError(error, "enrollmentSources.setActive");
-
-  await logAuditEvent({
-    action: active ? "enrollment_source.activate" : "enrollment_source.deactivate",
-    entity: "enrollment_sources",
-    entityId: id,
-  });
+  const { data, error } = await supabase
+    .from("participants")
+    .select("id, full_name, phone, anonymized_at, created_at")
+    .eq("enrollment_source", code)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+  if (error) dbError(error, "enrollmentSources.listRegistrations");
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    full_name: displayName(row),
+    phone: row.anonymized_at ? null : row.phone,
+    created_at: row.created_at,
+  }));
 }

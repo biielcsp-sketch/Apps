@@ -7,6 +7,7 @@ import { listGroups } from "@/lib/services/groups.service";
 import { MeetingForm } from "@/components/encontros/meeting-form";
 import { MeetingParticipantsPanel } from "@/components/encontros/meeting-participants-panel";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { BackLink } from "@/components/ui/BackLink";
 
 export default async function EncontroPage({
   params,
@@ -25,6 +26,7 @@ export default async function EncontroPage({
 
   return (
     <div className="flex flex-col gap-6">
+      <BackLink href="/encontros" label="Encontros" />
       <PageHeader title={meeting.title}>
         <Link
           href={`/encontros/${id}/presenca`}

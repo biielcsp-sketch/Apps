@@ -6,29 +6,41 @@ import {
   LayoutDashboard,
   Users,
   UserCog,
-  Home,
-  CalendarDays,
+  Coffee,
   HeartHandshake,
   ShieldCheck,
   QrCode,
   Menu,
   X,
   LogOut,
+  type LucideIcon,
 } from "lucide-react";
 import { NavLink } from "@/components/nav-link";
+import { NavGroup } from "@/components/nav-group";
 import { logout } from "@/app/actions/auth";
 
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/participantes", label: "Participantes", icon: Users },
-  { href: "/liderancas", label: "Líderes", icon: UserCog },
-  { href: "/grupos", label: "Grupos", icon: Home },
-  { href: "/encontros", label: "Encontros", icon: CalendarDays },
-  { href: "/acompanhamentos", label: "Acompanhamentos", icon: HeartHandshake },
-  { href: "/configuracoes/qrcodes", label: "QR Codes", icon: QrCode },
+type NavItem =
+  | { type: "link"; href: string; label: string; icon: LucideIcon }
+  | { type: "group"; label: string; icon: LucideIcon; items: { href: string; label: string }[] };
+
+const NAV_ITEMS: NavItem[] = [
+  { type: "link", href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { type: "link", href: "/participantes", label: "Participantes", icon: Users },
+  { type: "link", href: "/liderancas", label: "Líderes", icon: UserCog },
+  {
+    type: "group",
+    label: "Cafés",
+    icon: Coffee,
+    items: [
+      { href: "/grupos", label: "Grupos" },
+      { href: "/encontros", label: "Encontros" },
+    ],
+  },
+  { type: "link", href: "/acompanhamentos", label: "Acompanhamentos", icon: HeartHandshake },
+  { type: "link", href: "/configuracoes/qrcodes", label: "QR Codes", icon: QrCode },
 ];
 
-const DEVELOPER_NAV_ITEM = { href: "/contas", label: "Contas", icon: ShieldCheck };
+const DEVELOPER_NAV_ITEM: NavItem = { type: "link", href: "/contas", label: "Contas", icon: ShieldCheck };
 
 export function AdminShell({
   userName,
@@ -50,9 +62,13 @@ export function AdminShell({
           <Image src="/icons/logo-official.png" alt="Café com Deus Shine" width={876} height={866} className="h-14 w-auto" />
         </div>
         <nav className="flex flex-1 flex-col gap-1">
-          {navItems.map((item) => (
-            <NavLink key={item.href} {...item} />
-          ))}
+          {navItems.map((item) =>
+            item.type === "group" ? (
+              <NavGroup key={item.label} {...item} />
+            ) : (
+              <NavLink key={item.href} {...item} />
+            ),
+          )}
         </nav>
         <div className="mt-4 border-t border-border pt-4">
           <p className="truncate px-2 text-sm text-muted-foreground">{userName}</p>
@@ -87,9 +103,13 @@ export function AdminShell({
               </button>
             </div>
             <nav className="flex flex-1 flex-col gap-1">
-              {navItems.map((item) => (
-                <NavLink key={item.href} {...item} onNavigate={() => setMenuOpen(false)} />
-              ))}
+              {navItems.map((item) =>
+                item.type === "group" ? (
+                  <NavGroup key={item.label} {...item} onNavigate={() => setMenuOpen(false)} />
+                ) : (
+                  <NavLink key={item.href} {...item} onNavigate={() => setMenuOpen(false)} />
+                ),
+              )}
             </nav>
             <div className="mt-4 border-t border-border pt-4">
               <p className="truncate px-2 text-sm text-muted-foreground">{userName}</p>

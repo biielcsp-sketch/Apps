@@ -3,6 +3,7 @@ import { listActiveLeadersForSelect } from "@/lib/services/participants.service"
 import { Card } from "@/components/ui/Card";
 import { SuggestionCard } from "@/components/distribuicao/suggestion-card";
 import { ManualLeaderForm } from "@/components/distribuicao/manual-leader-form";
+import { BackLink } from "@/components/ui/BackLink";
 
 export default async function DistribuirParticipantePage({
   params,
@@ -17,6 +18,7 @@ export default async function DistribuirParticipantePage({
 
   return (
     <div className="flex flex-col gap-6">
+      <BackLink href="/participantes/aguardando-distribuicao" label="Aguardando distribuição" />
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Distribuir {participant.full_name}</h1>
         <p className="mt-1 text-sm text-muted-foreground">

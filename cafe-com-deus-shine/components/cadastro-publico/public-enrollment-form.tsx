@@ -97,47 +97,43 @@ export function PublicEnrollmentForm({ code }: { code: string }) {
         <input id="email" name="email" type="email" autoComplete="email" className={inputClass} />
       </div>
 
-      <details className="rounded-xl border border-border bg-muted/50 p-4">
-        <summary className="cursor-pointer text-sm font-medium text-foreground">
-          Mais detalhes (opcional)
-        </summary>
-        <div className="mt-4 flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className={labelClass} htmlFor="address">
-              Endereço
+      <div className="flex flex-col gap-1.5">
+        <label className={labelClass} htmlFor="address">
+          Endereço
+        </label>
+        <input id="address" name="address" required className={inputClass} />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className={labelClass}>Dias disponíveis</span>
+        <div className="flex flex-wrap gap-x-4 gap-y-2">
+          {AVAILABILITY_DAYS.map((day) => (
+            <label key={day} className="flex items-center gap-1.5 text-sm text-foreground">
+              <input type="checkbox" name="availability_days" value={day} />
+              {AVAILABILITY_DAY_LABELS[day]}
             </label>
-            <input id="address" name="address" className={inputClass} />
-          </div>
-          <div className="flex flex-col gap-2">
-            <span className={labelClass}>Dias disponíveis</span>
-            <div className="flex flex-wrap gap-x-4 gap-y-2">
-              {AVAILABILITY_DAYS.map((day) => (
-                <label key={day} className="flex items-center gap-1.5 text-sm text-foreground">
-                  <input type="checkbox" name="availability_days" value={day} />
-                  {AVAILABILITY_DAY_LABELS[day]}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <span className={labelClass}>Períodos disponíveis</span>
-            <div className="flex flex-wrap gap-x-4 gap-y-2">
-              {AVAILABILITY_PERIODS.map((period) => (
-                <label key={period} className="flex items-center gap-1.5 text-sm text-foreground">
-                  <input type="checkbox" name="availability_period" value={period} />
-                  {AVAILABILITY_PERIOD_LABELS[period]}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className={labelClass} htmlFor="location_preference">
-              Prefere um encontro perto de onde?
-            </label>
-            <input id="location_preference" name="location_preference" className={inputClass} />
-          </div>
+          ))}
         </div>
-      </details>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className={labelClass}>Períodos disponíveis</span>
+        <div className="flex flex-wrap gap-x-4 gap-y-2">
+          {AVAILABILITY_PERIODS.map((period) => (
+            <label key={period} className="flex items-center gap-1.5 text-sm text-foreground">
+              <input type="checkbox" name="availability_period" value={period} />
+              {AVAILABILITY_PERIOD_LABELS[period]}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className={labelClass} htmlFor="location_preference">
+          Prefere um encontro perto de onde?
+        </label>
+        <input id="location_preference" name="location_preference" required className={inputClass} />
+      </div>
 
       <label className="flex items-start gap-2.5 rounded-xl border border-border bg-muted p-4 text-sm text-foreground">
         <input type="checkbox" name="consent_accepted" required className="mt-0.5 h-4 w-4 shrink-0" />
