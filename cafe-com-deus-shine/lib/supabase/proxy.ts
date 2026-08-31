@@ -92,7 +92,12 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const isPublicRoute =
-    path === "/login" || path === "/" || path === "/definir-senha" || path === "/criar-acesso";
+    path === "/login" ||
+    path === "/" ||
+    path === "/definir-senha" ||
+    path === "/criar-acesso" ||
+    // Q2 (cadastro público via QR Code): a visitante nunca tem sessão.
+    path === "/cadastro";
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();

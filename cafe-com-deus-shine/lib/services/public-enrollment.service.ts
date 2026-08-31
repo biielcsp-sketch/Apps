@@ -7,6 +7,40 @@ import type { TablesInsert } from "@/types/database.types";
 
 export type PublicEnrollmentResult = "created" | "duplicate" | "discarded";
 
+// Q2: a rota pública /cadastro valida `?origem=` contra isto ANTES de
+// mostrar o formulário — link sem origem rastreável não deve permitir
+// cadastro. `enrollment_sources` só tem policy de RLS para `authenticated`
+// (admin CRUD, líder select) — quem acessa esta página não tem sessão
+// nenhuma, por isso o client admin, não o normal.
+export async function validateEnrollmentSource(code: string): Promise<boolean> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("enrollment_sources")
+    .select("id")
+    .eq("code", code)
+    .eq("active", true)
+    .maybeSingle();
+  if (error) dbError(error, "publicEnrollment.validateSource");
+  return Boolean(data);
+}
+
+// Q2: texto vigente dos termos para exibir na própria tela pública, antes
+// do aceite. `app_terms_versions` também só libera SELECT para
+// `authenticated` — o conteúdo em si é para ser público nesta tela
+// específica (é para isso que ela existe), mas a tabela não é, por isso
+// client admin aqui também.
+export async function getActiveTermsForPublicEnrollment() {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("app_terms_versions")
+    .select("version, content")
+    .order("published_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) dbError(error, "publicEnrollment.getActiveTerms");
+  return data;
+}
+
 // Único ponto do sistema onde alguém sem sessão autenticada escreve no
 // banco (decisão travada no CLAUDE.md). NUNCA via policy de RLS `anon` em
 // `participants` — RLS restringe linha, não coluna, e uma policy anônima
@@ -48,15 +82,7 @@ export async function submitPublicEnrollment(
     return "duplicate";
   }
 
-  // Versão vigente dos termos (mesma lógica de consent.service.ts, mas com
-  // o client admin — quem está preenchendo isto não tem sessão, então o
-  // client normal bateria em RLS/`anon` sem grant nenhum).
-  const { data: terms } = await admin
-    .from("app_terms_versions")
-    .select("version")
-    .order("published_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const terms = await getActiveTermsForPublicEnrollment();
 
   // 4. Payload montado campo a campo — NUNCA spread do body recebido.
   // status, consent_method e enrollment_source são decididos aqui, nunca
