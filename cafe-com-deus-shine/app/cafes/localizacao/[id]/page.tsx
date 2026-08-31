@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
 import { getGroup } from "@/lib/services/groups.service";
+import { getMyAvatarSignedUrl } from "@/lib/services/avatar.service";
 import { AdminShell } from "@/components/admin-shell";
 import { LiderShell } from "@/components/lider-shell";
 import { GroupLocationEditor } from "@/components/grupos/group-location-editor-loader";
@@ -20,7 +21,7 @@ export default async function GrupoLocalizacaoPage({
   // A RLS de `groups` já restringe uma líder ao(s) próprio(s) café(s) —
   // tentar abrir a localização de um café de outra líder cai aqui como
   // "não encontrado", não como erro de permissão.
-  const group = await getGroup(id);
+  const [group, avatarUrl] = await Promise.all([getGroup(id), getMyAvatarSignedUrl()]);
   if (!group) notFound();
 
   const content = (
@@ -37,11 +38,19 @@ export default async function GrupoLocalizacaoPage({
 
   if (isAdminRole(profile.role)) {
     return (
-      <AdminShell userName={profile.full_name} isDeveloper={profile.role === "desenvolvedor"}>
+      <AdminShell
+        userName={profile.full_name}
+        isDeveloper={profile.role === "desenvolvedor"}
+        avatarUrl={avatarUrl}
+      >
         {content}
       </AdminShell>
     );
   }
 
-  return <LiderShell userName={profile.full_name}>{content}</LiderShell>;
+  return (
+    <LiderShell userName={profile.full_name} avatarUrl={avatarUrl}>
+      {content}
+    </LiderShell>
+  );
 }

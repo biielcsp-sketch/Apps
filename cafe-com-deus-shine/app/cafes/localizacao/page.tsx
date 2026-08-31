@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
 import { listGroups } from "@/lib/services/groups.service";
+import { getMyAvatarSignedUrl } from "@/lib/services/avatar.service";
 import { AdminShell } from "@/components/admin-shell";
 import { LiderShell } from "@/components/lider-shell";
 import { GroupsLocationView } from "@/components/grupos/groups-location-view";
@@ -15,7 +16,7 @@ export default async function GruposLocalizacaoPage() {
   if (!profile) redirect("/login");
   if (profile.role === "participante") redirect("/minha-jornada");
 
-  const groups = await listGroups();
+  const [groups, avatarUrl] = await Promise.all([listGroups(), getMyAvatarSignedUrl()]);
 
   const content = (
     <div className="flex flex-col gap-6">
@@ -29,11 +30,19 @@ export default async function GruposLocalizacaoPage() {
 
   if (isAdminRole(profile.role)) {
     return (
-      <AdminShell userName={profile.full_name} isDeveloper={profile.role === "desenvolvedor"}>
+      <AdminShell
+        userName={profile.full_name}
+        isDeveloper={profile.role === "desenvolvedor"}
+        avatarUrl={avatarUrl}
+      >
         {content}
       </AdminShell>
     );
   }
 
-  return <LiderShell userName={profile.full_name}>{content}</LiderShell>;
+  return (
+    <LiderShell userName={profile.full_name} avatarUrl={avatarUrl}>
+      {content}
+    </LiderShell>
+  );
 }

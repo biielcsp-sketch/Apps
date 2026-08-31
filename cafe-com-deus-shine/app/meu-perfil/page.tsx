@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
+import { getMyAvatarSignedUrl } from "@/lib/services/avatar.service";
 import { AdminShell } from "@/components/admin-shell";
 import { LiderShell } from "@/components/lider-shell";
 import { ParticipanteShell } from "@/components/participante-shell";
@@ -14,9 +15,15 @@ export default async function MeuPerfilPage() {
   const profile = await getCurrentProfile();
   if (!profile) redirect("/login");
 
+  const avatarUrl = await getMyAvatarSignedUrl();
+
   if (isAdminRole(profile.role)) {
     return (
-      <AdminShell userName={profile.full_name} isDeveloper={profile.role === "desenvolvedor"}>
+      <AdminShell
+        userName={profile.full_name}
+        isDeveloper={profile.role === "desenvolvedor"}
+        avatarUrl={avatarUrl}
+      >
         <ProfileView profile={profile} />
       </AdminShell>
     );
@@ -24,14 +31,14 @@ export default async function MeuPerfilPage() {
 
   if (profile.role === "lider") {
     return (
-      <LiderShell userName={profile.full_name}>
+      <LiderShell userName={profile.full_name} avatarUrl={avatarUrl}>
         <ProfileView profile={profile} />
       </LiderShell>
     );
   }
 
   return (
-    <ParticipanteShell userName={profile.full_name}>
+    <ParticipanteShell userName={profile.full_name} avatarUrl={avatarUrl}>
       <ProfileView profile={profile} />
     </ParticipanteShell>
   );

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import {
   LayoutDashboard,
   Users,
@@ -16,6 +15,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/nav-link";
+import { SidebarIdentity } from "@/components/ui/SidebarIdentity";
 import { logout } from "@/app/actions/auth";
 
 const NAV_ITEMS = [
@@ -32,10 +32,12 @@ const DEVELOPER_NAV_ITEM = { href: "/contas", label: "Contas", icon: ShieldCheck
 export function AdminShell({
   userName,
   isDeveloper = false,
+  avatarUrl,
   children,
 }: {
   userName: string;
   isDeveloper?: boolean;
+  avatarUrl?: string | null;
   children: React.ReactNode;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -54,12 +56,11 @@ export function AdminShell({
           ))}
         </nav>
         <div className="mt-4 border-t border-border pt-4">
-          <Link href="/meu-perfil" className="block rounded-lg px-2 py-1.5 hover:bg-muted">
-            <p className="truncate text-sm text-muted-foreground">{userName}</p>
-            {isDeveloper && (
-              <p className="text-xs font-medium text-primary">Desenvolvedor</p>
-            )}
-          </Link>
+          <SidebarIdentity
+            userName={userName}
+            avatarUrl={avatarUrl}
+            roleLabel={isDeveloper ? "Desenvolvedor" : undefined}
+          />
           <form action={logout}>
             <button
               type="submit"
@@ -93,16 +94,12 @@ export function AdminShell({
               ))}
             </nav>
             <div className="mt-4 border-t border-border pt-4">
-              <Link
-                href="/meu-perfil"
-                onClick={() => setMenuOpen(false)}
-                className="block rounded-lg px-2 py-1.5 hover:bg-muted"
-              >
-                <p className="truncate text-sm text-muted-foreground">{userName}</p>
-                {isDeveloper && (
-                  <p className="text-xs font-medium text-primary">Desenvolvedor</p>
-                )}
-              </Link>
+              <SidebarIdentity
+                userName={userName}
+                avatarUrl={avatarUrl}
+                roleLabel={isDeveloper ? "Desenvolvedor" : undefined}
+                onNavigate={() => setMenuOpen(false)}
+              />
               <form action={logout}>
                 <button
                   type="submit"

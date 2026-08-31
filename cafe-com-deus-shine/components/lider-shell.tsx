@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import {
   Home,
   Users,
@@ -15,6 +14,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/nav-link";
+import { SidebarIdentity } from "@/components/ui/SidebarIdentity";
 import { logout } from "@/app/actions/auth";
 
 const NAV_ITEMS = [
@@ -28,9 +28,11 @@ const NAV_ITEMS = [
 
 export function LiderShell({
   userName,
+  avatarUrl,
   children,
 }: {
   userName: string;
+  avatarUrl?: string | null;
   children: React.ReactNode;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -48,9 +50,7 @@ export function LiderShell({
           ))}
         </nav>
         <div className="mt-4 border-t border-border pt-4">
-          <Link href="/meu-perfil" className="block rounded-lg px-2 py-1.5 hover:bg-muted">
-            <p className="truncate text-sm text-muted-foreground">{userName}</p>
-          </Link>
+          <SidebarIdentity userName={userName} avatarUrl={avatarUrl} />
           <form action={logout}>
             <button
               type="submit"
@@ -84,13 +84,7 @@ export function LiderShell({
               ))}
             </nav>
             <div className="mt-4 border-t border-border pt-4">
-              <Link
-                href="/meu-perfil"
-                onClick={() => setMenuOpen(false)}
-                className="block rounded-lg px-2 py-1.5 hover:bg-muted"
-              >
-                <p className="truncate text-sm text-muted-foreground">{userName}</p>
-              </Link>
+              <SidebarIdentity userName={userName} avatarUrl={avatarUrl} onNavigate={() => setMenuOpen(false)} />
               <form action={logout}>
                 <button
                   type="submit"

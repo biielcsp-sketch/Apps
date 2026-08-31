@@ -4,6 +4,7 @@ import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service"
 import { listGroups } from "@/lib/services/groups.service";
 import { listMeetings } from "@/lib/services/meetings.service";
 import { listActiveLeadersForSelect, listGroupsForSelect } from "@/lib/services/participants.service";
+import { getMyAvatarSignedUrl } from "@/lib/services/avatar.service";
 import { AdminShell } from "@/components/admin-shell";
 import { CafesTabs } from "@/components/grupos/cafes-tabs";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -17,15 +18,20 @@ export default async function CafesPage() {
   if (!profile) redirect("/login");
   if (!isAdminRole(profile.role)) redirect(profile.role === "lider" ? "/inicio" : "/minha-jornada");
 
-  const [groups, meetings, leaders, groupsForSelect] = await Promise.all([
+  const [groups, meetings, leaders, groupsForSelect, avatarUrl] = await Promise.all([
     listGroups(),
     listMeetings(),
     listActiveLeadersForSelect(),
     listGroupsForSelect(),
+    getMyAvatarSignedUrl(),
   ]);
 
   return (
-    <AdminShell userName={profile.full_name} isDeveloper={profile.role === "desenvolvedor"}>
+    <AdminShell
+      userName={profile.full_name}
+      isDeveloper={profile.role === "desenvolvedor"}
+      avatarUrl={avatarUrl}
+    >
       <div className="flex flex-col gap-6">
         <PageHeader title="Cafés" description="Grupos, encontros e localização em um só lugar." />
         <Suspense>
