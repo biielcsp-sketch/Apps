@@ -10,6 +10,7 @@ import {
   HeartHandshake,
   ShieldCheck,
   QrCode,
+  UserCircle,
   Menu,
   X,
   LogOut,
@@ -38,6 +39,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   { type: "link", href: "/acompanhamentos", label: "Acompanhamentos", icon: HeartHandshake },
   { type: "link", href: "/configuracoes/qrcodes", label: "QR Codes", icon: QrCode },
+  { type: "link", href: "/meu-perfil", label: "Meu Perfil", icon: UserCircle },
 ];
 
 const DEVELOPER_NAV_ITEM: NavItem = { type: "link", href: "/contas", label: "Contas", icon: ShieldCheck };

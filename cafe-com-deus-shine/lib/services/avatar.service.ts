@@ -82,6 +82,32 @@ export async function uploadMyAvatar(file: File) {
   return path;
 }
 
+// Remove o avatar da PRÓPRIA usuária logada — apaga o arquivo do bucket
+// e limpa a referência no profile.
+export async function removeMyAvatar() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new AppError("Sessão expirada. Faça login novamente.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("avatar_url")
+    .eq("id", user.id)
+    .single();
+  if (!profile?.avatar_url) return;
+
+  const { error: removeError } = await supabase.storage.from("avatars").remove([profile.avatar_url]);
+  if (removeError) dbError(removeError, "avatar.remove");
+
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({ avatar_url: null })
+    .eq("id", user.id);
+  if (profileError) dbError(profileError, "avatar.clearProfile");
+}
+
 // Bucket é privado — nunca uma URL pública permanente. Gera uma URL
 // assinada de curta duração sob demanda para exibir a foto.
 export async function getMyAvatarSignedUrl(): Promise<string | null> {

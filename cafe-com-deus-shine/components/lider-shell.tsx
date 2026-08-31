@@ -8,6 +8,7 @@ import {
   CalendarDays,
   HeartHandshake,
   History,
+  UserCircle,
   Menu,
   X,
   LogOut,
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
   { href: "/meus-encontros", label: "Encontros", icon: CalendarDays },
   { href: "/meus-acompanhamentos", label: "Acompanhar", icon: HeartHandshake },
   { href: "/historico", label: "Histórico", icon: History },
+  { href: "/meu-perfil", label: "Meu Perfil", icon: UserCircle },
 ];
 
 export function LiderShell({

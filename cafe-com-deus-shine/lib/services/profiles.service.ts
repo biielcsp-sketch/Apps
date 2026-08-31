@@ -1,6 +1,8 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { AppError, dbError } from "@/lib/errors";
 import type { Tables } from "@/types/database.types";
+import type { MyProfileInput } from "@/lib/validators/my-profile.schema";
 
 export type CurrentProfile = Tables<"profiles">;
 
@@ -35,4 +37,26 @@ export async function getCurrentProfile(): Promise<CurrentProfile | null> {
   // numa sessão já aberta (não precisa esperar o token expirar).
   if (!data.active) return null;
   return data;
+}
+
+// Autoatendimento: qualquer usuária autenticada atualiza os PRÓPRIOS
+// nome/telefone/whatsapp — nunca aceita um id de outra pessoa, o alvo é
+// sempre resolvido pela sessão.
+export async function updateMyProfile(input: MyProfileInput) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new AppError("Sessão expirada. Faça login novamente.");
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      full_name: input.full_name,
+      phone: input.phone || null,
+      whatsapp: input.whatsapp || null,
+    })
+    .eq("id", user.id);
+
+  if (error) dbError(error, "profiles.updateMy");
 }

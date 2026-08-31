@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Sparkles, Menu, X, LogOut } from "lucide-react";
+import { Sparkles, UserCircle, Menu, X, LogOut } from "lucide-react";
 import { NavLink } from "@/components/nav-link";
 import { logout } from "@/app/actions/auth";
 
-const NAV_ITEMS = [{ href: "/minha-jornada", label: "Minha Jornada", icon: Sparkles }];
+const NAV_ITEMS = [
+  { href: "/minha-jornada", label: "Minha Jornada", icon: Sparkles },
+  { href: "/meu-perfil", label: "Meu Perfil", icon: UserCircle },
+];
 
 export function ParticipanteShell({
   userName,
