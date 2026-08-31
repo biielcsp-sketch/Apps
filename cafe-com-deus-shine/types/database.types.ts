@@ -242,6 +242,41 @@ export type Database = {
           },
         ]
       }
+      enrollment_sources: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          label: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_sources_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follow_ups: {
         Row: {
           created_at: string
@@ -839,6 +874,10 @@ export type Database = {
       }
       app_check_login_rate_limit: { Args: { p_key: string }; Returns: boolean }
       app_check_participant_write_rate_limit: {
+        Args: { p_key: string }
+        Returns: boolean
+      }
+      app_check_public_enrollment_rate_limit: {
         Args: { p_key: string }
         Returns: boolean
       }

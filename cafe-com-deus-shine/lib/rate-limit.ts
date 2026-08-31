@@ -11,7 +11,8 @@ type RateLimitRpc =
   | "app_check_login_rate_limit"
   | "app_check_claim_account_rate_limit"
   | "app_check_erasure_rate_limit"
-  | "app_check_participant_write_rate_limit";
+  | "app_check_participant_write_rate_limit"
+  | "app_check_public_enrollment_rate_limit";
 
 async function hit(rpc: RateLimitRpc, key: string) {
   const supabase = await createClient();
@@ -41,4 +42,11 @@ export function checkErasureRateLimit(userId: string) {
 
 export function checkParticipantWriteRateLimit(userId: string) {
   return hit("app_check_participant_write_rate_limit", userId);
+}
+
+// Q1 (cadastro público via QR Code): por IP, não por usuária — quem
+// preenche o formulário público ainda não tem sessão nem e-mail conhecido
+// até o submit terminar.
+export function checkPublicEnrollmentRateLimit(ip: string) {
+  return hit("app_check_public_enrollment_rate_limit", ip);
 }
