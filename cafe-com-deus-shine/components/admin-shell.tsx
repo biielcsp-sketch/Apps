@@ -10,6 +10,7 @@ import {
   CalendarDays,
   HeartHandshake,
   ShieldCheck,
+  QrCode,
   Menu,
   X,
   LogOut,
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { href: "/grupos", label: "Grupos", icon: Home },
   { href: "/encontros", label: "Encontros", icon: CalendarDays },
   { href: "/acompanhamentos", label: "Acompanhamentos", icon: HeartHandshake },
+  { href: "/configuracoes/qrcodes", label: "QR Codes", icon: QrCode },
 ];
 
 const DEVELOPER_NAV_ITEM = { href: "/contas", label: "Contas", icon: ShieldCheck };
