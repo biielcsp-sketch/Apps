@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import type { LeafletMouseEvent, Marker as LeafletMarker } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { markerIcon, DEFAULT_MAP_CENTER } from "@/components/grupos/leaflet-icon";
+import { MapResizeFix } from "@/components/grupos/map-resize-fix";
 import { Button } from "@/components/ui/Button";
 import { updateGroupLocationAction, clearGroupLocationAction } from "@/app/actions/group-location";
 
@@ -78,6 +79,7 @@ export function GroupLocationEditor({
 
       <div className="h-[360px] overflow-hidden rounded-2xl border border-border">
         <MapContainer center={center} zoom={position ? 15 : 10} scrollWheelZoom className="h-full w-full">
+          <MapResizeFix />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
