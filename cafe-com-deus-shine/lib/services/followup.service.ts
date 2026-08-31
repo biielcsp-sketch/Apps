@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { logAuditEvent } from "@/lib/services/audit.service";
+import { dbError } from "@/lib/errors";
 import type { FollowUpInput } from "@/lib/validators/followup.schema";
 import type { Tables, Enums } from "@/types/database.types";
 
@@ -34,7 +35,7 @@ export async function listFollowUps(participantId: string) {
     .select("*")
     .eq("participant_id", participantId)
     .order("date", { ascending: false });
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "followup.list");
   return data ?? [];
 }
 
@@ -54,7 +55,7 @@ export async function createFollowUp(participantId: string, leaderId: string, in
     })
     .select()
     .single();
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "followup.create");
 
   await logAuditEvent({
     action: "followup.create",

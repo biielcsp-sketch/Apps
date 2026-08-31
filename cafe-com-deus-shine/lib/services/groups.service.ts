@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { logAuditEvent } from "@/lib/services/audit.service";
+import { AppError, dbError } from "@/lib/errors";
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/database.types";
 
 export type GroupRow = Tables<"groups">;
@@ -12,7 +13,7 @@ export async function listGroups() {
     .select("*, leader:leaders(id, profile:profiles(full_name)), occupants:participants!participants_current_group_id_fkey(count)")
     .order("name");
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "groups.list");
 
   return (data ?? []).map((g) => ({
     ...g,
@@ -34,10 +35,10 @@ export async function getGroup(id: string) {
 
 export async function createGroup(input: TablesInsert<"groups">) {
   const supabase = await createClient();
-  if (input.capacity <= 0) throw new Error("A capacidade precisa ser maior que zero.");
+  if (input.capacity <= 0) throw new AppError("A capacidade precisa ser maior que zero.");
 
   const { data, error } = await supabase.from("groups").insert(input).select().single();
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "groups.create");
 
   await logAuditEvent({ action: "group.create", entity: "groups", entityId: data.id, after: input });
   return data;
@@ -46,11 +47,11 @@ export async function createGroup(input: TablesInsert<"groups">) {
 export async function updateGroup(id: string, input: TablesUpdate<"groups">) {
   const supabase = await createClient();
   if (input.capacity !== undefined && input.capacity !== null && input.capacity <= 0) {
-    throw new Error("A capacidade precisa ser maior que zero.");
+    throw new AppError("A capacidade precisa ser maior que zero.");
   }
 
   const { data, error } = await supabase.from("groups").update(input).eq("id", id).select().single();
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "groups.update");
 
   await logAuditEvent({ action: "group.update", entity: "groups", entityId: id, after: input });
   return data;

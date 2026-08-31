@@ -108,44 +108,6 @@ export type Database = {
           },
         ]
       }
-      auth_audit_log: {
-        Row: {
-          created_at: string
-          event: Database["public"]["Enums"]["auth_audit_event"]
-          id: string
-          ip_address: string | null
-          metadata: Json | null
-          profile_id: string | null
-          user_agent: string | null
-        }
-        Insert: {
-          created_at?: string
-          event: Database["public"]["Enums"]["auth_audit_event"]
-          id?: string
-          ip_address?: string | null
-          metadata?: Json | null
-          profile_id?: string | null
-          user_agent?: string | null
-        }
-        Update: {
-          created_at?: string
-          event?: Database["public"]["Enums"]["auth_audit_event"]
-          id?: string
-          ip_address?: string | null
-          metadata?: Json | null
-          profile_id?: string | null
-          user_agent?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "auth_audit_log_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       audit_log: {
         Row: {
           action: string
@@ -181,6 +143,44 @@ export type Database = {
           {
             foreignKeyName: "audit_log_actor_profile_id_fkey"
             columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auth_audit_log: {
+        Row: {
+          created_at: string
+          event: Database["public"]["Enums"]["auth_audit_event"]
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          profile_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          event: Database["public"]["Enums"]["auth_audit_event"]
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          profile_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          event?: Database["public"]["Enums"]["auth_audit_event"]
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          profile_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auth_audit_log_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -873,6 +873,10 @@ export type Database = {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
         Returns: boolean
       }
+      app_revoke_user_sessions: {
+        Args: { p_profile_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       attendance_status: "presente" | "ausente" | "justificou" | "nao_informado"
@@ -882,6 +886,7 @@ export type Database = {
         | "logout"
         | "password_reset_requested"
         | "access_denied"
+        | "session_revoked"
       follow_up_status: "normal" | "atencao" | "acompanhamento_necessario"
       follow_up_type:
         | "encontro"
@@ -1036,6 +1041,7 @@ export const Constants = {
         "logout",
         "password_reset_requested",
         "access_denied",
+        "session_revoked",
       ],
       follow_up_status: ["normal", "atencao", "acompanhamento_necessario"],
       follow_up_type: [

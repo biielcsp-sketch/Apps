@@ -29,6 +29,31 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Segurança
+
+### Variáveis de ambiente
+
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e
+`SUPABASE_SERVICE_ROLE_KEY` (ver `.env.example`) são validadas no boot do
+servidor (`instrumentation.ts` → `lib/env.ts`) — se alguma estiver ausente
+ou em formato inválido, a aplicação falha ao subir com uma mensagem clara
+em vez de rodar com uma feature de segurança silenciosamente desativada.
+
+### Auditoria de dependências
+
+Rode manualmente antes de cada deploy (ainda não é automatizado em CI):
+
+```bash
+npm audit --production
+```
+
+Se aparecer uma vulnerabilidade de severidade alta/crítica numa dependência
+que o projeto já usa em produção, pare e avalie o caso antes de decidir se
+atualiza a versão, substitui a dependência ou aceita o risco
+temporariamente — não é uma decisão puramente técnica. `package-lock.json`
+está commitado no repositório para que `npm ci`/`npm audit` sejam
+reprodutíveis.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

@@ -3,11 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/services/audit.service";
 import { getCurrentProfile } from "@/lib/services/profiles.service";
+import { revokeUserSessions } from "@/lib/services/session.service";
+import { AppError, dbError } from "@/lib/errors";
 import type { Enums } from "@/types/database.types";
 
 function assertDeveloper(role: Enums<"user_role"> | undefined | null) {
   if (role !== "desenvolvedor") {
-    throw new Error("Apenas o perfil Desenvolvedor pode usar esta função.");
+    throw new AppError("Apenas o perfil Desenvolvedor pode usar esta função.");
   }
 }
 
@@ -24,7 +26,7 @@ export async function listAllAccounts() {
     .select("id, full_name, email, role, active, created_at")
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "accounts.listAll");
   return data;
 }
 
@@ -39,7 +41,7 @@ export async function getAccount(id: string) {
     supabase.from("participants").select("id").eq("profile_id", id).maybeSingle(),
   ]);
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "accounts.get");
   return { ...data, hasLeaderRow: Boolean(leaderRow), hasParticipantRow: Boolean(participantRow) };
 }
 
@@ -53,7 +55,7 @@ export async function resetUserPassword(profileId: string, newPassword: string) 
 
   const admin = createAdminClient();
   const { error } = await admin.auth.admin.updateUserById(profileId, { password: newPassword });
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "accounts.resetPassword");
 
   await logAuditEvent({
     action: "account.reset_password",
@@ -74,13 +76,13 @@ export async function updateUserEmail(profileId: string, newEmail: string) {
     email: newEmail,
     email_confirm: true,
   });
-  if (authError) throw new Error(authError.message);
+  if (authError) dbError(authError, "accounts.updateEmail.auth");
 
   const { error: profileError } = await admin
     .from("profiles")
     .update({ email: newEmail })
     .eq("id", profileId);
-  if (profileError) throw new Error(profileError.message);
+  if (profileError) dbError(profileError, "accounts.updateEmail.profile");
 
   await logAuditEvent({
     action: "account.update_email",
@@ -114,14 +116,14 @@ export async function createDirectAccount(input: {
     user_metadata: { full_name: input.fullName },
   });
   if (createError || !created.user) {
-    throw new Error(createError?.message ?? "Não foi possível criar a conta.");
+    dbError(createError, "accounts.createDirect.createUser", "Não foi possível criar a conta.");
   }
 
   const { error: profileError } = await admin
     .from("profiles")
     .update({ role: input.role, full_name: input.fullName })
     .eq("id", created.user.id);
-  if (profileError) throw new Error(profileError.message);
+  if (profileError) dbError(profileError, "accounts.createDirect.profile");
 
   await logAuditEvent({
     action: "account.create_direct",
@@ -151,7 +153,7 @@ export async function createDirectLeaderAccount(input: {
   const profile = await getCurrentProfile();
   assertDeveloper(profile?.role);
 
-  if (input.maxCapacity <= 0) throw new Error("A capacidade máxima precisa ser maior que zero.");
+  if (input.maxCapacity <= 0) throw new AppError("A capacidade máxima precisa ser maior que zero.");
 
   const admin = createAdminClient();
   const { data: created, error: createError } = await admin.auth.admin.createUser({
@@ -161,7 +163,7 @@ export async function createDirectLeaderAccount(input: {
     user_metadata: { full_name: input.fullName },
   });
   if (createError || !created.user) {
-    throw new Error(createError?.message ?? "Não foi possível criar a conta.");
+    dbError(createError, "accounts.createDirectLeader.createUser", "Não foi possível criar a conta.");
   }
 
   // app_handle_new_user já criou o profile com role 'lider' (padrão do
@@ -180,7 +182,7 @@ export async function createDirectLeaderAccount(input: {
     max_capacity: input.maxCapacity,
     status: "ativa",
   });
-  if (leaderError) throw new Error(leaderError.message);
+  if (leaderError) dbError(leaderError, "accounts.createDirectLeader.leader");
 
   await logAuditEvent({
     action: "account.create_direct_leader",
@@ -209,7 +211,7 @@ export async function listUnclaimedParticipants() {
     .is("anonymized_at", null)
     .order("full_name");
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "accounts.listUnclaimedParticipants");
   return data;
 }
 
@@ -230,9 +232,9 @@ export async function createDirectParticipantAccount(input: {
     .select("id, full_name, profile_id")
     .eq("id", input.participantId)
     .maybeSingle();
-  if (findError) throw new Error(findError.message);
-  if (!participant) throw new Error("Participante não encontrada.");
-  if (participant.profile_id) throw new Error("Esta participante já tem uma conta.");
+  if (findError) dbError(findError, "accounts.createDirectParticipant.find");
+  if (!participant) throw new AppError("Participante não encontrada.");
+  if (participant.profile_id) throw new AppError("Esta participante já tem uma conta.");
 
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     email: input.email,
@@ -241,7 +243,7 @@ export async function createDirectParticipantAccount(input: {
     user_metadata: { full_name: participant.full_name },
   });
   if (createError || !created.user) {
-    throw new Error(createError?.message ?? "Não foi possível criar a conta.");
+    dbError(createError, "accounts.createDirectParticipant.createUser", "Não foi possível criar a conta.");
   }
 
   await admin
@@ -253,7 +255,7 @@ export async function createDirectParticipantAccount(input: {
     .from("participants")
     .update({ profile_id: created.user.id, email: input.email })
     .eq("id", participant.id);
-  if (linkError) throw new Error(linkError.message);
+  if (linkError) dbError(linkError, "accounts.createDirectParticipant.link");
 
   await logAuditEvent({
     action: "account.create_direct_participant",
@@ -296,7 +298,7 @@ export async function updateAccount(
     .select("role")
     .eq("id", profileId)
     .single();
-  if (currentError) throw new Error(currentError.message);
+  if (currentError) dbError(currentError, "accounts.update.current");
 
   const changingRole = input.role !== current.role;
 
@@ -309,7 +311,7 @@ export async function updateAccount(
 
     if (!existingLeader) {
       if (!input.leader || !(input.leader.maxCapacity > 0)) {
-        throw new Error("Informe a capacidade máxima para transformar esta conta em líder.");
+        throw new AppError("Informe a capacidade máxima para transformar esta conta em líder.");
       }
       const { error: leaderError } = await admin.from("leaders").insert({
         profile_id: profileId,
@@ -320,7 +322,7 @@ export async function updateAccount(
         max_capacity: input.leader.maxCapacity,
         status: "ativa",
       });
-      if (leaderError) throw new Error(leaderError.message);
+      if (leaderError) dbError(leaderError, "accounts.update.becomeLeader");
     }
   }
 
@@ -333,22 +335,22 @@ export async function updateAccount(
 
     if (!alreadyLinked) {
       if (!input.participantId) {
-        throw new Error("Selecione a participante já cadastrada para vincular a esta conta.");
+        throw new AppError("Selecione a participante já cadastrada para vincular a esta conta.");
       }
       const { data: participant, error: findError } = await admin
         .from("participants")
         .select("id, profile_id")
         .eq("id", input.participantId)
         .maybeSingle();
-      if (findError) throw new Error(findError.message);
-      if (!participant) throw new Error("Participante não encontrada.");
-      if (participant.profile_id) throw new Error("Esta participante já tem uma conta.");
+      if (findError) dbError(findError, "accounts.update.becomeParticipant.find");
+      if (!participant) throw new AppError("Participante não encontrada.");
+      if (participant.profile_id) throw new AppError("Esta participante já tem uma conta.");
 
       const { error: linkError } = await admin
         .from("participants")
         .update({ profile_id: profileId })
         .eq("id", participant.id);
-      if (linkError) throw new Error(linkError.message);
+      if (linkError) dbError(linkError, "accounts.update.becomeParticipant.link");
     }
   }
 
@@ -356,7 +358,15 @@ export async function updateAccount(
     .from("profiles")
     .update({ full_name: input.fullName, role: input.role })
     .eq("id", profileId);
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "accounts.update");
+
+  // Sem isto, alguém rebaixada de admin pra líder (ou qualquer outra troca
+  // de papel) continuaria com os privilégios antigos até o token expirar
+  // naturalmente — a policy de RLS já muda na próxima query, mas a sessão
+  // em si (refresh token) seguiria viva.
+  if (changingRole) {
+    await revokeUserSessions(profileId);
+  }
 
   await logAuditEvent({
     action: "account.update",
@@ -367,21 +377,27 @@ export async function updateAccount(
 }
 
 // Ativa/desativa uma conta — bloqueia login e derruba qualquer sessão já
-// aberta na próxima navegação (getCurrentProfile trata active=false como
-// "sem sessão"). Alternativa segura à exclusão para quem tem histórico
-// vinculado (audit_log, presença registrada etc.) e não pode ser excluído
-// de verdade — ver deleteAccount().
+// aberta imediatamente (revokeUserSessions), com getCurrentProfile
+// tratando active=false como "sem sessão" como segunda camada (útil se o
+// token ainda não tiver sido invalidado no momento exato da requisição).
+// Alternativa segura à exclusão para quem tem histórico vinculado
+// (audit_log, presença registrada etc.) e não pode ser excluído de
+// verdade — ver deleteAccount().
 export async function setAccountActive(profileId: string, active: boolean) {
   const profile = await getCurrentProfile();
   assertDeveloper(profile?.role);
 
   if (profile!.id === profileId && !active) {
-    throw new Error("Você não pode desativar a própria conta.");
+    throw new AppError("Você não pode desativar a própria conta.");
   }
 
   const admin = createAdminClient();
   const { error } = await admin.from("profiles").update({ active }).eq("id", profileId);
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "accounts.setActive");
+
+  if (!active) {
+    await revokeUserSessions(profileId);
+  }
 
   await logAuditEvent({
     action: active ? "account.activate" : "account.deactivate",
@@ -405,7 +421,7 @@ export async function deleteAccount(profileId: string) {
   assertDeveloper(profile?.role);
 
   if (profile!.id === profileId) {
-    throw new Error("Você não pode excluir a própria conta.");
+    throw new AppError("Você não pode excluir a própria conta.");
   }
 
   const admin = createAdminClient();
@@ -414,10 +430,10 @@ export async function deleteAccount(profileId: string) {
     .select("role")
     .eq("id", profileId)
     .single();
-  if (targetError) throw new Error(targetError.message);
+  if (targetError) dbError(targetError, "accounts.delete.target");
 
   if (target.role === "lider") {
-    throw new Error(
+    throw new AppError(
       'Não é possível excluir uma conta de Líder — use "Inativar" na tela de Líderes. Excluir aqui deixaria o grupo sem responsável.',
     );
   }
@@ -430,13 +446,15 @@ export async function deleteAccount(profileId: string) {
 
   const { error: profileError } = await admin.from("profiles").delete().eq("id", profileId);
   if (profileError) {
-    throw new Error(
+    dbError(
+      profileError,
+      "accounts.delete.profile",
       "Esta conta tem histórico vinculado (ações registradas, presença, etc.) e não pode ser excluída sem perder esse histórico. Desative a conta em vez de excluir.",
     );
   }
 
   const { error: authError } = await admin.auth.admin.deleteUser(profileId);
-  if (authError) throw new Error(authError.message);
+  if (authError) dbError(authError, "accounts.delete.auth");
 
   await logAuditEvent({
     action: "account.delete",

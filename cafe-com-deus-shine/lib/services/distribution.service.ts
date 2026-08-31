@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { logAuditEvent } from "@/lib/services/audit.service";
+import { AppError, dbError } from "@/lib/errors";
 
 export type DistributionWeights = {
   disponibilidade: number;
@@ -71,7 +72,7 @@ export async function listAwaitingDistribution() {
     .eq("status", "aguardando_distribuicao")
     .order("enrollment_date", { ascending: true });
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "distribution.listAwaiting");
   return data ?? [];
 }
 
@@ -102,7 +103,7 @@ export async function suggestLeaders(participantId: string): Promise<{
     .select("id, full_name, city, neighborhood, availability_days, availability_period, location_preference")
     .eq("id", participantId)
     .single();
-  if (participantError || !participant) throw new Error("Participante não encontrada.");
+  if (participantError || !participant) throw new AppError("Participante não encontrada.");
 
   // Filtros obrigatórios: líder ativa com vagas restantes.
   const { data: leaders, error: leadersError } = await supabase
@@ -111,7 +112,7 @@ export async function suggestLeaders(participantId: string): Promise<{
       "id, city, neighborhood, region, max_capacity, profile:profiles(full_name), occupants:participants!participants_current_leader_id_fkey(count), groups(id, name, status, capacity, available_days, meeting_time, region, occupants:participants!participants_current_group_id_fkey(count))",
     )
     .eq("status", "ativa");
-  if (leadersError) throw new Error(leadersError.message);
+  if (leadersError) dbError(leadersError, "distribution.suggestLeaders");
 
   const eligible = (leaders ?? [])
     .map((l) => ({ ...l, occupied: l.occupants?.[0]?.count ?? 0 }))
@@ -224,20 +225,20 @@ export async function confirmDistribution(
     group_id: groupId,
     changed_by: user?.id ?? null,
   });
-  if (historyError) throw new Error(historyError.message);
+  if (historyError) dbError(historyError, "distribution.confirm.history");
 
   const { error: statusHistoryError } = await supabase.from("participant_status_history").insert({
     participant_id: participantId,
     status: "distribuida",
     changed_by: user?.id ?? null,
   });
-  if (statusHistoryError) throw new Error(statusHistoryError.message);
+  if (statusHistoryError) dbError(statusHistoryError, "distribution.confirm.statusHistory");
 
   const { error: updateError } = await supabase
     .from("participants")
     .update({ current_leader_id: leaderId, current_group_id: groupId, status: "distribuida" })
     .eq("id", participantId);
-  if (updateError) throw new Error(updateError.message);
+  if (updateError) dbError(updateError, "distribution.confirm.update");
 
   await logAuditEvent({
     action: "participant.distribute",

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { uploadMyAvatar } from "@/lib/services/avatar.service";
+import { toUserMessage } from "@/lib/errors";
 
 export type AvatarActionState = { error?: string; success?: boolean } | undefined;
 
@@ -20,7 +21,7 @@ export async function uploadAvatarAction(
   try {
     await uploadMyAvatar(file);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao enviar a imagem." };
+    return { error: toUserMessage(e, "actions.avatar.upload", "Erro ao enviar a imagem.") };
   }
 
   revalidatePath("/", "layout");

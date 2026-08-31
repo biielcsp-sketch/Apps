@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { logAuditEvent } from "@/lib/services/audit.service";
+import { dbError } from "@/lib/errors";
 
 // Transferência de participante já distribuída: fecha o vínculo aberto
 // (end_date = hoje) e abre um novo — nunca sobrescreve o registro antigo.
@@ -23,7 +24,7 @@ export async function transferParticipant(
     .update({ end_date: today, reason })
     .eq("participant_id", participantId)
     .is("end_date", null);
-  if (closeError) throw new Error(closeError.message);
+  if (closeError) dbError(closeError, "transfer.closeHistory");
 
   const { error: openError } = await supabase.from("participant_leader_history").insert({
     participant_id: participantId,
@@ -32,13 +33,13 @@ export async function transferParticipant(
     start_date: today,
     changed_by: user?.id ?? null,
   });
-  if (openError) throw new Error(openError.message);
+  if (openError) dbError(openError, "transfer.openHistory");
 
   const { error: updateError } = await supabase
     .from("participants")
     .update({ current_leader_id: newLeaderId, current_group_id: newGroupId })
     .eq("id", participantId);
-  if (updateError) throw new Error(updateError.message);
+  if (updateError) dbError(updateError, "transfer.update");
 
   await logAuditEvent({
     action: "participant.transfer",

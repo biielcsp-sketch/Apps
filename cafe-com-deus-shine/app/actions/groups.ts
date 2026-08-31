@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { GroupSchema } from "@/lib/validators/leader.schema";
 import { createGroup, updateGroup } from "@/lib/services/groups.service";
+import { toUserMessage } from "@/lib/errors";
 import type { FormActionState } from "@/app/actions/participants";
 
 function readOptionalString(formData: FormData, key: string) {
@@ -42,7 +43,7 @@ export async function createGroupAction(
   try {
     group = await createGroup(validated.data);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao criar grupo." };
+    return { error: toUserMessage(e, "actions.groups.create", "Erro ao criar grupo.") };
   }
 
   revalidatePath("/grupos");
@@ -62,7 +63,7 @@ export async function updateGroupAction(
   try {
     await updateGroup(id, validated.data);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao salvar grupo." };
+    return { error: toUserMessage(e, "actions.groups.update", "Erro ao salvar grupo.") };
   }
 
   revalidatePath(`/grupos/${id}`);

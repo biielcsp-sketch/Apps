@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { LeaderCreateSchema, LeaderUpdateSchema } from "@/lib/validators/leader.schema";
 import { createLeaderAccount, updateLeader, setLeaderStatus } from "@/lib/services/leaders.service";
 import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
+import { AppError, toUserMessage } from "@/lib/errors";
 import type { FormActionState } from "@/app/actions/participants";
 
 function readOptionalString(formData: FormData, key: string) {
@@ -39,7 +40,7 @@ export async function createLeaderAction(
   try {
     leader = await createLeaderAccount(validated.data);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao cadastrar líder." };
+    return { error: toUserMessage(e, "actions.leaders.create", "Erro ao cadastrar líder.") };
   }
 
   revalidatePath("/liderancas");
@@ -67,7 +68,7 @@ export async function updateLeaderAction(
   try {
     await updateLeader(id, validated.data);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao salvar." };
+    return { error: toUserMessage(e, "actions.leaders.update", "Erro ao salvar.") };
   }
 
   revalidatePath(`/liderancas/${id}`);
@@ -76,7 +77,7 @@ export async function updateLeaderAction(
 
 export async function toggleLeaderStatusAction(id: string, currentStatus: "ativa" | "inativa") {
   const profile = await getCurrentProfile();
-  if (!isAdminRole(profile?.role)) throw new Error("Apenas administradoras podem inativar líderes.");
+  if (!isAdminRole(profile?.role)) throw new AppError("Apenas administradoras podem inativar líderes.");
 
   await setLeaderStatus(id, currentStatus === "ativa" ? "inativa" : "ativa");
   revalidatePath("/liderancas");

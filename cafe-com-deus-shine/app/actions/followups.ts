@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { FollowUpSchema } from "@/lib/validators/followup.schema";
 import { createFollowUp } from "@/lib/services/followup.service";
 import { createClient } from "@/lib/supabase/server";
+import { toUserMessage } from "@/lib/errors";
 import type { FormActionState } from "@/app/actions/participants";
 
 export async function createFollowUpAction(
@@ -48,7 +49,7 @@ export async function createFollowUpAction(
   try {
     await createFollowUp(participantId, leaderId, validated.data);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao registrar acompanhamento." };
+    return { error: toUserMessage(e, "actions.followups.create", "Erro ao registrar acompanhamento.") };
   }
 
   revalidatePath(`${basePath}/${participantId}`);

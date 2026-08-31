@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/services/audit.service";
 import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
+import { revokeUserSessions } from "@/lib/services/session.service";
+import { AppError, dbError } from "@/lib/errors";
 import type { Tables, TablesUpdate } from "@/types/database.types";
 
 export type LeaderRow = Tables<"leaders">;
@@ -15,7 +17,7 @@ export async function listLeaders() {
     .order("status")
     .order("id");
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "leaders.list");
 
   return (data ?? []).map((l) => ({
     ...l,
@@ -40,11 +42,18 @@ export async function getLeader(id: string) {
 export async function updateLeader(id: string, input: TablesUpdate<"leaders">) {
   const supabase = await createClient();
   if (input.max_capacity !== undefined && input.max_capacity !== null && input.max_capacity <= 0) {
-    throw new Error("A capacidade máxima precisa ser maior que zero.");
+    throw new AppError("A capacidade máxima precisa ser maior que zero.");
   }
 
   const { data, error } = await supabase.from("leaders").update(input).eq("id", id).select().single();
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "leaders.update");
+
+  // S7: uma líder inativada não pode continuar usando a sessão que já
+  // tinha aberta — sem isso, o acesso dela só cai quando o token expirar
+  // naturalmente.
+  if (input.status === "inativa") {
+    await revokeUserSessions(data.profile_id);
+  }
 
   await logAuditEvent({ action: "leader.update", entity: "leaders", entityId: id, after: input });
   return data;
@@ -76,10 +85,10 @@ export async function createLeaderAccount(input: CreateLeaderAccountInput) {
   // de líder disparado por qualquer usuário autenticado.
   const profile = await getCurrentProfile();
   if (!isAdminRole(profile?.role)) {
-    throw new Error("Apenas administradoras podem cadastrar líderes.");
+    throw new AppError("Apenas administradoras podem cadastrar líderes.");
   }
 
-  if (input.max_capacity <= 0) throw new Error("A capacidade máxima precisa ser maior que zero.");
+  if (input.max_capacity <= 0) throw new AppError("A capacidade máxima precisa ser maior que zero.");
 
   const admin = createAdminClient();
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
@@ -87,7 +96,7 @@ export async function createLeaderAccount(input: CreateLeaderAccountInput) {
     { data: { full_name: input.full_name } },
   );
   if (inviteError || !invited.user) {
-    throw new Error(inviteError?.message ?? "Não foi possível convidar a líder.");
+    dbError(inviteError, "leaders.create.invite", "Não foi possível convidar a líder.");
   }
 
   // app_handle_new_user já criou o profile com role 'lider'; ajusta
@@ -112,7 +121,7 @@ export async function createLeaderAccount(input: CreateLeaderAccountInput) {
     })
     .select()
     .single();
-  if (leaderError) throw new Error(leaderError.message);
+  if (leaderError) dbError(leaderError, "leaders.create");
 
   await logAuditEvent({
     action: "leader.create",

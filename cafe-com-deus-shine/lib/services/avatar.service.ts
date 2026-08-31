@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { AppError, dbError } from "@/lib/errors";
 
 const MAX_SIZE_BYTES = 2 * 1024 * 1024;
 
@@ -49,20 +50,20 @@ function sniffImageType(bytes: Uint8Array): keyof typeof ALLOWED_EXTENSIONS | nu
 // nunca o nome original enviado pelo navegador.
 export async function uploadMyAvatar(file: File) {
   if (file.size > MAX_SIZE_BYTES) {
-    throw new Error("A imagem precisa ter no máximo 2MB.");
+    throw new AppError("A imagem precisa ter no máximo 2MB.");
   }
 
   const bytes = new Uint8Array(await file.arrayBuffer());
   const sniffed = sniffImageType(bytes);
   if (!sniffed) {
-    throw new Error("Arquivo inválido. Envie uma imagem JPEG, PNG ou WEBP de verdade.");
+    throw new AppError("Arquivo inválido. Envie uma imagem JPEG, PNG ou WEBP de verdade.");
   }
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new Error("Sessão expirada. Faça login novamente.");
+  if (!user) throw new AppError("Sessão expirada. Faça login novamente.");
 
   const ext = ALLOWED_EXTENSIONS[sniffed];
   const path = `${user.id}/avatar.${ext}`;
@@ -70,13 +71,13 @@ export async function uploadMyAvatar(file: File) {
   const { error: uploadError } = await supabase.storage
     .from("avatars")
     .upload(path, bytes, { contentType: sniffed, upsert: true });
-  if (uploadError) throw new Error(uploadError.message);
+  if (uploadError) dbError(uploadError, "avatar.upload");
 
   const { error: profileError } = await supabase
     .from("profiles")
     .update({ avatar_url: path })
     .eq("id", user.id);
-  if (profileError) throw new Error(profileError.message);
+  if (profileError) dbError(profileError, "avatar.updateProfile");
 
   return path;
 }

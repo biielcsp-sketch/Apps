@@ -9,6 +9,7 @@ import {
   addMeetingParticipant,
   removeMeetingParticipant,
 } from "@/lib/services/meetings.service";
+import { AppError, toUserMessage } from "@/lib/errors";
 import type { FormActionState } from "@/app/actions/participants";
 
 function readOptionalString(formData: FormData, key: string) {
@@ -41,7 +42,7 @@ export async function createMeetingAction(
   try {
     meeting = await createMeeting(validated.data);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao criar encontro." };
+    return { error: toUserMessage(e, "actions.meetings.create", "Erro ao criar encontro.") };
   }
 
   revalidatePath(basePath);
@@ -68,7 +69,7 @@ export async function updateMeetingAction(
       status: validated.data.status,
     });
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao salvar encontro." };
+    return { error: toUserMessage(e, "actions.meetings.update", "Erro ao salvar encontro.") };
   }
 
   revalidatePath(`${basePath}/${id}`);
@@ -77,7 +78,7 @@ export async function updateMeetingAction(
 
 export async function addMeetingParticipantAction(meetingId: string, basePath: string, formData: FormData) {
   const participantId = formData.get("participant_id") as string | null;
-  if (!participantId) throw new Error("Selecione uma participante.");
+  if (!participantId) throw new AppError("Selecione uma participante.");
   await addMeetingParticipant(meetingId, participantId);
   revalidatePath(`${basePath}/${meetingId}`);
 }

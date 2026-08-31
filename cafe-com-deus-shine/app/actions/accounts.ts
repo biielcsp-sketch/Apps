@@ -14,6 +14,7 @@ import {
   updateUserEmail,
 } from "@/lib/services/accounts.service";
 import { getCurrentProfile } from "@/lib/services/profiles.service";
+import { AppError, toUserMessage } from "@/lib/errors";
 import type { FormActionState } from "@/app/actions/participants";
 
 function readOptionalString(formData: FormData, key: string) {
@@ -73,7 +74,7 @@ export async function createAccountAction(
     try {
       await createDirectAccount({ ...validated.data, role });
     } catch (e) {
-      return { error: e instanceof Error ? e.message : "Erro ao criar a conta." };
+      return { error: toUserMessage(e, "actions.accounts.createDirect", "Erro ao criar a conta.") };
     }
     return { success: true };
   }
@@ -97,7 +98,7 @@ export async function createAccountAction(
     try {
       await createDirectLeaderAccount(validated.data);
     } catch (e) {
-      return { error: e instanceof Error ? e.message : "Erro ao criar a conta." };
+      return { error: toUserMessage(e, "actions.accounts.createDirectLeader", "Erro ao criar a conta.") };
     }
     return { success: true };
   }
@@ -114,7 +115,7 @@ export async function createAccountAction(
     try {
       await createDirectParticipantAccount(validated.data);
     } catch (e) {
-      return { error: e instanceof Error ? e.message : "Erro ao criar a conta." };
+      return { error: toUserMessage(e, "actions.accounts.createDirectParticipant", "Erro ao criar a conta.") };
     }
     return { success: true };
   }
@@ -181,7 +182,7 @@ export async function updateAccountAction(
           : undefined,
     });
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao salvar." };
+    return { error: toUserMessage(e, "actions.accounts.update", "Erro ao salvar.") };
   }
 
   revalidatePath(`/contas/${profileId}`);
@@ -194,7 +195,7 @@ export async function updateAccountAction(
 export async function setAccountActiveAction(profileId: string, active: boolean) {
   const profile = await getCurrentProfile();
   if (profile?.role !== "desenvolvedor") {
-    throw new Error("Apenas o perfil Desenvolvedor pode ativar/desativar contas.");
+    throw new AppError("Apenas o perfil Desenvolvedor pode ativar/desativar contas.");
   }
 
   await setAccountActive(profileId, active);
@@ -208,7 +209,7 @@ export async function setAccountActiveAction(profileId: string, active: boolean)
 export async function deleteAccountAction(profileId: string) {
   const profile = await getCurrentProfile();
   if (profile?.role !== "desenvolvedor") {
-    throw new Error("Apenas o perfil Desenvolvedor pode excluir contas.");
+    throw new AppError("Apenas o perfil Desenvolvedor pode excluir contas.");
   }
 
   await deleteAccount(profileId);
@@ -240,7 +241,7 @@ export async function resetUserPasswordAction(
   try {
     await resetUserPassword(profileId, validated.data.password);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao redefinir a senha." };
+    return { error: toUserMessage(e, "actions.accounts.resetPassword", "Erro ao redefinir a senha.") };
   }
 
   return { success: true };
@@ -271,7 +272,7 @@ export async function updateUserEmailAction(
   try {
     await updateUserEmail(profileId, validated.data.email);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao alterar o e-mail." };
+    return { error: toUserMessage(e, "actions.accounts.updateEmail", "Erro ao alterar o e-mail.") };
   }
 
   revalidatePath(`/contas/${profileId}`);

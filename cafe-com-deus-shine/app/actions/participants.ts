@@ -27,6 +27,7 @@ import {
   checkParticipantWriteRateLimit,
 } from "@/lib/rate-limit";
 import { logAuthEvent, isRlsDenied } from "@/lib/services/auth-audit.service";
+import { AppError, toUserMessage } from "@/lib/errors";
 import type { Enums } from "@/types/database.types";
 
 export type FormActionState = { error?: string; success?: boolean } | undefined;
@@ -91,7 +92,7 @@ export async function createParticipantAction(
     if (isRlsDenied(e)) {
       await logAuthEvent("access_denied", profile!.id, { action: "createParticipant" });
     }
-    return { error: e instanceof Error ? e.message : "Erro ao cadastrar participante." };
+    return { error: toUserMessage(e, "actions.participants.create", "Erro ao cadastrar participante.") };
   }
 
   revalidatePath("/participantes");
@@ -136,7 +137,7 @@ export async function updateParticipantPersonalAction(
   try {
     await updateParticipantPersonal(id, validated.data);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao salvar." };
+    return { error: toUserMessage(e, "actions.participants.save", "Erro ao salvar.") };
   }
 
   revalidatePath(isLeaderRoute ? `/minhas-participantes/${id}` : `/participantes/${id}`);
@@ -169,7 +170,7 @@ export async function updateParticipantAdminAction(
   try {
     await updateParticipantAdminFields(id, validated.data);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao salvar." };
+    return { error: toUserMessage(e, "actions.participants.save", "Erro ao salvar.") };
   }
 
   revalidatePath(`/participantes/${id}`);
@@ -178,11 +179,11 @@ export async function updateParticipantAdminAction(
 
 export async function changeParticipantStatusAction(id: string, formData: FormData) {
   const profile = await getCurrentProfile();
-  if (!isAdminRole(profile?.role)) throw new Error("Apenas administradoras podem alterar o status.");
+  if (!isAdminRole(profile?.role)) throw new AppError("Apenas administradoras podem alterar o status.");
 
   const status = formData.get("status") as Enums<"participant_status"> | null;
   const note = readOptionalString(formData, "note") ?? null;
-  if (!status) throw new Error("Selecione um status.");
+  if (!status) throw new AppError("Selecione um status.");
 
   await changeParticipantStatus(id, status, note);
   revalidatePath(`/participantes/${id}`);
@@ -218,7 +219,7 @@ export async function requestErasureAction(
         participant_id: participantId,
       });
     }
-    return { error: e instanceof Error ? e.message : "Erro ao solicitar exclusão." };
+    return { error: toUserMessage(e, "actions.participants.requestErasure", "Erro ao solicitar exclusão.") };
   }
 
   revalidatePath(isLeaderRoute ? `/minhas-participantes/${participantId}` : `/participantes/${participantId}`);
@@ -227,7 +228,7 @@ export async function requestErasureAction(
 
 export async function processErasureAction(requestId: string) {
   const profile = await getCurrentProfile();
-  if (!isAdminRole(profile?.role)) throw new Error("Apenas administradoras podem processar exclusões.");
+  if (!isAdminRole(profile?.role)) throw new AppError("Apenas administradoras podem processar exclusões.");
 
   await processErasure(requestId);
   revalidatePath("/participantes/solicitacoes-exclusao");
@@ -271,7 +272,7 @@ export async function claimParticipantAccountAction(
   try {
     await claimParticipantAccount(email, password);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao criar o acesso." };
+    return { error: toUserMessage(e, "actions.participants.claimAccount", "Erro ao criar o acesso.") };
   }
 
   const supabase = await createClient();
@@ -312,7 +313,7 @@ export async function updateMyParticipantProfileAction(
   try {
     await updateMyParticipantProfile(participant.id, validated.data);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao salvar." };
+    return { error: toUserMessage(e, "actions.participants.save", "Erro ao salvar.") };
   }
 
   revalidatePath("/minha-jornada");

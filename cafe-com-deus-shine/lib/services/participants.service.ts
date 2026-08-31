@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/services/audit.service";
+import { AppError, dbError } from "@/lib/errors";
 import type { Tables, TablesInsert, Enums } from "@/types/database.types";
 import type {
   ParticipantCreateInput,
@@ -64,7 +65,7 @@ export async function listParticipants(filters: ParticipantFilters = {}) {
   }
 
   const { data, error } = await query;
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "participants.list");
 
   return (data ?? []).map((row) => ({
     ...row,
@@ -178,7 +179,7 @@ export async function createParticipant(input: ParticipantCreateInput) {
   payload.consent_version = terms?.version ?? null;
 
   const { data, error } = await supabase.from("participants").insert(payload).select().single();
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "participants.create");
 
   await logAuditEvent({
     action: "participant.create",
@@ -201,7 +202,7 @@ export async function updateParticipantPersonal(id: string, input: ParticipantPe
     .select()
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "participants.updatePersonal");
 
   await logAuditEvent({
     action: "participant.update",
@@ -225,7 +226,7 @@ export async function updateParticipantAdminFields(
     .select()
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "participants.updateAdminFields");
 
   await logAuditEvent({
     action: "participant.update_admin_fields",
@@ -254,7 +255,7 @@ export async function changeParticipantStatus(
     note,
     changed_by: user?.id ?? null,
   });
-  if (historyError) throw new Error(historyError.message);
+  if (historyError) dbError(historyError, "participants.changeStatus.history");
 
   const { data, error } = await supabase
     .from("participants")
@@ -262,7 +263,7 @@ export async function changeParticipantStatus(
     .eq("id", id)
     .select()
     .single();
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "participants.changeStatus");
 
   await logAuditEvent({
     action: "participant.status_change",
@@ -287,7 +288,7 @@ export async function listActiveLeadersForSelect() {
     .eq("status", "ativa")
     .order("id");
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "participants.listActiveLeaders");
   return (data ?? []).map((l) => ({ id: l.id, full_name: l.profile?.full_name ?? "" }));
 }
 
@@ -301,7 +302,7 @@ export async function getLeaderAssignmentHistory(leaderId: string) {
     .eq("leader_id", leaderId)
     .order("start_date", { ascending: false });
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "participants.leaderAssignmentHistory");
   return (data ?? []).map((row) => ({
     ...row,
     participant: row.participant
@@ -316,7 +317,7 @@ export async function getLeaderAssignmentHistory(leaderId: string) {
 export async function listGroupsForSelect() {
   const supabase = await createClient();
   const { data, error } = await supabase.from("groups").select("id, name").order("name");
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "participants.listGroupsForSelect");
   return data ?? [];
 }
 
@@ -339,14 +340,14 @@ export async function claimParticipantAccount(email: string, password: string) {
     .is("deleted_at", null)
     .is("anonymized_at", null)
     .maybeSingle();
-  if (findError) throw new Error(findError.message);
+  if (findError) dbError(findError, "participants.claimAccount.find");
   if (!participant) {
-    throw new Error(
+    throw new AppError(
       "Não encontramos esse e-mail no nosso cadastro. Confirme com sua líder se o e-mail está certo.",
     );
   }
   if (participant.profile_id) {
-    throw new Error("Este e-mail já tem acesso criado. Faça login normalmente.");
+    throw new AppError("Este e-mail já tem acesso criado. Faça login normalmente.");
   }
 
   const { data: created, error: createError } = await admin.auth.admin.createUser({
@@ -356,7 +357,7 @@ export async function claimParticipantAccount(email: string, password: string) {
     user_metadata: { full_name: participant.full_name },
   });
   if (createError || !created.user) {
-    throw new Error(createError?.message ?? "Não foi possível criar o acesso.");
+    dbError(createError, "participants.claimAccount.createUser", "Não foi possível criar o acesso.");
   }
 
   // app_handle_new_user já criou o profile com role 'lider' por padrão;
@@ -365,13 +366,13 @@ export async function claimParticipantAccount(email: string, password: string) {
     .from("profiles")
     .update({ role: "participante" })
     .eq("id", created.user.id);
-  if (roleError) throw new Error(roleError.message);
+  if (roleError) dbError(roleError, "participants.claimAccount.setRole");
 
   const { error: linkError } = await admin
     .from("participants")
     .update({ profile_id: created.user.id })
     .eq("id", participant.id);
-  if (linkError) throw new Error(linkError.message);
+  if (linkError) dbError(linkError, "participants.claimAccount.link");
 
   await logAuditEvent({
     action: "participant.create_account",
@@ -396,7 +397,7 @@ export async function getCurrentParticipant() {
     .eq("profile_id", user.id)
     .maybeSingle();
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "participants.getCurrent");
   return data;
 }
 
@@ -409,7 +410,7 @@ export async function updateMyParticipantProfile(id: string, input: ParticipantS
     .select()
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "participants.updateMyProfile");
   return data;
 }
 

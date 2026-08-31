@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { logAuditEvent } from "@/lib/services/audit.service";
+import { dbError } from "@/lib/errors";
 import type { Enums } from "@/types/database.types";
 
 export async function getAttendanceForMeeting(meetingId: string) {
@@ -10,13 +11,13 @@ export async function getAttendanceForMeeting(meetingId: string) {
     .from("meeting_participants")
     .select("id, participant:participants(id, full_name)")
     .eq("meeting_id", meetingId);
-  if (participantsError) throw new Error(participantsError.message);
+  if (participantsError) dbError(participantsError, "attendance.forMeeting.participants");
 
   const { data: attendance, error: attendanceError } = await supabase
     .from("attendance")
     .select("participant_id, status, notes")
     .eq("meeting_id", meetingId);
-  if (attendanceError) throw new Error(attendanceError.message);
+  if (attendanceError) dbError(attendanceError, "attendance.forMeeting");
 
   const byParticipant = new Map(attendance?.map((a) => [a.participant_id, a]));
 
@@ -53,7 +54,7 @@ export async function upsertAttendance(
       },
       { onConflict: "meeting_id,participant_id" },
     );
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "attendance.upsert");
 
   await logAuditEvent({
     action: "attendance.update",
@@ -71,6 +72,6 @@ export async function getParticipantAttendanceHistory(participantId: string) {
     .eq("participant_id", participantId)
     .order("id", { ascending: false });
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "attendance.participantHistory");
   return (data ?? []).filter((a) => a.meeting).sort((a, b) => (b.meeting!.date).localeCompare(a.meeting!.date));
 }

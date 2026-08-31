@@ -6,14 +6,15 @@ import { confirmDistribution } from "@/lib/services/distribution.service";
 import { transferParticipant } from "@/lib/services/transfer.service";
 import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
 import { logAuthEvent, isRlsDenied } from "@/lib/services/auth-audit.service";
+import { AppError } from "@/lib/errors";
 
 export async function confirmDistributionAction(participantId: string, formData: FormData) {
   const profile = await getCurrentProfile();
-  if (!isAdminRole(profile?.role)) throw new Error("Apenas administradoras podem distribuir participantes.");
+  if (!isAdminRole(profile?.role)) throw new AppError("Apenas administradoras podem distribuir participantes.");
 
   const leaderId = formData.get("leader_id") as string | null;
   const groupId = (formData.get("group_id") as string | null) || null;
-  if (!leaderId) throw new Error("Selecione uma líder.");
+  if (!leaderId) throw new AppError("Selecione uma líder.");
 
   try {
     await confirmDistribution(participantId, leaderId, groupId);
@@ -32,12 +33,12 @@ export async function confirmDistributionAction(participantId: string, formData:
 
 export async function transferParticipantAction(participantId: string, formData: FormData) {
   const profile = await getCurrentProfile();
-  if (!isAdminRole(profile?.role)) throw new Error("Apenas administradoras podem transferir participantes.");
+  if (!isAdminRole(profile?.role)) throw new AppError("Apenas administradoras podem transferir participantes.");
 
   const leaderId = formData.get("leader_id") as string | null;
   const groupId = (formData.get("group_id") as string | null) || null;
   const reason = (formData.get("reason") as string | null) || null;
-  if (!leaderId) throw new Error("Selecione a nova líder.");
+  if (!leaderId) throw new AppError("Selecione a nova líder.");
 
   try {
     await transferParticipant(participantId, leaderId, groupId, reason);

@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { logAuditEvent } from "@/lib/services/audit.service";
+import { AppError, dbError } from "@/lib/errors";
 
 export async function requestErasure(participantId: string, reason: string) {
   const supabase = await createClient();
@@ -21,7 +22,7 @@ export async function requestErasure(participantId: string, reason: string) {
     status: "pendente",
   });
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "erasure.request");
 
   await logAuditEvent({
     action: "erasure.request",
@@ -41,7 +42,7 @@ export async function listPendingErasureRequests() {
     .eq("status", "pendente")
     .order("requested_at", { ascending: true });
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "erasure.listPending");
   return data;
 }
 
@@ -59,8 +60,8 @@ export async function processErasure(requestId: string) {
     .select("id, participant_id, status")
     .eq("id", requestId)
     .single();
-  if (requestError || !request) throw new Error("Solicitação de exclusão não encontrada.");
-  if (request.status !== "pendente") throw new Error("Esta solicitação já foi processada.");
+  if (requestError || !request) throw new AppError("Solicitação de exclusão não encontrada.");
+  if (request.status !== "pendente") throw new AppError("Esta solicitação já foi processada.");
 
   const anonymizedAt = new Date().toISOString();
 
@@ -80,19 +81,19 @@ export async function processErasure(requestId: string) {
       anonymized_at: anonymizedAt,
     })
     .eq("id", request.participant_id);
-  if (participantError) throw new Error(participantError.message);
+  if (participantError) dbError(participantError, "erasure.process.participant");
 
   const { error: followupsError } = await supabase
     .from("follow_ups")
     .update({ observation: "[removido a pedido do titular]" })
     .eq("participant_id", request.participant_id);
-  if (followupsError) throw new Error(followupsError.message);
+  if (followupsError) dbError(followupsError, "erasure.process.followups");
 
   const { error: updateRequestError } = await supabase
     .from("data_erasure_requests")
     .update({ status: "concluida", processed_at: anonymizedAt, processed_by: user?.id ?? null })
     .eq("id", requestId);
-  if (updateRequestError) throw new Error(updateRequestError.message);
+  if (updateRequestError) dbError(updateRequestError, "erasure.process.updateRequest");
 
   // Apenas metadados no audit_log — nunca o conteúdo original apagado.
   await logAuditEvent({

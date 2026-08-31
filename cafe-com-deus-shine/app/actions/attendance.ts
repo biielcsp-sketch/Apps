@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { upsertAttendance } from "@/lib/services/attendance.service";
 import { getCurrentProfile } from "@/lib/services/profiles.service";
 import { getCurrentParticipant } from "@/lib/services/participants.service";
+import { AppError } from "@/lib/errors";
 import type { Enums } from "@/types/database.types";
 
 export async function markAttendanceAction(
@@ -14,7 +15,7 @@ export async function markAttendanceAction(
 ) {
   const status = formData.get("status") as Enums<"attendance_status"> | null;
   const notes = (formData.get("notes") as string | null) || null;
-  if (!status) throw new Error("Selecione um status de presença.");
+  if (!status) throw new AppError("Selecione um status de presença.");
 
   await upsertAttendance(meetingId, participantId, status, notes);
   revalidatePath(`${basePath}/${meetingId}/presenca`);
@@ -25,11 +26,11 @@ export async function markAttendanceAction(
 export async function confirmMyAttendanceAction(meetingId: string) {
   const profile = await getCurrentProfile();
   if (profile?.role !== "participante") {
-    throw new Error("Apenas a própria participante pode confirmar presença.");
+    throw new AppError("Apenas a própria participante pode confirmar presença.");
   }
 
   const participant = await getCurrentParticipant();
-  if (!participant) throw new Error("Cadastro de participante não encontrado.");
+  if (!participant) throw new AppError("Cadastro de participante não encontrado.");
 
   await upsertAttendance(meetingId, participant.id, "presente", null);
   revalidatePath("/minha-jornada");

@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { logAuditEvent } from "@/lib/services/audit.service";
+import { AppError, dbError } from "@/lib/errors";
 import type { MeetingInput } from "@/lib/validators/meeting.schema";
 import type { Tables, TablesUpdate } from "@/types/database.types";
 
@@ -13,7 +14,7 @@ export async function listMeetings() {
     .select("*, group:groups(id, name), leader:leaders(id, profile:profiles(full_name))")
     .order("date", { ascending: false });
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "meetings.list");
   return data ?? [];
 }
 
@@ -25,7 +26,7 @@ export async function listGroupMeetings(groupId: string) {
     .eq("group_id", groupId)
     .order("date", { ascending: true });
 
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "meetings.listGroupMeetings");
   return data ?? [];
 }
 
@@ -46,7 +47,7 @@ export async function getMeetingParticipants(meetingId: string) {
     .from("meeting_participants")
     .select("id, participant:participants(id, full_name)")
     .eq("meeting_id", meetingId);
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "meetings.getParticipants");
   return data ?? [];
 }
 
@@ -68,7 +69,7 @@ export async function getGroupParticipantsNotInMeeting(groupId: string, meetingI
     query = query.not("id", "in", `(${linkedIds.join(",")})`);
   }
   const { data, error } = await query;
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "meetings.groupParticipantsNotInMeeting");
   return data ?? [];
 }
 
@@ -80,7 +81,7 @@ export async function createMeeting(input: MeetingInput) {
     .select("id, leader_id")
     .eq("id", input.group_id)
     .single();
-  if (groupError || !group) throw new Error("Grupo não encontrado.");
+  if (groupError || !group) throw new AppError("Grupo não encontrado.");
 
   const { data: meeting, error } = await supabase
     .from("meetings")
@@ -95,7 +96,7 @@ export async function createMeeting(input: MeetingInput) {
     })
     .select()
     .single();
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "meetings.create");
 
   // Vincula automaticamente todas as participantes atuais do grupo.
   const { data: groupParticipants } = await supabase
@@ -123,7 +124,7 @@ export async function createMeeting(input: MeetingInput) {
 export async function updateMeeting(id: string, input: TablesUpdate<"meetings">) {
   const supabase = await createClient();
   const { data, error } = await supabase.from("meetings").update(input).eq("id", id).select().single();
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "meetings.update");
 
   await logAuditEvent({ action: "meeting.update", entity: "meetings", entityId: id, after: input });
   return data;
@@ -134,11 +135,11 @@ export async function addMeetingParticipant(meetingId: string, participantId: st
   const { error } = await supabase
     .from("meeting_participants")
     .insert({ meeting_id: meetingId, participant_id: participantId });
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "meetings.addParticipant");
 }
 
 export async function removeMeetingParticipant(meetingParticipantId: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("meeting_participants").delete().eq("id", meetingParticipantId);
-  if (error) throw new Error(error.message);
+  if (error) dbError(error, "meetings.removeParticipant");
 }
