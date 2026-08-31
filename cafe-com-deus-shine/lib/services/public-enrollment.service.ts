@@ -41,6 +41,28 @@ export async function getActiveTermsForPublicEnrollment() {
   return data;
 }
 
+// Reaproveitado tanto pelo autocadastro (abaixo) quanto pela tela de
+// revisão de novas inscrições (Q3) — a mesma checagem de duplicata não
+// pode ter duas implementações divergentes.
+export async function findDuplicateParticipantByPhone(
+  phone: string,
+  excludeParticipantId?: string,
+) {
+  const admin = createAdminClient();
+  let query = admin
+    .from("participants")
+    .select("id")
+    .eq("phone", phone.trim())
+    .neq("status", "inativa")
+    .is("deleted_at", null);
+  if (excludeParticipantId) {
+    query = query.neq("id", excludeParticipantId);
+  }
+  const { data, error } = await query.maybeSingle();
+  if (error) dbError(error, "publicEnrollment.findDuplicate");
+  return data;
+}
+
 // Único ponto do sistema onde alguém sem sessão autenticada escreve no
 // banco (decisão travada no CLAUDE.md). NUNCA via policy de RLS `anon` em
 // `participants` — RLS restringe linha, não coluna, e uma policy anônima
@@ -66,22 +88,14 @@ export async function submitPublicEnrollment(
     throw new AppError("Muitas tentativas. Aguarde alguns minutos e tente novamente.");
   }
 
-  const admin = createAdminClient();
-
   // 3. Duplicata por telefone (status != 'inativa') — mesma pessoa
   // escaneando o QR de novo não deve virar um segundo cadastro.
-  const { data: existing, error: findError } = await admin
-    .from("participants")
-    .select("id")
-    .eq("phone", input.phone.trim())
-    .neq("status", "inativa")
-    .is("deleted_at", null)
-    .maybeSingle();
-  if (findError) dbError(findError, "publicEnrollment.findDuplicate");
+  const existing = await findDuplicateParticipantByPhone(input.phone);
   if (existing) {
     return "duplicate";
   }
 
+  const admin = createAdminClient();
   const terms = await getActiveTermsForPublicEnrollment();
 
   // 4. Payload montado campo a campo — NUNCA spread do body recebido.

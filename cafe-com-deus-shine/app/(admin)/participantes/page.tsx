@@ -56,6 +56,12 @@ export default async function ParticipantesPage({
         </Link>
         <div className="flex items-center justify-center gap-4 sm:gap-3">
           <Link
+            href="/participantes/novas-inscricoes"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            Novas inscrições
+          </Link>
+          <Link
             href="/participantes/aguardando-distribuicao"
             className="text-sm font-medium text-muted-foreground hover:text-foreground"
           >
