@@ -6,6 +6,7 @@ import { AdminShell } from "@/components/admin-shell";
 import { LiderShell } from "@/components/lider-shell";
 import { GroupsLocationView } from "@/components/grupos/groups-location-view";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { BackLink } from "@/components/ui/BackLink";
 
 // Rota fora dos route groups por papel — igual /meu-perfil, admin,
 // desenvolvedor e líder acessam a mesma tela (a RLS de `groups` já
@@ -20,6 +21,7 @@ export default async function GruposLocalizacaoPage() {
 
   const content = (
     <div className="flex flex-col gap-6">
+      <BackLink href={isAdminRole(profile.role) ? "/dashboard" : "/inicio"} label={isAdminRole(profile.role) ? "Dashboard" : "Início"} />
       <PageHeader
         title="Localização dos Cafés"
         description="Insira e consulte onde cada café acontece."

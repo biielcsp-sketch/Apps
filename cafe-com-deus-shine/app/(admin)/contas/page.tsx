@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { getCurrentProfile } from "@/lib/services/profiles.service";
 import { listAllAccounts } from "@/lib/services/accounts.service";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { BackLink } from "@/components/ui/BackLink";
 import { AccountsGrouped } from "@/components/accounts/accounts-grouped";
 
 export default async function ContasPage() {
@@ -14,6 +15,7 @@ export default async function ContasPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <BackLink href="/dashboard" label="Dashboard" />
       <PageHeader
         title="Contas"
         description="Exclusivo do perfil Desenvolvedor: veja todas as contas, redefina senha ou altere o e-mail de qualquer uma."

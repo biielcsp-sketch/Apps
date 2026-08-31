@@ -3,12 +3,14 @@ import { Plus } from "lucide-react";
 import { listLeaders } from "@/lib/services/leaders.service";
 import { LeadersList } from "@/components/liderancas/leaders-list";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { BackLink } from "@/components/ui/BackLink";
 
 export default async function LiderancasPage() {
   const leaders = await listLeaders();
 
   return (
     <div>
+      <BackLink href="/dashboard" label="Dashboard" />
       <PageHeader title="Líderes">
         <Link
           href="/liderancas/nova"

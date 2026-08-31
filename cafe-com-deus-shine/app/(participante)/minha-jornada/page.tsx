@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { BackButton } from "@/components/ui/BackButton";
 import { getCurrentProfile } from "@/lib/services/profiles.service";
 import { getCurrentParticipant, getParticipantTimeline } from "@/lib/services/participants.service";
 import { getParticipantAttendanceHistory } from "@/lib/services/attendance.service";
@@ -16,7 +17,8 @@ export default async function MinhaJornadaPage() {
   if (!participant) {
     return (
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">
+        <BackButton />
+        <h1 className="mt-3 text-2xl font-semibold text-foreground">
           Olá, {profile?.full_name.split(" ")[0]} 🌷
         </h1>
         <Card className="mt-6 p-6">
@@ -42,6 +44,7 @@ export default async function MinhaJornadaPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <BackButton />
       <div>
         <h1 className="text-2xl font-semibold text-foreground">
           Olá, {profile?.full_name.split(" ")[0]} 🌷

@@ -5,6 +5,7 @@ import { AdminShell } from "@/components/admin-shell";
 import { LiderShell } from "@/components/lider-shell";
 import { ParticipanteShell } from "@/components/participante-shell";
 import { ProfileView } from "@/components/perfil/profile-view";
+import { BackLink } from "@/components/ui/BackLink";
 
 // Rota fora de todos os route groups de papel — /meu-perfil é o mesmo
 // caminho para admin, líder e participante, então não pode viver dentro
@@ -24,7 +25,10 @@ export default async function MeuPerfilPage() {
         isDeveloper={profile.role === "desenvolvedor"}
         avatarUrl={avatarUrl}
       >
-        <ProfileView profile={profile} />
+        <div className="flex flex-col gap-6">
+          <BackLink href="/dashboard" label="Dashboard" />
+          <ProfileView profile={profile} />
+        </div>
       </AdminShell>
     );
   }
@@ -32,14 +36,20 @@ export default async function MeuPerfilPage() {
   if (profile.role === "lider") {
     return (
       <LiderShell userName={profile.full_name} avatarUrl={avatarUrl}>
-        <ProfileView profile={profile} />
+        <div className="flex flex-col gap-6">
+          <BackLink href="/inicio" label="Início" />
+          <ProfileView profile={profile} />
+        </div>
       </LiderShell>
     );
   }
 
   return (
     <ParticipanteShell userName={profile.full_name} avatarUrl={avatarUrl}>
-      <ProfileView profile={profile} />
+      <div className="flex flex-col gap-6">
+        <BackLink href="/minha-jornada" label="Minha Jornada" />
+        <ProfileView profile={profile} />
+      </div>
     </ParticipanteShell>
   );
 }

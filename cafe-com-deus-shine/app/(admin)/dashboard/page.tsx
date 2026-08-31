@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { BarList } from "@/components/dashboard/bar-list";
+import { BackButton } from "@/components/ui/BackButton";
 import { getAdminDashboard } from "@/lib/services/dashboard.service";
 
 const ATTENDANCE_LABELS: Record<string, string> = {
@@ -14,6 +15,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <BackButton />
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
         <p className="mt-1 text-sm text-muted-foreground">

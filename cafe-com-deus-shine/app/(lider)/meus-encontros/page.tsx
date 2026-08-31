@@ -3,12 +3,14 @@ import { Plus } from "lucide-react";
 import { listMeetings } from "@/lib/services/meetings.service";
 import { MeetingsList } from "@/components/encontros/meetings-list";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { BackLink } from "@/components/ui/BackLink";
 
 export default async function EncontrosPage() {
   const meetings = await listMeetings();
 
   return (
     <div>
+      <BackLink href="/inicio" label="Início" />
       <PageHeader title="Encontros">
         <Link
           href="/meus-encontros/novo"

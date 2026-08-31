@@ -9,6 +9,7 @@ import { ParticipantsFilters } from "@/components/participantes/participants-fil
 import { ParticipantsTable } from "@/components/participantes/participants-table";
 import { computeAttentionAlerts } from "@/lib/services/followup.service";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { BackLink } from "@/components/ui/BackLink";
 import type { Enums } from "@/types/database.types";
 
 type SearchParams = {
@@ -46,6 +47,7 @@ export default async function ParticipantesPage({
 
   return (
     <div>
+      <BackLink href="/dashboard" label="Dashboard" />
       <PageHeader title="Participantes" description={`${participants.length} encontradas`}>
         <Link
           href="/participantes/novo"

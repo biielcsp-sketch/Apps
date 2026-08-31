@@ -8,6 +8,7 @@ import { getMyAvatarSignedUrl } from "@/lib/services/avatar.service";
 import { AdminShell } from "@/components/admin-shell";
 import { CafesTabs } from "@/components/grupos/cafes-tabs";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { BackLink } from "@/components/ui/BackLink";
 
 // Rota fora dos route groups por papel, como /meu-perfil e
 // /cafes/localizacao — só admin/desenvolvedor usam esta tela (a líder
@@ -33,6 +34,7 @@ export default async function CafesPage() {
       avatarUrl={avatarUrl}
     >
       <div className="flex flex-col gap-6">
+        <BackLink href="/dashboard" label="Dashboard" />
         <PageHeader title="Cafés" description="Grupos, encontros e localização em um só lugar." />
         <Suspense>
           <CafesTabs
