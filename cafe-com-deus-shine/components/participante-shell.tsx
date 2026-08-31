@@ -2,14 +2,12 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Sparkles, UserCircle, Menu, X, LogOut } from "lucide-react";
+import Link from "next/link";
+import { Sparkles, Menu, X, LogOut } from "lucide-react";
 import { NavLink } from "@/components/nav-link";
 import { logout } from "@/app/actions/auth";
 
-const NAV_ITEMS = [
-  { href: "/minha-jornada", label: "Minha Jornada", icon: Sparkles },
-  { href: "/meu-perfil", label: "Meu Perfil", icon: UserCircle },
-];
+const NAV_ITEMS = [{ href: "/minha-jornada", label: "Minha Jornada", icon: Sparkles }];
 
 export function ParticipanteShell({
   userName,
@@ -33,7 +31,9 @@ export function ParticipanteShell({
           ))}
         </nav>
         <div className="mt-4 border-t border-border pt-4">
-          <p className="truncate px-2 text-sm text-muted-foreground">{userName}</p>
+          <Link href="/meu-perfil" className="block rounded-lg px-2 py-1.5 hover:bg-muted">
+            <p className="truncate text-sm text-muted-foreground">{userName}</p>
+          </Link>
           <form action={logout}>
             <button
               type="submit"
@@ -67,7 +67,13 @@ export function ParticipanteShell({
               ))}
             </nav>
             <div className="mt-4 border-t border-border pt-4">
-              <p className="truncate px-2 text-sm text-muted-foreground">{userName}</p>
+              <Link
+                href="/meu-perfil"
+                onClick={() => setMenuOpen(false)}
+                className="block rounded-lg px-2 py-1.5 hover:bg-muted"
+              >
+                <p className="truncate text-sm text-muted-foreground">{userName}</p>
+              </Link>
               <form action={logout}>
                 <button
                   type="submit"

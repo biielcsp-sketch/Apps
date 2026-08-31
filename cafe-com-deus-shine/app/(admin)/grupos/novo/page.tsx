@@ -8,7 +8,7 @@ export default async function NovoGrupoPage() {
 
   return (
     <div>
-      <BackLink href="/grupos" label="Grupos" />
+      <BackLink href="/cafes?tab=grupos" label="Cafés" />
       <h1 className="mt-3 text-2xl font-semibold text-foreground">Novo grupo</h1>
       <Card className="mt-4 p-6">
         <GroupForm leaders={leaders} />

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Home,
   Users,
@@ -9,7 +10,6 @@ import {
   HeartHandshake,
   History,
   MapPin,
-  UserCircle,
   Menu,
   X,
   LogOut,
@@ -24,7 +24,6 @@ const NAV_ITEMS = [
   { href: "/meus-acompanhamentos", label: "Acompanhar", icon: HeartHandshake },
   { href: "/historico", label: "Histórico", icon: History },
   { href: "/cafes/localizacao", label: "Localização", icon: MapPin },
-  { href: "/meu-perfil", label: "Meu Perfil", icon: UserCircle },
 ];
 
 export function LiderShell({
@@ -49,7 +48,9 @@ export function LiderShell({
           ))}
         </nav>
         <div className="mt-4 border-t border-border pt-4">
-          <p className="truncate px-2 text-sm text-muted-foreground">{userName}</p>
+          <Link href="/meu-perfil" className="block rounded-lg px-2 py-1.5 hover:bg-muted">
+            <p className="truncate text-sm text-muted-foreground">{userName}</p>
+          </Link>
           <form action={logout}>
             <button
               type="submit"
@@ -83,7 +84,13 @@ export function LiderShell({
               ))}
             </nav>
             <div className="mt-4 border-t border-border pt-4">
-              <p className="truncate px-2 text-sm text-muted-foreground">{userName}</p>
+              <Link
+                href="/meu-perfil"
+                onClick={() => setMenuOpen(false)}
+                className="block rounded-lg px-2 py-1.5 hover:bg-muted"
+              >
+                <p className="truncate text-sm text-muted-foreground">{userName}</p>
+              </Link>
               <form action={logout}>
                 <button
                   type="submit"

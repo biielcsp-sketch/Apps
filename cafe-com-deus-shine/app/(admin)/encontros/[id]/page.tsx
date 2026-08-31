@@ -26,7 +26,7 @@ export default async function EncontroPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <BackLink href="/encontros" label="Encontros" />
+      <BackLink href="/cafes?tab=encontros" label="Cafés" />
       <PageHeader title={meeting.title}>
         <Link
           href={`/encontros/${id}/presenca`}

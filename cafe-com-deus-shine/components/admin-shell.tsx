@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   LayoutDashboard,
   Users,
@@ -10,40 +11,23 @@ import {
   HeartHandshake,
   ShieldCheck,
   QrCode,
-  UserCircle,
   Menu,
   X,
   LogOut,
-  type LucideIcon,
 } from "lucide-react";
 import { NavLink } from "@/components/nav-link";
-import { NavGroup } from "@/components/nav-group";
 import { logout } from "@/app/actions/auth";
 
-type NavItem =
-  | { type: "link"; href: string; label: string; icon: LucideIcon }
-  | { type: "group"; label: string; icon: LucideIcon; items: { href: string; label: string }[] };
-
-const NAV_ITEMS: NavItem[] = [
-  { type: "link", href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { type: "link", href: "/participantes", label: "Participantes", icon: Users },
-  { type: "link", href: "/liderancas", label: "Líderes", icon: UserCog },
-  {
-    type: "group",
-    label: "Cafés",
-    icon: Coffee,
-    items: [
-      { href: "/grupos", label: "Grupos" },
-      { href: "/encontros", label: "Encontros" },
-      { href: "/cafes/localizacao", label: "Localização" },
-    ],
-  },
-  { type: "link", href: "/acompanhamentos", label: "Acompanhamentos", icon: HeartHandshake },
-  { type: "link", href: "/configuracoes/qrcodes", label: "QR Codes", icon: QrCode },
-  { type: "link", href: "/meu-perfil", label: "Meu Perfil", icon: UserCircle },
+const NAV_ITEMS = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/participantes", label: "Participantes", icon: Users },
+  { href: "/liderancas", label: "Líderes", icon: UserCog },
+  { href: "/cafes", label: "Cafés", icon: Coffee },
+  { href: "/acompanhamentos", label: "Acompanhamentos", icon: HeartHandshake },
+  { href: "/configuracoes/qrcodes", label: "QR Codes", icon: QrCode },
 ];
 
-const DEVELOPER_NAV_ITEM: NavItem = { type: "link", href: "/contas", label: "Contas", icon: ShieldCheck };
+const DEVELOPER_NAV_ITEM = { href: "/contas", label: "Contas", icon: ShieldCheck };
 
 export function AdminShell({
   userName,
@@ -65,19 +49,17 @@ export function AdminShell({
           <Image src="/icons/logo-official.png" alt="Café com Deus Shine" width={876} height={866} className="h-14 w-auto" />
         </div>
         <nav className="flex flex-1 flex-col gap-1">
-          {navItems.map((item) =>
-            item.type === "group" ? (
-              <NavGroup key={item.label} {...item} />
-            ) : (
-              <NavLink key={item.href} {...item} />
-            ),
-          )}
+          {navItems.map((item) => (
+            <NavLink key={item.href} {...item} />
+          ))}
         </nav>
         <div className="mt-4 border-t border-border pt-4">
-          <p className="truncate px-2 text-sm text-muted-foreground">{userName}</p>
-          {isDeveloper && (
-            <p className="px-2 text-xs font-medium text-primary">Desenvolvedor</p>
-          )}
+          <Link href="/meu-perfil" className="block rounded-lg px-2 py-1.5 hover:bg-muted">
+            <p className="truncate text-sm text-muted-foreground">{userName}</p>
+            {isDeveloper && (
+              <p className="text-xs font-medium text-primary">Desenvolvedor</p>
+            )}
+          </Link>
           <form action={logout}>
             <button
               type="submit"
@@ -106,19 +88,21 @@ export function AdminShell({
               </button>
             </div>
             <nav className="flex flex-1 flex-col gap-1">
-              {navItems.map((item) =>
-                item.type === "group" ? (
-                  <NavGroup key={item.label} {...item} onNavigate={() => setMenuOpen(false)} />
-                ) : (
-                  <NavLink key={item.href} {...item} onNavigate={() => setMenuOpen(false)} />
-                ),
-              )}
+              {navItems.map((item) => (
+                <NavLink key={item.href} {...item} onNavigate={() => setMenuOpen(false)} />
+              ))}
             </nav>
             <div className="mt-4 border-t border-border pt-4">
-              <p className="truncate px-2 text-sm text-muted-foreground">{userName}</p>
-              {isDeveloper && (
-                <p className="px-2 text-xs font-medium text-primary">Desenvolvedor</p>
-              )}
+              <Link
+                href="/meu-perfil"
+                onClick={() => setMenuOpen(false)}
+                className="block rounded-lg px-2 py-1.5 hover:bg-muted"
+              >
+                <p className="truncate text-sm text-muted-foreground">{userName}</p>
+                {isDeveloper && (
+                  <p className="text-xs font-medium text-primary">Desenvolvedor</p>
+                )}
+              </Link>
               <form action={logout}>
                 <button
                   type="submit"
