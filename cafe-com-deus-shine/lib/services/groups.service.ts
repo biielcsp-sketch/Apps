@@ -86,3 +86,29 @@ export async function updateGroup(id: string, input: TablesUpdate<"groups">) {
   await logAuditEvent({ action: "group.update", entity: "groups", entityId: id, after: input });
   return data;
 }
+
+export async function updateGroupLocation(id: string, latitude: number, longitude: number) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("groups").update({ latitude, longitude }).eq("id", id);
+  if (error) dbError(error, "groups.updateLocation");
+
+  await logAuditEvent({
+    action: "group.update_location",
+    entity: "groups",
+    entityId: id,
+    after: { latitude, longitude },
+  });
+}
+
+export async function clearGroupLocation(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("groups").update({ latitude: null, longitude: null }).eq("id", id);
+  if (error) dbError(error, "groups.clearLocation");
+
+  await logAuditEvent({
+    action: "group.clear_location",
+    entity: "groups",
+    entityId: id,
+    after: { latitude: null, longitude: null },
+  });
+}

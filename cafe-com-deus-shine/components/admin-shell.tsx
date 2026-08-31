@@ -35,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
     items: [
       { href: "/grupos", label: "Grupos" },
       { href: "/encontros", label: "Encontros" },
+      { href: "/cafes/localizacao", label: "Localização" },
     ],
   },
   { type: "link", href: "/acompanhamentos", label: "Acompanhamentos", icon: HeartHandshake },

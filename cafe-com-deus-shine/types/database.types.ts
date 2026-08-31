@@ -341,7 +341,9 @@ export type Database = {
           capacity: number
           created_at: string
           id: string
+          latitude: number | null
           leader_id: string
+          longitude: number | null
           meeting_time: string | null
           name: string
           region: string | null
@@ -354,7 +356,9 @@ export type Database = {
           capacity: number
           created_at?: string
           id?: string
+          latitude?: number | null
           leader_id: string
+          longitude?: number | null
           meeting_time?: string | null
           name: string
           region?: string | null
@@ -367,7 +371,9 @@ export type Database = {
           capacity?: number
           created_at?: string
           id?: string
+          latitude?: number | null
           leader_id?: string
+          longitude?: number | null
           meeting_time?: string | null
           name?: string
           region?: string | null

@@ -8,6 +8,7 @@ import {
   CalendarDays,
   HeartHandshake,
   History,
+  MapPin,
   UserCircle,
   Menu,
   X,
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { href: "/meus-encontros", label: "Encontros", icon: CalendarDays },
   { href: "/meus-acompanhamentos", label: "Acompanhar", icon: HeartHandshake },
   { href: "/historico", label: "Histórico", icon: History },
+  { href: "/cafes/localizacao", label: "Localização", icon: MapPin },
   { href: "/meu-perfil", label: "Meu Perfil", icon: UserCircle },
 ];
 
