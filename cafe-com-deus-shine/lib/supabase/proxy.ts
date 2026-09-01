@@ -23,7 +23,7 @@ function buildCsp(supabaseUrl: string) {
     default-src 'self';
     script-src 'self' 'unsafe-inline';
     style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data:;
+    img-src 'self' blob: data: https://*.tile.openstreetmap.org https://unpkg.com;
     font-src 'self';
     connect-src 'self' https://${supabaseHost} wss://${supabaseHost};
     frame-ancestors 'none';

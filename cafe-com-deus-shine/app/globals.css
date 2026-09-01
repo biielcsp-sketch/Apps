@@ -48,3 +48,11 @@ body {
 .leaflet-container img {
   max-width: none;
 }
+
+/* Bandeira que o próprio Leaflet injeta ao lado do link "Leaflet" no
+   canto do mapa (marca própria da biblioteca, sem relação com a
+   localização exibida) — some para não confundir quem está vendo o
+   mapa do Brasil. */
+.leaflet-attribution-flag {
+  display: none;
+}
