@@ -40,18 +40,15 @@ html,
 body {
   background: var(--background);
   color: var(--foreground);
-  /* Sem isso, o navegador deixa "arrastar a tela" (bounce/rubber-band ao
-     puxar além do topo/fim, e drag horizontal se algo transbordar) —
-     trava o app no formato celular, parado como um app nativo. O zoom
-     por pinça já é bloqueado pelo <meta name="viewport"> (userScalable
-     false); `manipulation` aqui é só pra tirar o delay de duplo-toque,
-     rolagem vertical continua normal. `pan-y` sozinho (tentativa
-     anterior) travava a rolagem em alguns navegadores — não usar de
-     novo. O mapa (Leaflet) não é afetado: ele define o próprio
-     touch-action no .leaflet-container, mais específico que esta regra. */
-  overscroll-behavior: none;
+  /* O zoom por pinça já é bloqueado pelo <meta name="viewport">
+     (userScalable false) — é o mecanismo confiável pra isso. `overflow-x:
+     hidden` só bloqueia arrasto horizontal, não mexe na rolagem vertical.
+     NÃO adicionar overscroll-behavior nem touch-action aqui de novo: as
+     duas tentativas anteriores (touch-action: pan-y, depois
+     touch-action: manipulation + overscroll-behavior: none) travaram a
+     rolagem vertical em celulares reais, mesmo funcionando bem no
+     desktop e no simulador. */
   overflow-x: hidden;
-  touch-action: manipulation;
 }
 
 /* O reset global do Tailwind aplica max-width/height:auto em toda
