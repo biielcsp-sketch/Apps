@@ -82,7 +82,7 @@ export function ParticipanteShell({
         </div>
       )}
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         {/* Top bar — mobile */}
         <header className="relative flex items-center border-b border-border bg-logo-panel px-4 py-3 md:hidden">
           <button aria-label="Abrir menu" onClick={() => setMenuOpen(true)} className="relative z-10">

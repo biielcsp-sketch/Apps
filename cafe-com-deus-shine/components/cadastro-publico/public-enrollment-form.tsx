@@ -61,8 +61,22 @@ export function PublicEnrollmentForm({ code }: { code: string }) {
       </div>
 
       <div className="flex flex-col gap-1.5">
+        <label className={labelClass} htmlFor="preferred_name">
+          Como prefere ser chamada
+        </label>
+        <input id="preferred_name" name="preferred_name" autoComplete="nickname" className={inputClass} />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className={labelClass} htmlFor="birth_date">
+          Data de nascimento
+        </label>
+        <input id="birth_date" name="birth_date" type="date" className={inputClass} />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
         <label className={labelClass} htmlFor="phone">
-          Seu telefone (com WhatsApp, se puder)
+          Seu telefone
         </label>
         <input
           id="phone"
@@ -71,6 +85,20 @@ export function PublicEnrollmentForm({ code }: { code: string }) {
           inputMode="numeric"
           autoComplete="tel"
           required
+          placeholder="(11) 99999-9999"
+          className={inputClass}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className={labelClass} htmlFor="whatsapp">
+          Seu WhatsApp (se for diferente do telefone)
+        </label>
+        <input
+          id="whatsapp"
+          name="whatsapp"
+          type="tel"
+          inputMode="numeric"
           placeholder="(11) 99999-9999"
           className={inputClass}
         />
@@ -133,6 +161,18 @@ export function PublicEnrollmentForm({ code }: { code: string }) {
           Prefere um encontro perto de onde?
         </label>
         <input id="location_preference" name="location_preference" required className={inputClass} />
+      </div>
+
+      <label className="flex items-center gap-2 text-sm text-foreground">
+        <input type="checkbox" name="home_meeting_ok" defaultChecked className="h-4 w-4 shrink-0" />
+        Disponível para encontros em casa
+      </label>
+
+      <div className="flex flex-col gap-1.5">
+        <label className={labelClass} htmlFor="other_notes">
+          Outras informações relevantes (opcional)
+        </label>
+        <textarea id="other_notes" name="other_notes" rows={3} className={inputClass} />
       </div>
 
       <label className="flex items-start gap-2.5 rounded-xl border border-border bg-muted p-4 text-sm text-foreground">

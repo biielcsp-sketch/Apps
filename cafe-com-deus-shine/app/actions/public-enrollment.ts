@@ -39,6 +39,7 @@ export async function submitPublicEnrollmentAction(
 ): Promise<PublicEnrollmentActionState> {
   const validated = PublicEnrollmentSchema.safeParse({
     full_name: formData.get("full_name"),
+    preferred_name: readOptionalString(formData, "preferred_name"),
     phone: formData.get("phone"),
     whatsapp: readOptionalString(formData, "whatsapp"),
     email: readOptionalString(formData, "email"),
@@ -49,6 +50,8 @@ export async function submitPublicEnrollmentAction(
     availability_days: readArray(formData, "availability_days"),
     availability_period: readArray(formData, "availability_period"),
     location_preference: readString(formData, "location_preference"),
+    home_meeting_ok: formData.get("home_meeting_ok") === "on",
+    other_notes: readOptionalString(formData, "other_notes"),
     consent_accepted: formData.get("consent_accepted") === "on",
     code: formData.get("code"),
     website: readOptionalString(formData, "website"),

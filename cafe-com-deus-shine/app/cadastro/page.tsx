@@ -2,6 +2,7 @@ import Image from "next/image";
 import { validateEnrollmentSource } from "@/lib/services/public-enrollment.service";
 import { PublicEnrollmentForm } from "@/components/cadastro-publico/public-enrollment-form";
 import { Card } from "@/components/ui/Card";
+import { BackButton } from "@/components/ui/BackButton";
 
 type SearchParams = { origem?: string };
 
@@ -25,7 +26,8 @@ export default async function CadastroPage({
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        <div className="mb-6 flex flex-col items-center text-center">
+        <BackButton />
+        <div className="mt-4 mb-6 flex flex-col items-center text-center">
           <Image
             src="/icons/logo-official.png"
             alt="Café com Deus Shine"

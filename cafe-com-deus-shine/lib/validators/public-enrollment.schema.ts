@@ -10,6 +10,7 @@ import { AVAILABILITY_DAYS, AVAILABILITY_PERIODS } from "@/lib/validators/partic
 // do usuário — só cidade, bairro e e-mail continuam opcionais.
 export const PublicEnrollmentSchema = z.object({
   full_name: z.string().trim().min(2, { error: "Informe seu nome completo." }),
+  preferred_name: z.string().trim().optional(),
   phone: z.string().trim().min(8, { error: "Informe um telefone válido, com DDD." }),
   whatsapp: z.string().trim().optional(),
   email: z.union([z.email({ error: "E-mail inválido." }), z.literal("")]).optional(),
@@ -24,6 +25,8 @@ export const PublicEnrollmentSchema = z.object({
     .array(z.enum(AVAILABILITY_PERIODS))
     .min(1, { error: "Selecione ao menos um período disponível." }),
   location_preference: z.string().trim().min(1, { error: "Informe sua preferência de localização." }),
+  home_meeting_ok: z.boolean().optional(),
+  other_notes: z.string().trim().optional(),
   consent_accepted: z.literal(true, {
     error: "É necessário aceitar os termos para se inscrever.",
   }),

@@ -103,6 +103,7 @@ export async function submitPublicEnrollment(
   // vêm do formulário (item 6).
   const payload: TablesInsert<"participants"> = {
     full_name: input.full_name.trim(),
+    preferred_name: input.preferred_name?.trim() || null,
     phone: input.phone.trim(),
     whatsapp: input.whatsapp?.trim() || null,
     email: input.email?.trim() || null,
@@ -113,6 +114,8 @@ export async function submitPublicEnrollment(
     availability_days: input.availability_days ?? null,
     availability_period: input.availability_period ?? null,
     location_preference: input.location_preference?.trim() || null,
+    home_meeting_ok: input.home_meeting_ok ?? true,
+    other_notes: input.other_notes?.trim() || null,
     status: "nova_inscricao",
     consent_accepted_at: new Date().toISOString(),
     consent_version: terms?.version ?? null,
