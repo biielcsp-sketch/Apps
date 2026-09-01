@@ -43,8 +43,8 @@ export default async function MinhaParticipantePage({
     <div className="flex flex-col gap-6">
       <BackLink href="/minhas-participantes" label="Minhas participantes" />
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold text-foreground">{participant.full_name}</h1>
             <span
               className={`rounded-full px-2.5 py-1 text-xs font-medium ${PARTICIPANT_STATUS_BADGE[participant.status]}`}
@@ -69,7 +69,7 @@ export default async function MinhaParticipantePage({
         {!participant.anonymized_at && (
           <Link
             href={`/minhas-participantes/${id}/editar`}
-            className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground hover:bg-muted"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground hover:bg-muted"
           >
             <Pencil size={15} />
             Editar

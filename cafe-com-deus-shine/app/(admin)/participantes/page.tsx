@@ -56,7 +56,7 @@ export default async function ParticipantesPage({
           <Plus size={16} />
           Nova participante
         </Link>
-        <div className="flex items-center justify-center gap-4 sm:gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-x-3">
           <Link
             href="/participantes/novas-inscricoes"
             className="text-sm font-medium text-muted-foreground hover:text-foreground"

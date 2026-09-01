@@ -8,9 +8,9 @@ export function BarList({ items }: { items: { label: string; count: number }[] }
     <div className="flex flex-col gap-2.5">
       {items.map((item) => (
         <div key={item.label}>
-          <div className="mb-1 flex items-center justify-between text-xs">
-            <span className="truncate text-foreground">{item.label}</span>
-            <span className="text-muted-foreground">{item.count}</span>
+          <div className="mb-1 flex items-center justify-between gap-2 text-xs">
+            <span className="min-w-0 truncate text-foreground">{item.label}</span>
+            <span className="shrink-0 text-muted-foreground">{item.count}</span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div className="h-full bg-primary" style={{ width: `${(item.count / max) * 100}%` }} />

@@ -39,9 +39,9 @@ export function AttendanceRoll({
           action={markAttendanceAction.bind(null, meetingId, row.participantId, basePath)}
           className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
         >
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">{row.fullName}</span>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[row.status]}`}>
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-sm font-medium text-foreground">{row.fullName}</span>
+            <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[row.status]}`}>
               {STATUS_OPTIONS.find((o) => o.value === row.status)?.label}
             </span>
           </div>
