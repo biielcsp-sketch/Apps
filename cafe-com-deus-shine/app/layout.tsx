@@ -31,6 +31,15 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#a8563f",
+  // Trava o zoom/pinça do navegador para o app parecer um app nativo, não
+  // uma página da web que dá pra arrastar/dar zoom. O mapa (Leaflet) não é
+  // afetado — ele já gerencia o próprio touch-action internamente,
+  // independente disso.
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

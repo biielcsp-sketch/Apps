@@ -36,9 +36,18 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html,
 body {
   background: var(--background);
   color: var(--foreground);
+  /* Sem esse par, o navegador deixa "arrastar a tela" (bounce/rubber-band
+     ao puxar além do topo/fim, e drag horizontal se algo transbordar) —
+     trava o app no formato celular, parado como um app nativo. O mapa
+     (Leaflet) não é afetado: ele define o próprio touch-action no
+     .leaflet-container, mais específico que esta regra. */
+  overscroll-behavior: none;
+  overflow-x: hidden;
+  touch-action: pan-y;
 }
 
 /* O reset global do Tailwind aplica max-width/height:auto em toda
