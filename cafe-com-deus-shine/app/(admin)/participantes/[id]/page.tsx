@@ -18,6 +18,8 @@ import { FollowUpsList } from "@/components/acompanhamento/followups-list";
 import { AttentionBadge } from "@/components/acompanhamento/attention-badge";
 import { listFollowUps, computeAttentionAlerts } from "@/lib/services/followup.service";
 import { CopySignupLink } from "@/components/participantes/copy-signup-link";
+import { ContactButtons } from "@/components/participantes/contact-buttons";
+import { CONTACT_STATUS_BADGE, CONTACT_STATUS_LABELS } from "@/lib/participant-status-labels";
 import { BackLink } from "@/components/ui/BackLink";
 
 export default async function ParticipantePage({
@@ -53,6 +55,13 @@ export default async function ParticipantePage({
             >
               {PARTICIPANT_STATUS_LABELS[participant.status]}
             </span>
+            {!participant.anonymized_at && (
+              <span
+                className={`rounded-full px-2.5 py-1 text-xs font-medium ${CONTACT_STATUS_BADGE[participant.contact_status]}`}
+              >
+                {CONTACT_STATUS_LABELS[participant.contact_status]}
+              </span>
+            )}
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
             Líder: {participant.leader?.full_name ?? "sem líder"} · Grupo:{" "}
@@ -82,17 +91,20 @@ export default async function ParticipantePage({
           </p>
         </Card>
       ) : (
-        <Card className="p-6">
-          <p className="text-sm font-semibold text-foreground">Informações</p>
-          <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-            <Info label="Telefone" value={participant.phone} />
-            <Info label="WhatsApp" value={participant.whatsapp} />
-            <Info label="E-mail" value={participant.email} />
-            <Info label="Cidade / Bairro" value={[participant.city, participant.neighborhood].filter(Boolean).join(" / ")} />
-            <Info label="Endereço" value={participant.address} />
-            <Info label="Data de inscrição" value={new Date(participant.enrollment_date).toLocaleDateString("pt-BR")} />
-          </dl>
-        </Card>
+        <>
+          <ContactButtons whatsapp={participant.whatsapp} phone={participant.phone} />
+          <Card className="p-6">
+            <p className="text-sm font-semibold text-foreground">Informações</p>
+            <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+              <Info label="Telefone" value={participant.phone} />
+              <Info label="WhatsApp" value={participant.whatsapp} />
+              <Info label="E-mail" value={participant.email} />
+              <Info label="Cidade / Bairro" value={[participant.city, participant.neighborhood].filter(Boolean).join(" / ")} />
+              <Info label="Endereço" value={participant.address} />
+              <Info label="Data de inscrição" value={new Date(participant.enrollment_date).toLocaleDateString("pt-BR")} />
+            </dl>
+          </Card>
+        </>
       )}
 
       {!participant.anonymized_at && (

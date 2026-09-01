@@ -577,6 +577,48 @@ export type Database = {
           },
         ]
       }
+      participant_contact_status_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          id: string
+          note: string | null
+          participant_id: string
+          status: Database["public"]["Enums"]["contact_status"]
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          participant_id: string
+          status: Database["public"]["Enums"]["contact_status"]
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          participant_id?: string
+          status?: Database["public"]["Enums"]["contact_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_contact_status_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_contact_status_history_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_leader_history: {
         Row: {
           changed_by: string | null
@@ -696,6 +738,7 @@ export type Database = {
           consent_accepted_at: string | null
           consent_method: string | null
           consent_version: string | null
+          contact_status: Database["public"]["Enums"]["contact_status"]
           created_at: string
           current_group_id: string | null
           current_leader_id: string | null
@@ -729,6 +772,7 @@ export type Database = {
           consent_accepted_at?: string | null
           consent_method?: string | null
           consent_version?: string | null
+          contact_status?: Database["public"]["Enums"]["contact_status"]
           created_at?: string
           current_group_id?: string | null
           current_leader_id?: string | null
@@ -762,6 +806,7 @@ export type Database = {
           consent_accepted_at?: string | null
           consent_method?: string | null
           consent_version?: string | null
+          contact_status?: Database["public"]["Enums"]["contact_status"]
           created_at?: string
           current_group_id?: string | null
           current_leader_id?: string | null
@@ -932,6 +977,17 @@ export type Database = {
         | "password_reset_requested"
         | "access_denied"
         | "session_revoked"
+      contact_status:
+        | "aguardando_1_contato"
+        | "primeira_mensagem_enviada"
+        | "segunda_mensagem_enviada"
+        | "em_conversa"
+        | "em_processo"
+        | "nao_respondeu"
+        | "parou_de_responder"
+        | "numero_invalido"
+        | "consolidada"
+        | "sem_interesse"
       follow_up_status: "normal" | "atencao" | "acompanhamento_necessario"
       follow_up_type:
         | "encontro"
@@ -1087,6 +1143,18 @@ export const Constants = {
         "password_reset_requested",
         "access_denied",
         "session_revoked",
+      ],
+      contact_status: [
+        "aguardando_1_contato",
+        "primeira_mensagem_enviada",
+        "segunda_mensagem_enviada",
+        "em_conversa",
+        "em_processo",
+        "nao_respondeu",
+        "parou_de_responder",
+        "numero_invalido",
+        "consolidada",
+        "sem_interesse",
       ],
       follow_up_status: ["normal", "atencao", "acompanhamento_necessario"],
       follow_up_type: [
