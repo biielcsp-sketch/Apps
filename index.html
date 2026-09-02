@@ -4683,8 +4683,10 @@ function desempenhoHTML(){
         <tbody>${rows||emptyRow(5)}</tbody></table></div>
     </div>`;
 }
+let fechMesOff=0;
 function fechamentoMensalHTML(){
-  const mesIni=mesAtualISO();
+  const mo=monthRange(fechMesOff);
+  const mesIni=mo.ini;
   if(fechamentoMensalHTML._mes!==mesIni){
     fechamentoMensalHTML._mes=mesIni; fechamentoMensalHTML._lista=null;
     gpFechamentosList(mesIni).then(r=>{ fechamentoMensalHTML._lista=Array.isArray(r)?r:[]; if(equipeSubtab==='desempenho')renderEquipeBody(); }).catch(()=>{ fechamentoMensalHTML._lista=[]; });
@@ -4718,15 +4720,20 @@ function fechamentoMensalHTML(){
       <div class="card-title">Fechamento Mensal <span class="muted">· competência ${mesIni.slice(0,7)}</span></div>
       <button class="btn btn-primary" onclick="confirmarFecharPeriodo()">Fechar período do mês</button>
     </div>
-    ${lista===null?'<div class="empty">Carregando...</div>':`<div class="table-wrapper"><table>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px">
+      <button class="btn btn-ghost" style="padding:6px 14px" onclick="fechMesOff--;renderEquipeBody()">←</button>
+      <div class="strong" style="font-size:14px;text-transform:capitalize">${mo.label}</div>
+      <button class="btn btn-ghost" style="padding:6px 14px" onclick="fechMesOff++;renderEquipeBody()">→</button>
+    </div>
+    ${lista===null?'<div class="empty">Carregando...</div>':(lista.length?`<div class="table-wrapper"><table>
       <thead><tr><th>Colaborador</th><th>Núcleo</th><th>Mínimo</th><th>Status</th><th>Extra</th><th>Total Ranking</th><th></th></tr></thead>
       <tbody>${rows||emptyRow(7)}</tbody>
-    </table></div>`}
+    </table></div>`:'<div class="empty">Este mês ainda não foi fechado.</div>')}
     <div style="font-size:11.5px;color:var(--text-3);padding-top:10px">Fechar o período trava novos lançamentos retroativos para os colaboradores já processados. Reabrir exige motivo e fica registrado em log.</div>
   </div>`;
 }
 async function confirmarFecharPeriodo(){
-  const mesIni=mesAtualISO();
+  const mesIni=monthRange(fechMesOff).ini;
   if(!confirm('Fechar o período de '+mesIni.slice(0,7)+'? Isso trava novos lançamentos retroativos para os colaboradores processados.'))return;
   try{
     const r=await gpFecharPeriodo(mesIni);
@@ -4744,7 +4751,7 @@ async function confirmarReabrirPeriodo(colabId){
   const motivo=$('#reabMotivo').value.trim();
   if(!motivo){Toast('Informe o motivo','erro');return;}
   try{
-    const r=await gpReabrirPeriodo(colabId,mesAtualISO(),motivo);
+    const r=await gpReabrirPeriodo(colabId,monthRange(fechMesOff).ini,motivo);
     if(!r||!r.ok){Toast((r&&r.erro)||'Não foi possível reabrir','erro');return;}
     closeModal(); fechamentoMensalHTML._mes=null; renderEquipeBody(); Toast('Período reaberto','sucesso');
   }catch(e){ Toast('Erro: '+(e.message||e),'erro'); }
@@ -6060,6 +6067,7 @@ const I18N_ZH = {
   'Fechamento Mensal':'月度结算','Fechar período do mês':'结算本月','Núcleo':'核心分','Mínimo':'最低标准',
   'Apto':'达标','Não apto':'未达标','Extra':'额外分','Reabrir':'重新开放','Motivo da reabertura':'重开原因',
   'Velocidade':'速度','Meta do mês':'本月目标','Mínimo fixo do Analista':'分析员固定最低分',
+  'Este mês ainda não foi fechado.':'本月尚未结算。',
   // Tarefas
   'Nova tarefa':'新任务','Tarefa':'任务','Concluída em':'完成于','Marcar concluída':'标记完成',
   'Pendente':'待处理','Concluída':'已完成','Nenhuma tarefa concluída para este colaborador':'该员工没有已完成的任务',
