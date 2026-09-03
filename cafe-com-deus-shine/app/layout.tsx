@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { InstallPrompt } from "@/components/install-prompt";
+import { SplashScreen } from "@/components/splash-screen";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           style={{ backgroundImage: "url(/background.jpg)" }}
         />
         {children}
+        <SplashScreen />
         <InstallPrompt />
         <ServiceWorkerRegister />
       </body>
