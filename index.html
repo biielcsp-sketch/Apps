@@ -866,7 +866,7 @@ const fmtK = n => n>=1000 ? 'R$ '+(n/1000).toFixed(1).replace('.',',')+'k' : fmt
 const today = () => new Date().toISOString().slice(0,10);
 const dBR = s => { if(!s)return''; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; };
 const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-const PERFIL_LABEL = {admin:'Administrador',operador:'Auxiliar',supervisor:'Líder',analista:'Analista',colaborador:'Colaborador',proprietaria:'总经理'};
+const PERFIL_LABEL = {admin:'Administrador',operador:'Auxiliar',supervisor:'Líder',analista:'Analista',colaborador:'Colaborador',proprietaria:'Proprietária'};
 const initials = n => n.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 const $ = s => document.querySelector(s);
 function avatarHTML(nome, foto, cls, extraStyle){
@@ -996,7 +996,7 @@ const TITLES = {
   prodgeral:['Desempenho Geral','Indicadores gerais da produção da fábrica'],
   prodequipe: ['Gestão de Pessoas','Funcionários, metas, frequência e bonificações'],
   prodminhastarefas:['Minhas Tarefas','Suas tarefas, feedbacks e sugestões de melhoria'],
-  execdash:['总经理仪表板','公司关键指标与经营决策信息'],
+  execdash:['Painel Executivo','Indicadores-chave e informações para decisão'],
   prodrel:    ['Relatórios','Relatórios de produção em PDF'],
   prodconfig: ['Configurações','Empresa, módulos, metas e turnos'],
   dashboard:  ['Dashboard','Visão geral do seu negócio'],
@@ -2128,7 +2128,7 @@ function campoPerfilInner(prefix, colabId, perfilAtual, disabled){
       <div style="padding:10px 14px;background:var(--surface-2);border-radius:10px;font-size:14px;color:var(--text-2)">${PERFIL_LABEL[p]||p} <span style="color:var(--text-3);font-size:12px">— definido pela função (${colab.funcao}) em Funcionários</span></div>
       <input type="hidden" id="${prefix}Perfil" value="${p}">`;
   }
-  const opts=[['colaborador','Colaborador'],['admin','Administrador'],['proprietaria','总经理 (painel executivo, somente leitura)']];
+  const opts=[['colaborador','Colaborador'],['admin','Administrador'],['proprietaria','Proprietária (painel executivo, somente leitura)']];
   if(perfilAtual && ['operador','supervisor','analista'].includes(perfilAtual)){
     opts.push([perfilAtual, (PERFIL_LABEL[perfilAtual]||perfilAtual)+' (sem colaborador vinculado)']);
   }
@@ -2546,11 +2546,9 @@ function buildSidebar(){
     return;
   }
   if(cu && cu.perfil==='proprietaria'){
-    let he=`<div class="nav-label">经营管理</div>`;
-    he+=navItem('execdash','仪表板');
+    let he=`<div class="nav-label">Gestão</div>`;
+    he+=navItem('execdash','Dashboard');
     $('#sidebarNav').innerHTML=he;
-    const gs=$('#globalSearch'); if(gs) gs.placeholder='搜索...';
-    const tb=$('#themeBtn'); if(tb) tb.title='切换深色/浅色模式';
     document.querySelectorAll('#sidebarNav [data-page]').forEach(item=>{
       item.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); go(this.dataset.page); });
       item.addEventListener('touchend', function(e){ e.preventDefault(); go(this.dataset.page); }, {passive:false});
@@ -5555,19 +5553,14 @@ function salvarSugestaoIdeia(){
 }
 
 /* =====================================================================
-   === NOVO: 总经理仪表板 (perfil "proprietaria" — somente leitura, 100% em chinês) ===
+   === NOVO: PAINEL EXECUTIVO (perfil "proprietaria" — somente leitura) ===
    ===================================================================== */
-function mesLabelZH(off){
-  const now=new Date(); const d=new Date(now.getFullYear(), now.getMonth()+off, 1);
-  return d.getFullYear()+'年'+(d.getMonth()+1)+'月';
-}
-const CATEGORIA_LABEL_ZH={producao:'生产',embalagem:'包装',analista:'分析'};
-const STATUS_COLAB_ZH={ativo:'在职',ferias:'休假',afastado:'停职',desligado:'离职'};
+const CATEGORIA_LABEL={producao:'Produção',embalagem:'Embalagem',analista:'Analista'};
 let execMesOff=0, execReqId=0;
 RENDER.execdash=function(){ renderExecDash(); };
 function renderExecDash(){
   const mo=monthRange(execMesOff);
-  $('#page-execdash').innerHTML = periodNav(mesLabelZH(execMesOff),'execMesOff','renderExecDash') + `<div id="execBody"><div class="empty">加载中...</div></div>`;
+  $('#page-execdash').innerHTML = periodNav(mo.label,'execMesOff','renderExecDash') + `<div id="execBody"><div class="empty">Carregando...</div></div>`;
   renderExecBody(mo);
 }
 async function renderExecBody(mo){
@@ -5583,7 +5576,7 @@ async function renderExecBody(mo){
   body.innerHTML = execDashboardHTML(mo, lista, oficial);
   setTimeout(()=>drawExecChart(mo), 40);
 }
-function execKpiZH(label,val,sub,col){
+function execKpi(label,val,sub,col){
   return `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value"${col?` style="color:${col}"`:''}>${val}</div>${sub?`<div class="kpi-trend" style="color:var(--text-3);background:transparent;padding-left:0">${sub}</div>`:''}</div>`;
 }
 function execDashboardHTML(mo, listaRanking, oficial){
@@ -5610,73 +5603,73 @@ function execDashboardHTML(mo, listaRanking, oficial){
   const feedbacksRecentes=prod.feedbacks.filter(f=>f.criado_em && (Date.now()-new Date(f.criado_em).getTime())<30*86400000).length;
 
   const avariasEventosMes=(prod.avarias||[]).filter(x=>x.data>=mo.ini && x.data<=mo.fim);
-  const porMotivo={}; avariasEventosMes.forEach(x=>{const k=(x.motivo||'其他').trim()||'其他'; porMotivo[k]=(porMotivo[k]||0)+1;});
+  const porMotivo={}; avariasEventosMes.forEach(x=>{const k=(x.motivo||'Outros').trim()||'Outros'; porMotivo[k]=(porMotivo[k]||0)+1;});
   const topMotivos=Object.entries(porMotivo).sort((x,y)=>y[1]-x[1]).slice(0,5);
 
   const kpis=`<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px">
-    ${execKpiZH('本月产量', a.prodTot+' 件')}
-    ${execKpiZH('次品率', a.taxaAv.toFixed(1)+'%', '上限 '+avMax+'%', a.taxaAv>avMax?'#FF3D57':'#27C28B')}
-    ${execKpiZH('平均效率', a.ef.toFixed(0)+'%')}
-    ${execKpiZH('在职员工', ativos.length+' 人')}
-    ${execKpiZH('符合奖金资格', aptos+' / '+linhas.length+' 人', undefined, naoAptos>0?'#F5A623':'#27C28B')}
-    ${execKpiZH('本月旷工', faltasInjMes+' 次', undefined, faltasInjMes>0?'#FF3D57':undefined)}
+    ${execKpi('Produção do mês', a.prodTot+' <span>peças</span>')}
+    ${execKpi('Taxa de avarias', a.taxaAv.toFixed(1)+'%', '<span>limite</span> '+avMax+'%', a.taxaAv>avMax?'#FF3D57':'#27C28B')}
+    ${execKpi('Eficiência média', a.ef.toFixed(0)+'%')}
+    ${execKpi('Colaboradores ativos', ativos.length+' <span>pessoas</span>')}
+    ${execKpi('Aptos à bonificação', aptos+' / '+linhas.length, undefined, naoAptos>0?'#F5A623':'#27C28B')}
+    ${execKpi('Faltas injustificadas (mês)', faltasInjMes+' <span>vezes</span>', undefined, faltasInjMes>0?'#FF3D57':undefined)}
   </div>`;
 
   const statusBadge = oficial
-    ? `<span class="badge" style="color:#27C28B;background:#27C28B18">正式结算</span>`
-    : `<span class="badge" style="color:#F5A623;background:#F5A62318">预览 · 每日更新</span>`;
+    ? `<span class="badge" style="color:#27C28B;background:#27C28B18">Fechamento oficial</span>`
+    : `<span class="badge" style="color:#F5A623;background:#F5A62318">Prévia · atualizada diariamente</span>`;
 
   const chartCard=`<div class="card" style="margin-bottom:20px">
-    <div class="card-head"><div class="card-title">本月生产趋势 ${statusBadge}</div></div>
+    <div class="card-head"><div class="card-title">Tendência de produção do mês ${statusBadge}</div></div>
     <div style="height:260px"><canvas id="execChart"></canvas></div>
   </div>`;
 
-  const catRows=Object.entries(porCat).map(([k,v])=>`<tr><td class="strong">${CATEGORIA_LABEL_ZH[k]}</td><td>${v} 人</td></tr>`).join('');
+  const catRows=Object.entries(porCat).map(([k,v])=>`<tr><td class="strong">${CATEGORIA_LABEL[k]}</td><td>${v} <span>pessoas</span></td></tr>`).join('');
   const catCard=`<div class="card" style="margin-bottom:20px">
-    <div class="card-head"><div class="card-title">按职能分布</div></div>
-    <div class="table-wrapper"><table><thead><tr><th>职能</th><th>在职人数</th></tr></thead><tbody>${catRows||'<tr><td colspan="2"><div class="empty">暂无数据</div></td></tr>'}</tbody></table></div>
+    <div class="card-head"><div class="card-title">Distribuição por função</div></div>
+    <div class="table-wrapper"><table><thead><tr><th>Função</th><th>Ativos</th></tr></thead><tbody>${catRows||'<tr><td colspan="2"><div class="empty">Nenhum registro ainda</div></td></tr>'}</tbody></table></div>
   </div>`;
 
   const rankRows=linhas.map((r,i)=>`<tr>
       <td class="strong">${i+1}</td>
       <td><div class="cell-user">${avatarHTML(r.nome,r.foto)}<div class="strong">${r.nome}</div></div></td>
-      <td>${CATEGORIA_LABEL_ZH[categoriaColabPorFuncao(r.funcao)]||r.funcao}</td>
+      <td>${CATEGORIA_LABEL[categoriaColabPorFuncao(r.funcao)]||r.funcao}</td>
       <td>${r.total_nucleo}</td>
-      <td>${r.apto_bonificacao?'<span class="badge" style="color:#27C28B;background:#27C28B18">达标</span>':'<span class="badge" style="color:#FF3D57;background:#FF3D5718">未达标</span>'}</td>
-      <td class="strong" style="color:var(--accent)">${r.total_ranking} 分</td>
+      <td>${r.apto_bonificacao?'<span class="badge" style="color:#27C28B;background:#27C28B18">Apto</span>':'<span class="badge" style="color:#FF3D57;background:#FF3D5718">Não apto</span>'}</td>
+      <td class="strong" style="color:var(--accent)">${r.total_ranking} <span>pts</span></td>
     </tr>`).join('');
   const rankCard=`<div class="card" style="margin-bottom:20px">
-    <div class="card-head"><div class="card-title">排名与奖金资格</div></div>
-    <div class="table-wrapper"><table><thead><tr><th>#</th><th>员工</th><th>职能</th><th>核心分</th><th>状态</th><th>总分</th></tr></thead>
-    <tbody>${rankRows||'<tr><td colspan="6"><div class="empty">本月暂无积分记录</div></td></tr>'}</tbody></table></div>
+    <div class="card-head"><div class="card-title">Ranking e bonificação</div></div>
+    <div class="table-wrapper"><table><thead><tr><th>#</th><th>Colaborador</th><th>Função</th><th>Núcleo</th><th>Status</th><th>Total</th></tr></thead>
+    <tbody>${rankRows||'<tr><td colspan="6"><div class="empty">Nenhum colaborador ativo com pontuação neste mês.</div></td></tr>'}</tbody></table></div>
   </div>`;
 
-  const foraNomes = ferias.concat(afastados).map(c=>`${c.nome}（${STATUS_COLAB_ZH[c.status]}）`).join('、');
+  const foraNomes = ferias.concat(afastados).map(c=>`${c.nome} (<span>${(STATUS_COLAB[c.status]||{}).l||c.status}</span>)`).join(', ');
   const equipeCard=`<div class="card" style="margin-bottom:20px">
-    <div class="card-head"><div class="card-title">人员状态</div></div>
+    <div class="card-head"><div class="card-title">Situação da equipe</div></div>
     <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:${foraNomes?'12px':'0'}">
-      ${execKpiZH('在职', ativos.length)}
-      ${execKpiZH('休假', ferias.length)}
-      ${execKpiZH('停职', afastados.length)}
-      ${execKpiZH('本月离职', desligadosMes.length)}
+      ${execKpi('Ativo', ativos.length)}
+      ${execKpi('Férias', ferias.length)}
+      ${execKpi('Afastado', afastados.length)}
+      ${execKpi('Desligados no mês', desligadosMes.length)}
     </div>
-    ${foraNomes?`<div style="font-size:12.5px;color:var(--text-3)">当前休假/停职：${foraNomes}</div>`:''}
+    ${foraNomes?`<div style="font-size:12.5px;color:var(--text-3)"><span>Em férias ou afastados:</span> ${foraNomes}</div>`:''}
   </div>`;
 
   const pendCard=`<div class="card" style="margin-bottom:20px">
-    <div class="card-head"><div class="card-title">待处理事项（实时）</div></div>
+    <div class="card-head"><div class="card-title">Pendências (tempo real)</div></div>
     <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
-      ${execKpiZH('待处理任务', tarefasPendentes, undefined, tarefasPendentes>0?'#F5A623':undefined)}
-      ${execKpiZH('待评估改进建议', ideiasAbertas)}
-      ${execKpiZH('近30天反馈', feedbacksRecentes)}
+      ${execKpi('Tarefas pendentes', tarefasPendentes, undefined, tarefasPendentes>0?'#F5A623':undefined)}
+      ${execKpi('Ideias em aberto', ideiasAbertas)}
+      ${execKpi('Feedbacks nos últimos 30 dias', feedbacksRecentes)}
     </div>
   </div>`;
 
-  const motivoRows=topMotivos.map(([m,n])=>`<tr><td class="strong">${m}</td><td>${n} 次</td></tr>`).join('');
+  const motivoRows=topMotivos.map(([m,n])=>`<tr><td class="strong">${m}</td><td>${n} <span>vezes</span></td></tr>`).join('');
   const motivoCard=`<div class="card">
-    <div class="card-head"><div class="card-title">本月次品主要原因</div></div>
-    <div class="table-wrapper"><table><thead><tr><th>原因</th><th>次数</th></tr></thead>
-    <tbody>${motivoRows||'<tr><td colspan="2"><div class="empty">本月无次品记录</div></td></tr>'}</tbody></table></div>
+    <div class="card-head"><div class="card-title">Principais motivos de avaria no mês</div></div>
+    <div class="table-wrapper"><table><thead><tr><th>Motivo</th><th>Vezes</th></tr></thead>
+    <tbody>${motivoRows||'<tr><td colspan="2"><div class="empty">Nenhuma avaria registrada no mês</div></td></tr>'}</tbody></table></div>
   </div>`;
 
   return kpis + chartCard + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" class="exec-2col">${catCard}${equipeCard}</div>` + rankCard + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" class="exec-2col">${pendCard}${motivoCard}</div>`;
@@ -5691,9 +5684,11 @@ function drawExecChart(mo){
   const regs=prod.producao.filter(r=>r.data>=mo.ini && r.data<=mo.fim);
   const byDay=mo.dias.map(d=>regs.filter(r=>r.data===d).reduce((s,r)=>s+(+r.produzido_liquido||0),0));
   const metaDia=+prod.metasGlobais.meta_diaria_fabrica||0;
-  drawDashChart('execChart','line',mo.dias.map(d=>d.slice(8,10)+'日'),[
-    {label:'产量',data:byDay,borderColor:'#2979FF',backgroundColor:'rgba(41,121,255,.15)',fill:true,tension:.3,pointRadius:0},
-    {label:'目标',data:byDay.map(()=>metaDia),borderColor:'rgba(150,150,160,.8)',borderDash:[6,4],pointRadius:0,fill:false}
+  /* o gráfico é canvas: o TreeWalker não alcança, então traduz na origem com T() */
+  const sufixoDia = idiomaAtual()==='zh' ? '日' : '';
+  drawDashChart('execChart','line',mo.dias.map(d=>d.slice(8,10)+sufixoDia),[
+    {label:T('Produzido'),data:byDay,borderColor:'#2979FF',backgroundColor:'rgba(41,121,255,.15)',fill:true,tension:.3,pointRadius:0},
+    {label:T('Meta'),data:byDay.map(()=>metaDia),borderColor:'rgba(150,150,160,.8)',borderDash:[6,4],pointRadius:0,fill:false}
   ]);
 }
 
@@ -6411,6 +6406,33 @@ const I18N = {
   'Diario':{en:'Daily',zh:'每日'},
   'Meta diária da fábrica:':{en:'Factory daily target:',zh:'工厂每日目标：'},
   'Melhor colaborador:':{en:'Best employee:',zh:'最佳员工：'},
+  // painel executivo (总经理)
+  'Painel Executivo':{en:'Executive Dashboard',zh:'总经理仪表板'},
+  'Indicadores-chave e informações para decisão':{en:'Key indicators and decision information',zh:'公司关键指标与经营决策信息'},
+  'Produção do mês':{en:'Month production',zh:'本月产量'},
+  'Taxa de avarias':{en:'Defect rate',zh:'次品率'},
+  'pessoas':{en:'people',zh:'人'},
+  'vezes':{en:'times',zh:'次'},
+  'Vezes':{en:'Times',zh:'次数'},
+  'Ativos':{en:'Active',zh:'在职人数'},
+  'Fechamento oficial':{en:'Official closing',zh:'正式结算'},
+  'Prévia · atualizada diariamente':{en:'Preview · updated daily',zh:'预览 · 每日更新'},
+  'Tendência de produção do mês':{en:'Production trend this month',zh:'本月生产趋势'},
+  'Distribuição por função':{en:'Distribution by role',zh:'按职能分布'},
+  'Ranking e bonificação':{en:'Ranking and bonus',zh:'排名与奖金资格'},
+  'Situação da equipe':{en:'Team status',zh:'人员状态'},
+  'Desligados no mês':{en:'Terminated this month',zh:'本月离职'},
+  'Em férias ou afastados:':{en:'On vacation or leave:',zh:'当前休假/停职：'},
+  'Pendências (tempo real)':{en:'Open items (real time)',zh:'待处理事项（实时）'},
+  'Feedbacks nos últimos 30 dias':{en:'Feedback in the last 30 days',zh:'近30天反馈'},
+  'Principais motivos de avaria no mês':{en:'Top defect reasons this month',zh:'本月次品主要原因'},
+  'Nenhuma avaria registrada no mês':{en:'No defects recorded this month',zh:'本月无次品记录'},
+  'Outros':{en:'Others',zh:'其他'},
+  'Proprietária':{en:'Owner',zh:'总经理'},
+  // perfil proprietária / cabeçalho
+  'Gestão':{en:'Management',zh:'经营管理'},
+  'Proprietária (painel executivo, somente leitura)':{en:'Owner (executive dashboard, read-only)',zh:'总经理（仅可查看经营看板）'},
+  'Alternar tema claro/escuro':{en:'Toggle light/dark theme',zh:'切换深色/浅色模式'},
 };
 
 /* =====================================================================
@@ -6419,8 +6441,8 @@ const I18N = {
    visível, as versões en/zh; o motor abaixo TROCA o texto na tela pelo
    idioma ativo (não é legenda). O texto original em português fica
    guardado no próprio nó, então dá para alternar quantas vezes quiser.
-   O painel executivo do perfil 总经理 (#page-execdash) fica de fora:
-   ele é escrito direto em chinês, por decisão de produto.
+   Vale para todas as telas, inclusive o painel executivo do perfil
+   proprietária, que segue o idioma escolhido como qualquer outra.
    ===================================================================== */
 const IDIOMAS = [['pt','🇧🇷','Português'],['en','🇺🇸','English'],['zh','🇨🇳','中文']];
 const IDIOMA_KEY = 'sutodata-idioma';
@@ -6450,9 +6472,9 @@ function T(txt){
     '.lang-item .lang-check{color:var(--accent);font-weight:800}'+
     '</style>'); }catch(e){}
 
-  /* o que nunca é traduzido */
+  /* o que nunca é traduzido (dados do usuário e blocos marcados) */
   function foraDoEscopo(el){
-    try{ return !!(el.closest && el.closest('#page-execdash,[data-no-i18n]')); }catch(e){ return false; }
+    try{ return !!(el.closest && el.closest('[data-no-i18n]')); }catch(e){ return false; }
   }
 
   function traduzirNo(n, lang){
@@ -6544,6 +6566,12 @@ function T(txt){
     try{ localStorage.setItem(IDIOMA_KEY,lang); }catch(e){}
     document.querySelectorAll('.lang-menu').forEach(m=>m.hidden=true);
     aplicarIdioma();
+    /* datas e rótulos de gráfico são montados na hora do render, então não
+       adianta só trocar o texto na tela: refaz a página atual no idioma novo */
+    try{
+      const pg=(location.hash||'').slice(1);
+      if(pg && typeof RENDER!=='undefined' && RENDER[pg]) RENDER[pg]();
+    }catch(e){ console.error('re-render ao trocar idioma', e && e.message); }
     /* fica salvo no usuário: acompanha a pessoa em qualquer aparelho */
     try{
       const cu=(typeof currentUser==='function')?currentUser():null;

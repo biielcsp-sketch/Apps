@@ -3,7 +3,9 @@
 ## Regra fixa: três idiomas (Português / English / 中文)
 
 O sistema tem três versões de idioma, e o usuário escolhe a dele pelo seletor
-de bandeira (cabeçalho e tela de login). Todo texto visível no `index.html` —
+de bandeira (cabeçalho e tela de login). Isso vale para TODAS as telas,
+inclusive o painel executivo do perfil proprietária (总经理). Todo texto
+visível no `index.html` —
 títulos de página, nomes de aba/sub-aba, rótulos de campo, cabeçalhos de
 tabela, botões, badges de status, mensagens de estado vazio, placeholders —
 precisa existir nos três idiomas. Isso vale para QUALQUER painel, aba ou texto
@@ -36,8 +38,6 @@ do dicionário, e as outras duas versões são traduções dessa chave.
 
 ### O que fica FORA da tradução
 
-- **Painel executivo do perfil 总经理 (`#page-execdash`)**: escrito direto em
-  chinês por decisão de produto; o motor pula essa subárvore.
 - Qualquer elemento marcado com `data-no-i18n` (e seus filhos).
 - Dados do usuário: nomes de pessoas, textos de tarefa/feedback/ideia, logins.
   Como o casamento é por igualdade exata com uma chave do dicionário, esses
