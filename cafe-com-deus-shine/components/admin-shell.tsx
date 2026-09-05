@@ -12,6 +12,8 @@ import {
   QrCode,
   BookOpen,
   ScrollText,
+  Newspaper,
+  FileText,
   Menu,
   X,
   LogOut,
@@ -21,12 +23,14 @@ import { SidebarIdentity } from "@/components/ui/SidebarIdentity";
 import { logout } from "@/app/actions/auth";
 
 const NAV_ITEMS = [
+  { href: "/feed", label: "Feed", icon: Newspaper },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/participantes", label: "Participantes", icon: Users },
   { href: "/liderancas", label: "Líderes", icon: UserCog },
   { href: "/cafes", label: "Cafés", icon: Coffee },
   { href: "/acompanhamentos", label: "Acompanhamentos", icon: HeartHandshake },
-  { href: "/estudos", label: "Estudo do mês", icon: BookOpen },
+  { href: "/biblia", label: "Bíblia", icon: BookOpen },
+  { href: "/estudos", label: "Estudo do mês", icon: FileText },
   { href: "/configuracoes/qrcodes", label: "QR Codes", icon: QrCode },
   { href: "/configuracoes/regras", label: "Regras do café", icon: ScrollText },
 ];

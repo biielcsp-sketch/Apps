@@ -7,11 +7,13 @@ import { StudyMaterialsPanel } from "@/components/estudos/study-materials-panel"
 import { PageHeader } from "@/components/ui/PageHeader";
 import { BackLink } from "@/components/ui/BackLink";
 
-// Estudo do mês: a pastora publica o material, e toda a comunidade
-// (líder, co-líder, anfitriã e participante) consegue abrir e baixar.
+// Estudo do mês: tela de publicação, exclusiva da pastora e do
+// desenvolvedor. A comunidade não entra aqui — ela vê o tema do mês no
+// Feed, que lê o mesmo material em modo leitura.
 export default async function EstudosPage() {
   const profile = await getCurrentProfile();
   if (!profile) redirect("/login");
+  if (!isAdminRole(profile.role)) redirect("/feed");
 
   const [avatarUrl, materials] = await Promise.all([
     getMyAvatarSignedUrl(),

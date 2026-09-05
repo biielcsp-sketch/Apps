@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      bible_favorites: {
+        Row: {
+          book_abbrev: string
+          book_name: string
+          chapter: number
+          created_at: string
+          id: string
+          profile_id: string
+          text: string
+          verse: number
+        }
+        Insert: {
+          book_abbrev: string
+          book_name: string
+          chapter: number
+          created_at?: string
+          id?: string
+          profile_id: string
+          text: string
+          verse: number
+        }
+        Update: {
+          book_abbrev?: string
+          book_name?: string
+          chapter?: number
+          created_at?: string
+          id?: string
+          profile_id?: string
+          text?: string
+          verse?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bible_favorites_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cafe_photos: {
+        Row: {
+          author_profile_id: string
+          caption: string | null
+          created_at: string
+          group_id: string
+          id: string
+          storage_path: string
+        }
+        Insert: {
+          author_profile_id: string
+          caption?: string | null
+          created_at?: string
+          group_id: string
+          id?: string
+          storage_path: string
+        }
+        Update: {
+          author_profile_id?: string
+          caption?: string | null
+          created_at?: string
+          group_id?: string
+          id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cafe_photos_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cafe_photos_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_config: {
         Row: {
           key: string

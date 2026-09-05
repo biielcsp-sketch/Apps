@@ -10,6 +10,7 @@ import {
   History,
   MapPin,
   BookOpen,
+  Newspaper,
   Menu,
   X,
   LogOut,
@@ -19,13 +20,14 @@ import { SidebarIdentity } from "@/components/ui/SidebarIdentity";
 import { logout } from "@/app/actions/auth";
 
 const NAV_ITEMS = [
+  { href: "/feed", label: "Feed", icon: Newspaper },
   { href: "/inicio", label: "Início", icon: Home },
   { href: "/minhas-participantes", label: "Participantes", icon: Users },
   { href: "/meus-encontros", label: "Encontros", icon: CalendarDays },
   { href: "/meus-acompanhamentos", label: "Acompanhar", icon: HeartHandshake },
   { href: "/historico", label: "Histórico", icon: History },
   { href: "/cafes/localizacao", label: "Localização", icon: MapPin },
-  { href: "/estudos", label: "Estudo do mês", icon: BookOpen },
+  { href: "/biblia", label: "Bíblia", icon: BookOpen },
 ];
 
 export function LiderShell({

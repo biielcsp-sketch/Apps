@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Sparkles, BookOpen, Menu, X, LogOut } from "lucide-react";
+import { Sparkles, BookOpen, Newspaper, Menu, X, LogOut } from "lucide-react";
 import { NavLink } from "@/components/nav-link";
 import { SidebarIdentity } from "@/components/ui/SidebarIdentity";
 import { logout } from "@/app/actions/auth";
 
 const NAV_ITEMS = [
+  { href: "/feed", label: "Feed", icon: Newspaper },
   { href: "/minha-jornada", label: "Minha Jornada", icon: Sparkles },
-  { href: "/estudos", label: "Estudo do mês", icon: BookOpen },
+  { href: "/biblia", label: "Bíblia", icon: BookOpen },
 ];
 
 export function ParticipanteShell({
