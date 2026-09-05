@@ -124,6 +124,7 @@ export async function createMeeting(input: MeetingInput) {
       date: input.date,
       time: input.time || null,
       location: input.location || null,
+      ministered_by: input.ministered_by || null,
       status: input.status ?? "planejado",
       group_id: group.id,
       leader_id: group.leader_id,

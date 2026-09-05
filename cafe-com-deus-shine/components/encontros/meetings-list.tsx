@@ -32,6 +32,11 @@ export function MeetingsList({ meetings, basePath }: { meetings: Meeting[]; base
             <p className="truncate text-xs text-muted-foreground">
               {m.group?.name} · {m.leader?.profile?.full_name}
             </p>
+            {m.ministered_by && (
+              <p className="truncate text-xs text-muted-foreground">
+                Palavra: {m.ministered_by}
+              </p>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-3">
             <span className="text-xs text-muted-foreground">

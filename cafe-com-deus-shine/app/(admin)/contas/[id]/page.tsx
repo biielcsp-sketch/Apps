@@ -8,13 +8,7 @@ import { ResetPasswordForm } from "@/components/accounts/reset-password-form";
 import { UpdateEmailForm } from "@/components/accounts/update-email-form";
 import { EditAccountForm } from "@/components/accounts/edit-account-form";
 import { AccountDangerZone } from "@/components/accounts/account-danger-zone";
-
-const ROLE_LABELS = {
-  admin: "Admin",
-  lider: "Líder",
-  participante: "Participante",
-  desenvolvedor: "Desenvolvedor",
-};
+import { ROLE_LABELS } from "@/lib/role-labels";
 
 export default async function ContaDetalhePage({
   params,

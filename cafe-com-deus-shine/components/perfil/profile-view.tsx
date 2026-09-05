@@ -6,13 +6,8 @@ import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { logout } from "@/app/actions/auth";
 import type { CurrentProfile } from "@/lib/services/profiles.service";
+import { ROLE_LABELS } from "@/lib/role-labels";
 
-const ROLE_LABELS: Record<CurrentProfile["role"], string> = {
-  admin: "Admin",
-  lider: "Líder",
-  participante: "Participante",
-  desenvolvedor: "Desenvolvedor",
-};
 
 export async function ProfileView({ profile }: { profile: CurrentProfile }) {
   const signedUrl = await getMyAvatarSignedUrl();

@@ -6,8 +6,11 @@ import { submitPublicEnrollment } from "@/lib/services/public-enrollment.service
 import { toUserMessage } from "@/lib/errors";
 
 export type PublicEnrollmentActionState =
-  | { status: "success" }
-  | { status: "duplicate" }
+  // `hasEmail` decide o que a tela final oferece: com e-mail no cadastro,
+  // ela já pode criar o acesso; sem e-mail, o link não adianta (o acesso é
+  // reivindicado justamente pelo e-mail do cadastro).
+  | { status: "success"; hasEmail: boolean }
+  | { status: "duplicate"; hasEmail: boolean }
   | { status: "error"; error: string }
   | undefined;
 
@@ -63,10 +66,11 @@ export async function submitPublicEnrollmentAction(
 
   try {
     const result = await submitPublicEnrollment(validated.data, await clientIp());
+    const hasEmail = Boolean(validated.data.email);
     // "discarded" (honeypot) responde como sucesso genérico de propósito —
     // nunca ensina o bot a se adaptar revelando que foi descartado.
-    if (result === "duplicate") return { status: "duplicate" };
-    return { status: "success" };
+    if (result === "duplicate") return { status: "duplicate", hasEmail };
+    return { status: "success", hasEmail };
   } catch (e) {
     return {
       status: "error",

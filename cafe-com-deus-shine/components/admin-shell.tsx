@@ -10,6 +10,8 @@ import {
   HeartHandshake,
   ShieldCheck,
   QrCode,
+  BookOpen,
+  ScrollText,
   Menu,
   X,
   LogOut,
@@ -24,7 +26,9 @@ const NAV_ITEMS = [
   { href: "/liderancas", label: "Líderes", icon: UserCog },
   { href: "/cafes", label: "Cafés", icon: Coffee },
   { href: "/acompanhamentos", label: "Acompanhamentos", icon: HeartHandshake },
+  { href: "/estudos", label: "Estudo do mês", icon: BookOpen },
   { href: "/configuracoes/qrcodes", label: "QR Codes", icon: QrCode },
+  { href: "/configuracoes/regras", label: "Regras do café", icon: ScrollText },
 ];
 
 const DEVELOPER_NAV_ITEM = { href: "/contas", label: "Contas", icon: ShieldCheck };

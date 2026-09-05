@@ -30,6 +30,7 @@ export async function createLeaderAction(
     meeting_address: readOptionalString(formData, "meeting_address"),
     region: readOptionalString(formData, "region"),
     max_capacity: formData.get("max_capacity"),
+    role: formData.get("role") || undefined,
   });
 
   if (!validated.success) {

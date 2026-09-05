@@ -24,6 +24,7 @@ function parseMeetingForm(formData: FormData) {
     date: formData.get("date"),
     time: readOptionalString(formData, "time"),
     location: readOptionalString(formData, "location"),
+    ministered_by: readOptionalString(formData, "ministered_by"),
     status: formData.get("status") || undefined,
   });
 }
@@ -66,6 +67,7 @@ export async function updateMeetingAction(
       date: validated.data.date,
       time: validated.data.time || null,
       location: validated.data.location || null,
+      ministered_by: validated.data.ministered_by || null,
       status: validated.data.status,
     });
   } catch (e) {

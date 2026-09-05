@@ -9,6 +9,8 @@ import { listGroupMeetings } from "@/lib/services/meetings.service";
 import { Timeline } from "@/components/participantes/timeline";
 import { AttendanceHistory } from "@/components/participantes/attendance-history";
 import { confirmMyAttendanceAction } from "@/app/actions/attendance";
+import { getCafeRules } from "@/lib/services/cafe-rules.service";
+import { PARTICIPANT_STATUS_LABELS } from "@/lib/participant-status-labels";
 
 export default async function MinhaJornadaPage() {
   const profile = await getCurrentProfile();
@@ -30,10 +32,11 @@ export default async function MinhaJornadaPage() {
     );
   }
 
-  const [timeline, attendanceHistory, groupMeetings] = await Promise.all([
+  const [timeline, attendanceHistory, groupMeetings, cafeRules] = await Promise.all([
     getParticipantTimeline(participant.id),
     getParticipantAttendanceHistory(participant.id),
     participant.group ? listGroupMeetings(participant.group.id) : Promise.resolve([]),
+    getCafeRules().catch(() => ""),
   ]);
 
   const confirmedMeetingIds = new Set(
@@ -54,6 +57,43 @@ export default async function MinhaJornadaPage() {
           {participant.group?.name ?? "sem grupo"}
         </p>
       </div>
+
+      {/* Onde ela está no processo: já entrou num café ou ainda espera
+          direcionamento. É a primeira dúvida de quem acabou de se cadastrar. */}
+      <Card className="p-5">
+        <p className="mb-2 text-sm font-semibold text-foreground">Meu processo</p>
+        {participant.group ? (
+          <>
+            <span className="inline-flex rounded-full bg-primary/15 px-3 py-1 text-xs font-medium text-primary">
+              Você já está em um café
+            </span>
+            <p className="mt-2 text-sm text-foreground">{participant.group.name}</p>
+            <p className="text-sm text-muted-foreground">
+              Com a líder {participant.leader?.profile?.full_name ?? "a definir"}
+            </p>
+          </>
+        ) : (
+          <>
+            <span className="inline-flex rounded-full bg-accent/40 px-3 py-1 text-xs font-medium text-foreground">
+              Aguardando direcionamento
+            </span>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Recebemos seu cadastro! Nossa equipe está escolhendo o café mais perto de você.
+              Assim que isso acontecer, sua líder aparece aqui.
+            </p>
+          </>
+        )}
+        <p className="mt-3 text-xs text-muted-foreground">
+          Situação atual: {PARTICIPANT_STATUS_LABELS[participant.status]}
+        </p>
+      </Card>
+
+      {cafeRules && (
+        <Card className="p-5">
+          <p className="mb-2 text-sm font-semibold text-foreground">Como funciona o café</p>
+          <p className="whitespace-pre-line text-sm text-muted-foreground">{cafeRules}</p>
+        </Card>
+      )}
 
       {participant.leader && (
         <Card className="p-5">

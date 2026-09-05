@@ -54,6 +54,13 @@ export function LeaderCreateForm() {
           <input id="region" name="region" className={inputClass} />
         </div>
         <div className="flex flex-col gap-1.5">
+          <label className={labelClass} htmlFor="role">Papel</label>
+          <select id="role" name="role" defaultValue="lider" className={inputClass}>
+            <option value="lider">Líder</option>
+            <option value="co_lider">Co-líder</option>
+          </select>
+        </div>
+        <div className="flex flex-col gap-1.5">
           <label className={labelClass} htmlFor="max_capacity">Capacidade máxima</label>
           <input
             id="max_capacity"

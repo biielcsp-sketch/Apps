@@ -10,6 +10,8 @@ export const LeaderCreateSchema = z.object({
   meeting_address: z.string().trim().optional().nullable(),
   region: z.string().trim().optional().nullable(),
   max_capacity: z.coerce.number().int().positive({ error: "A capacidade deve ser maior que zero." }),
+  // Co-líder tem a mesma função da líder — muda só como ela é chamada.
+  role: z.enum(["lider", "co_lider"]).optional(),
 });
 export type LeaderCreateInput = z.infer<typeof LeaderCreateSchema>;
 
@@ -31,6 +33,7 @@ export const GroupSchema = z.object({
   region: z.string().trim().optional().nullable(),
   available_days: z.array(z.string()).optional().nullable(),
   meeting_time: z.string().optional().nullable(),
+  host_profile_id: z.string().uuid().optional().nullable(),
   status: z.enum(["ativo", "inativo", "lotado"]).optional(),
 });
 export type GroupInput = z.infer<typeof GroupSchema>;

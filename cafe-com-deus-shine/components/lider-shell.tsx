@@ -9,6 +9,7 @@ import {
   HeartHandshake,
   History,
   MapPin,
+  BookOpen,
   Menu,
   X,
   LogOut,
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { href: "/meus-acompanhamentos", label: "Acompanhar", icon: HeartHandshake },
   { href: "/historico", label: "Histórico", icon: History },
   { href: "/cafes/localizacao", label: "Localização", icon: MapPin },
+  { href: "/estudos", label: "Estudo do mês", icon: BookOpen },
 ];
 
 export function LiderShell({

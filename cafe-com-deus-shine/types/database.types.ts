@@ -340,6 +340,7 @@ export type Database = {
           available_days: string[] | null
           capacity: number
           created_at: string
+          host_profile_id: string | null
           id: string
           latitude: number | null
           leader_id: string
@@ -355,6 +356,7 @@ export type Database = {
           available_days?: string[] | null
           capacity: number
           created_at?: string
+          host_profile_id?: string | null
           id?: string
           latitude?: number | null
           leader_id: string
@@ -370,6 +372,7 @@ export type Database = {
           available_days?: string[] | null
           capacity?: number
           created_at?: string
+          host_profile_id?: string | null
           id?: string
           latitude?: number | null
           leader_id?: string
@@ -381,6 +384,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "groups_host_profile_id_fkey"
+            columns: ["host_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "groups_leader_id_fkey"
             columns: ["leader_id"]
@@ -490,6 +500,7 @@ export type Database = {
           id: string
           leader_id: string
           location: string | null
+          ministered_by: string | null
           status: Database["public"]["Enums"]["meeting_status"]
           time: string | null
           title: string
@@ -502,6 +513,7 @@ export type Database = {
           id?: string
           leader_id: string
           location?: string | null
+          ministered_by?: string | null
           status?: Database["public"]["Enums"]["meeting_status"]
           time?: string | null
           title: string
@@ -514,6 +526,7 @@ export type Database = {
           id?: string
           leader_id?: string
           location?: string | null
+          ministered_by?: string | null
           status?: Database["public"]["Enums"]["meeting_status"]
           time?: string | null
           title?: string
@@ -910,6 +923,53 @@ export type Database = {
         }
         Relationships: []
       }
+      study_materials: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_name: string
+          id: string
+          mime_type: string
+          reference_month: string
+          size_bytes: number
+          storage_path: string
+          title: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_name: string
+          id?: string
+          mime_type: string
+          reference_month: string
+          size_bytes: number
+          storage_path: string
+          title: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_name?: string
+          id?: string
+          mime_type?: string
+          reference_month?: string
+          size_bytes?: number
+          storage_path?: string
+          title?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_materials_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -934,6 +994,7 @@ export type Database = {
       }
       app_current_leader_id: { Args: never; Returns: string }
       app_current_participant_id: { Args: never; Returns: string }
+      app_hosted_group_id: { Args: never; Returns: string }
       app_is_admin: { Args: never; Returns: boolean }
       app_is_responsible_for_participant: {
         Args: { p_participant_id: string }
@@ -945,7 +1006,8 @@ export type Database = {
           p_after?: Json
           p_before?: Json
           p_entity: string
-          p_entity_id: string
+          // uuid nullable no banco: nem toda entidade auditável tem id uuid
+          p_entity_id: string | null
         }
         Returns: undefined
       }
@@ -978,16 +1040,11 @@ export type Database = {
         | "access_denied"
         | "session_revoked"
       contact_status:
-        | "aguardando_1_contato"
-        | "primeira_mensagem_enviada"
-        | "segunda_mensagem_enviada"
-        | "em_conversa"
         | "em_processo"
-        | "nao_respondeu"
-        | "parou_de_responder"
-        | "numero_invalido"
-        | "consolidada"
-        | "sem_interesse"
+        | "primeira_visita"
+        | "segunda_visita"
+        | "terceira_visita"
+        | "membro"
       follow_up_status: "normal" | "atencao" | "acompanhamento_necessario"
       follow_up_type:
         | "encontro"
@@ -1007,7 +1064,13 @@ export type Database = {
         | "ativa"
         | "acompanhamento"
         | "inativa"
-      user_role: "admin" | "lider" | "participante" | "desenvolvedor"
+      user_role:
+        | "admin"
+        | "lider"
+        | "participante"
+        | "desenvolvedor"
+        | "co_lider"
+        | "anfitria"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1145,16 +1208,11 @@ export const Constants = {
         "session_revoked",
       ],
       contact_status: [
-        "aguardando_1_contato",
-        "primeira_mensagem_enviada",
-        "segunda_mensagem_enviada",
-        "em_conversa",
         "em_processo",
-        "nao_respondeu",
-        "parou_de_responder",
-        "numero_invalido",
-        "consolidada",
-        "sem_interesse",
+        "primeira_visita",
+        "segunda_visita",
+        "terceira_visita",
+        "membro",
       ],
       follow_up_status: ["normal", "atencao", "acompanhamento_necessario"],
       follow_up_type: [
@@ -1177,7 +1235,14 @@ export const Constants = {
         "acompanhamento",
         "inativa",
       ],
-      user_role: ["admin", "lider", "participante", "desenvolvedor"],
+      user_role: [
+        "admin",
+        "lider",
+        "participante",
+        "desenvolvedor",
+        "co_lider",
+        "anfitria",
+      ],
     },
   },
 } as const

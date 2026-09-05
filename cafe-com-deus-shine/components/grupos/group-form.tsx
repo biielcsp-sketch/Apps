@@ -14,9 +14,13 @@ const labelClass = "text-sm font-medium text-foreground";
 export function GroupForm({
   group,
   leaders,
+  hosts = [],
 }: {
   group?: GroupRow;
   leaders: { id: string; full_name: string }[];
+  // Contas com papel Anfitriã — ela enxerga o café que hospeda como a
+  // líder enxerga, mas sem poder alterar nada.
+  hosts?: { id: string; full_name: string }[];
 }) {
   const action = group ? updateGroupAction.bind(null, group.id) : createGroupAction;
   const [state, formAction, pending] = useActionState<FormActionState, FormData>(action, undefined);
@@ -26,6 +30,20 @@ export function GroupForm({
       <div className="flex flex-col gap-1.5 sm:col-span-2">
         <label className={labelClass} htmlFor="name">Nome do grupo</label>
         <input id="name" name="name" required defaultValue={group?.name ?? ""} className={inputClass} />
+      </div>
+      <div className="flex flex-col gap-1.5 sm:col-span-2">
+        <label className={labelClass} htmlFor="host_profile_id">Anfitriã (opcional)</label>
+        <select
+          id="host_profile_id"
+          name="host_profile_id"
+          defaultValue={group?.host_profile_id ?? ""}
+          className={inputClass}
+        >
+          <option value="">Sem anfitriã</option>
+          {hosts.map((h) => (
+            <option key={h.id} value={h.id}>{h.full_name}</option>
+          ))}
+        </select>
       </div>
       <div className="flex flex-col gap-1.5 sm:col-span-2">
         <label className={labelClass} htmlFor="leader_id">Líder responsável</label>

@@ -4,15 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import type { Tables } from "@/types/database.types";
+import { ROLE_LABELS, ROLE_ORDER } from "@/lib/role-labels";
 
-const ROLE_LABELS: Record<Tables<"profiles">["role"], string> = {
-  admin: "Admin",
-  lider: "Líder",
-  participante: "Participante",
-  desenvolvedor: "Desenvolvedor",
-};
-
-const ROLE_ORDER: Tables<"profiles">["role"][] = ["desenvolvedor", "admin", "lider", "participante"];
 
 type AccountRow = Pick<Tables<"profiles">, "id" | "full_name" | "email" | "role" | "active">;
 

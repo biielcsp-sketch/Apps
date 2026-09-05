@@ -21,6 +21,7 @@ function parseGroupForm(formData: FormData) {
   return GroupSchema.safeParse({
     name: formData.get("name"),
     leader_id: formData.get("leader_id"),
+    host_profile_id: readOptionalString(formData, "host_profile_id"),
     address: readOptionalString(formData, "address"),
     capacity: formData.get("capacity"),
     region: readOptionalString(formData, "region"),

@@ -53,6 +53,16 @@ export function MeetingForm({
         <label className={labelClass} htmlFor="location">Local</label>
         <input id="location" name="location" defaultValue={meeting?.location ?? ""} className={inputClass} />
       </div>
+      <div className="flex flex-col gap-1.5 sm:col-span-2">
+        <label className={labelClass} htmlFor="ministered_by">Quem ministrou a palavra</label>
+        <input
+          id="ministered_by"
+          name="ministered_by"
+          defaultValue={meeting?.ministered_by ?? ""}
+          placeholder="Nome de quem ministrou no encontro"
+          className={inputClass}
+        />
+      </div>
       {meeting && (
         <div className="flex flex-col gap-1.5">
           <label className={labelClass} htmlFor="status">Status</label>

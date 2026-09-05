@@ -73,6 +73,9 @@ export type CreateLeaderAccountInput = {
   meeting_address?: string | null;
   region?: string | null;
   max_capacity: number;
+  // Co-líder: mesma função da líder (mesma linha em `leaders`, mesmas
+  // permissões via app_current_leader_id()) — muda só o rótulo do papel.
+  role?: "lider" | "co_lider";
 };
 
 // Cria o login da líder (convite por e-mail via Supabase Auth) e o
@@ -100,11 +103,16 @@ export async function createLeaderAccount(input: CreateLeaderAccountInput) {
   }
 
   // app_handle_new_user já criou o profile com role 'lider'; ajusta
-  // telefone/whatsapp se informados.
-  if (input.phone || input.whatsapp) {
+  // telefone/whatsapp e, quando for co-líder, o papel.
+  const roleToSet = input.role === "co_lider" ? "co_lider" : null;
+  if (input.phone || input.whatsapp || roleToSet) {
     await admin
       .from("profiles")
-      .update({ phone: input.phone ?? null, whatsapp: input.whatsapp ?? null })
+      .update({
+        phone: input.phone ?? null,
+        whatsapp: input.whatsapp ?? null,
+        ...(roleToSet ? { role: roleToSet } : {}),
+      })
       .eq("id", invited.user.id);
   }
 
@@ -131,4 +139,18 @@ export async function createLeaderAccount(input: CreateLeaderAccountInput) {
   });
 
   return leader;
+}
+
+// Contas com papel Anfitriã, para o seletor do formulário de grupo.
+export async function listHostsForSelect() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .eq("role", "anfitria")
+    .eq("active", true)
+    .order("full_name");
+
+  if (error) dbError(error, "leaders.listHostsForSelect");
+  return data ?? [];
 }

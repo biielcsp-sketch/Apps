@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import {
   submitPublicEnrollmentAction,
   type PublicEnrollmentActionState,
@@ -20,6 +20,37 @@ const inputClass =
   "w-full rounded-xl border border-border bg-card px-4 py-3.5 text-base outline-none focus:ring-2 focus:ring-primary";
 const labelClass = "text-sm font-medium text-foreground";
 
+const CLAIM_PATH = "/criar-acesso";
+
+// Muita gente preenche o formulário no evento e vai criar o acesso depois,
+// em casa — o botão de copiar deixa ela guardar o link no WhatsApp dela
+// mesma sem depender de e-mail (que esbarra em limite de envio).
+function CopyLinkButton() {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    const url = `${window.location.origin}${CLAIM_PATH}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // Navegador sem permissão de área de transferência: o link continua
+      // visível no botão acima, então não trava nada.
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="text-sm font-medium text-primary underline underline-offset-4"
+    >
+      {copied ? "Link copiado!" : "Copiar link para acessar depois"}
+    </button>
+  );
+}
+
 export function PublicEnrollmentForm({ code }: { code: string }) {
   const [state, action, pending] = useActionState<PublicEnrollmentActionState, FormData>(
     submitPublicEnrollmentAction,
@@ -35,6 +66,26 @@ export function PublicEnrollmentForm({ code }: { code: string }) {
             ? "Você já está cadastrada — nossa equipe vai entrar em contato."
             : "Muito obrigada por se inscrever! Nossa equipe vai entrar em contato em breve."}
         </p>
+
+        {state.hasEmail ? (
+          <div className="mt-4 flex w-full flex-col items-center gap-3 border-t border-border pt-5">
+            <p className="text-sm text-foreground">
+              Agora crie seu acesso para acompanhar sua jornada pelo aplicativo:
+            </p>
+            <a
+              href={CLAIM_PATH}
+              className="w-full rounded-xl bg-primary px-4 py-3.5 text-base font-medium text-primary-foreground"
+            >
+              Criar meu acesso
+            </a>
+            <CopyLinkButton />
+          </div>
+        ) : (
+          <p className="mt-4 border-t border-border pt-5 text-sm text-muted-foreground">
+            Para criar seu acesso ao aplicativo depois, avise nossa equipe do seu e-mail — é
+            por ele que o acesso é liberado.
+          </p>
+        )}
       </div>
     );
   }
