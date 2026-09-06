@@ -8,7 +8,7 @@
       name="description"
       content="Um encontro semanal de mulheres, em volta de um café, para ouvir a Palavra e caminhar juntas. Inscreva-se e encontramos o grupo mais perto de você."
     />
-    <meta name="theme-color" content="#1a120b" />
+    <meta name="theme-color" content="#0d5b06" />
     <link rel="icon" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
 
@@ -34,10 +34,9 @@
   </head>
 
   <body>
-    <!-- Nav em mix-blend-difference: ela se inverte contra o que passa por
-         baixo, então continua legível no fundo escuro e no bloco claro do
-         formulário, sem nenhum JS de scroll. -->
-    <header class="nav">
+    <!-- A nav começa transparente sobre o hero verde e ganha um vidro
+         rosé ao rolar (a classe é trocada no app.js). -->
+    <header class="nav" id="nav">
       <nav class="nav-inner">
         <div class="nav-brand">
           <span class="nav-dot" aria-hidden="true"></span>
@@ -179,7 +178,7 @@
       </section>
 
       <!-- ================= INSCRIÇÃO ================= -->
-      <section class="section" id="inscricao">
+      <section class="section section-deep" id="inscricao">
         <div class="glow glow-left" aria-hidden="true"></div>
         <div class="wrap wrap-narrow">
           <h2 class="display">Inscrição</h2>

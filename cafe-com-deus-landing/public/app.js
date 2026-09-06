@@ -12,6 +12,31 @@
 
   var APP_URL = (window.CAFE_CONFIG && window.CAFE_CONFIG.appUrl) || "";
 
+  /* --------------------- nav ao rolar --------------------- */
+
+  // Sobre o hero verde a nav é transparente com texto creme; a partir do
+  // primeiro scroll ela vira um vidro rosé com texto marrom, senão o
+  // texto creme sumiria no fundo claro das seções seguintes.
+  var nav = document.getElementById("nav");
+  var ticking = false;
+
+  function syncNav() {
+    nav.classList.toggle("scrolled", window.scrollY > 40);
+    ticking = false;
+  }
+
+  window.addEventListener(
+    "scroll",
+    function () {
+      if (!ticking) {
+        ticking = true;
+        window.requestAnimationFrame(syncNav);
+      }
+    },
+    { passive: true },
+  );
+  syncNav();
+
   var el = {
     loading: document.getElementById("form-loading"),
     closed: document.getElementById("form-closed"),
