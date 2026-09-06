@@ -135,9 +135,11 @@ export async function createDirectAccount(input: {
   return created.user.id;
 }
 
-// Cria a conta de uma líder com senha já definida (em vez do convite por
-// e-mail de createLeaderAccount) — mesmo efeito final (profile + linha em
-// `leaders`), só muda como a senha chega até ela.
+// Cria a conta de uma líder com senha definida na hora, pelo perfil
+// desenvolvedor. Mesmo efeito de createLeaderAccount (profile + linha em
+// `leaders`); a diferença é só quem pode chamar. Como aqui a senha também
+// chega à líder por fora do sistema, marca a troca obrigatória no primeiro
+// acesso pelo mesmo caminho.
 export async function createDirectLeaderAccount(input: {
   email: string;
   password: string;
@@ -160,7 +162,7 @@ export async function createDirectLeaderAccount(input: {
     email: input.email,
     password: input.password,
     email_confirm: true,
-    user_metadata: { full_name: input.fullName },
+    user_metadata: { full_name: input.fullName, must_change_password: true },
   });
   if (createError || !created.user) {
     dbError(createError, "accounts.createDirectLeader.createUser", "Não foi possível criar a conta.");

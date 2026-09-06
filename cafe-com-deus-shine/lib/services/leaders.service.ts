@@ -66,6 +66,7 @@ export async function setLeaderStatus(id: string, status: "ativa" | "inativa") {
 export type CreateLeaderAccountInput = {
   full_name: string;
   email: string;
+  password: string;
   phone?: string | null;
   whatsapp?: string | null;
   city?: string | null;
@@ -78,9 +79,18 @@ export type CreateLeaderAccountInput = {
   role?: "lider" | "co_lider";
 };
 
-// Cria o login da líder (convite por e-mail via Supabase Auth) e o
-// registro em `leaders`. Usa service_role — só chame a partir de uma
-// Server Action que já validou que quem está pedindo é admin.
+// Cria o login da líder e o registro em `leaders`. Usa service_role — só
+// chame a partir de uma Server Action que já validou que quem está pedindo
+// é admin.
+//
+// A conta nasce com senha provisória e e-mail já confirmado, no mesmo
+// molde de claimParticipantAccount(). Antes isso era um convite por
+// e-mail (inviteUserByEmail), que dependia do serviço de e-mail embutido
+// do Supabase — limitado a poucos envios por hora e, nas palavras da
+// própria documentação deles, "para experimentar", com disponibilidade
+// best-effort. Na prática o cadastro travava a partir da segunda líder
+// seguida. Sem e-mail nenhum, não há limite nenhum: a pastora passa a
+// senha por WhatsApp e a líder é obrigada a trocar no primeiro acesso.
 export async function createLeaderAccount(input: CreateLeaderAccountInput) {
   // Checagem redundante: a Server Action que chama isto já valida admin, mas
   // service_role ignora RLS — repetimos a checagem aqui (defesa em
@@ -94,12 +104,32 @@ export async function createLeaderAccount(input: CreateLeaderAccountInput) {
   if (input.max_capacity <= 0) throw new AppError("A capacidade máxima precisa ser maior que zero.");
 
   const admin = createAdminClient();
-  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
-    input.email,
-    { data: { full_name: input.full_name } },
-  );
-  if (inviteError || !invited.user) {
-    dbError(inviteError, "leaders.create.invite", "Não foi possível convidar a líder.");
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
+    email: input.email,
+    password: input.password,
+    // Sem e-mail de confirmação: quem cadastrou foi a pastora, o endereço
+    // já veio conferido por ela.
+    email_confirm: true,
+    // `must_change_password` é lido pelo proxy.ts direto do usuário da
+    // sessão (sem consulta extra ao banco) para empurrar a líder à troca
+    // no primeiro acesso. Não é barreira de segurança — user_metadata é
+    // gravável pela própria usuária —, é o que faz a senha provisória não
+    // virar definitiva por esquecimento.
+    user_metadata: { full_name: input.full_name, must_change_password: true },
+  });
+  if (createError || !created.user) {
+    // O erro de e-mail repetido é o único que a admin consegue resolver
+    // sozinha, então ele merece uma frase própria.
+    const alreadyExists =
+      createError?.code === "email_exists" ||
+      /already been registered|already exists/i.test(createError?.message ?? "");
+    dbError(
+      createError,
+      "leaders.create.createUser",
+      alreadyExists
+        ? "Já existe uma conta com esse e-mail. Confira a lista de lideranças ou use outro endereço."
+        : "Não foi possível criar o acesso da líder.",
+    );
   }
 
   // app_handle_new_user já criou o profile com role 'lider'; ajusta
@@ -113,13 +143,13 @@ export async function createLeaderAccount(input: CreateLeaderAccountInput) {
         whatsapp: input.whatsapp ?? null,
         ...(roleToSet ? { role: roleToSet } : {}),
       })
-      .eq("id", invited.user.id);
+      .eq("id", created.user.id);
   }
 
   const { data: leader, error: leaderError } = await admin
     .from("leaders")
     .insert({
-      profile_id: invited.user.id,
+      profile_id: created.user.id,
       city: input.city ?? null,
       neighborhood: input.neighborhood ?? null,
       meeting_address: input.meeting_address ?? null,

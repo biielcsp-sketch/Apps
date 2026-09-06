@@ -1,12 +1,20 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { LeaderCreateSchema, LeaderUpdateSchema } from "@/lib/validators/leader.schema";
 import { createLeaderAccount, updateLeader, setLeaderStatus } from "@/lib/services/leaders.service";
 import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
 import { AppError, toUserMessage } from "@/lib/errors";
 import type { FormActionState } from "@/app/actions/participants";
+
+// O cadastro de líder não redireciona mais ao terminar: a tela precisa
+// ficar de pé mostrando o que a pastora tem que enviar para a líder. A
+// senha NÃO volta daqui de propósito — o formulário já a tem no próprio
+// estado, então não há motivo para ela atravessar a rede uma segunda vez.
+export type LeaderCreateState =
+  | { status: "error"; error: string }
+  | { status: "created"; leaderId: string; fullName: string; email: string }
+  | undefined;
 
 function readOptionalString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -14,15 +22,18 @@ function readOptionalString(formData: FormData, key: string) {
 }
 
 export async function createLeaderAction(
-  _state: FormActionState,
+  _state: LeaderCreateState,
   formData: FormData,
-): Promise<FormActionState> {
+): Promise<LeaderCreateState> {
   const profile = await getCurrentProfile();
-  if (!isAdminRole(profile?.role)) return { error: "Apenas administradoras podem cadastrar líderes." };
+  if (!isAdminRole(profile?.role)) {
+    return { status: "error", error: "Apenas administradoras podem cadastrar líderes." };
+  }
 
   const validated = LeaderCreateSchema.safeParse({
     full_name: formData.get("full_name"),
     email: formData.get("email"),
+    password: formData.get("password"),
     phone: readOptionalString(formData, "phone"),
     whatsapp: readOptionalString(formData, "whatsapp"),
     city: readOptionalString(formData, "city"),
@@ -34,18 +45,29 @@ export async function createLeaderAction(
   });
 
   if (!validated.success) {
-    return { error: validated.error.issues[0]?.message ?? "Verifique os campos do formulário." };
+    return {
+      status: "error",
+      error: validated.error.issues[0]?.message ?? "Verifique os campos do formulário.",
+    };
   }
 
   let leader;
   try {
     leader = await createLeaderAccount(validated.data);
   } catch (e) {
-    return { error: toUserMessage(e, "actions.leaders.create", "Erro ao cadastrar líder.") };
+    return {
+      status: "error",
+      error: toUserMessage(e, "actions.leaders.create", "Erro ao cadastrar líder."),
+    };
   }
 
   revalidatePath("/liderancas");
-  redirect(`/liderancas/${leader.id}`);
+  return {
+    status: "created",
+    leaderId: leader.id,
+    fullName: validated.data.full_name,
+    email: validated.data.email,
+  };
 }
 
 export async function updateLeaderAction(

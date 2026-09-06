@@ -105,6 +105,29 @@ export async function updateSession(request: NextRequest) {
     return applyStaticSecurityHeaders(NextResponse.redirect(url));
   }
 
+  // Líder recém-cadastrada entra com a senha provisória que a pastora
+  // passou por WhatsApp; até trocar, o sistema inteiro leva ela de volta
+  // para /trocar-senha. A flag vem no próprio usuário da sessão
+  // (raw_user_meta_data), então isso não custa consulta nenhuma ao banco.
+  //
+  // Não é barreira de segurança: user_metadata é gravável pela própria
+  // usuária, então quem quiser insistir consegue contornar. É o que
+  // impede a senha provisória de virar definitiva por esquecimento — e
+  // quem contorna só fica com a própria senha fraca, não ganha acesso a
+  // nada que já não fosse dela.
+  // Rotas de API ficam de fora: um 307 no lugar de uma imagem de QR Code
+  // só produziria erro estranho, e elas não são caminho de navegação.
+  if (
+    user?.user_metadata?.must_change_password === true &&
+    path !== "/trocar-senha" &&
+    !path.startsWith("/api/")
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/trocar-senha";
+    url.search = "";
+    return applyStaticSecurityHeaders(NextResponse.redirect(url));
+  }
+
   response.headers.set("Content-Security-Policy", csp);
   return applyStaticSecurityHeaders(response);
 }

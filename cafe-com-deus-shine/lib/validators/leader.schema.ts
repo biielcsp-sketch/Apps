@@ -3,6 +3,13 @@ import { z } from "zod";
 export const LeaderCreateSchema = z.object({
   full_name: z.string().trim().min(2, { error: "Informe o nome completo." }),
   email: z.email({ error: "Informe um e-mail válido." }),
+  // Senha provisória definida pela pastora e passada à líder por fora do
+  // sistema (WhatsApp). Mínimo maior que o das outras senhas de propósito:
+  // esta trafega por um canal que não controlamos, e a líder é obrigada a
+  // trocá-la no primeiro acesso.
+  password: z
+    .string()
+    .min(8, { error: "A senha provisória precisa ter pelo menos 8 caracteres." }),
   phone: z.string().trim().optional().nullable(),
   whatsapp: z.string().trim().optional().nullable(),
   city: z.string().trim().optional().nullable(),

@@ -42,7 +42,18 @@ Não existe cadastro público — o primeiro usuário precisa ser criado manualm
 3. Faça login normalmente pelo app — ela cairá em `/dashboard`.
 
 Novas líderes **não** precisam desse passo manual: a tela "Nova líder" (em
-Líderes → Nova líder) já cria a conta e envia o convite por e-mail automaticamente.
+Líderes → Nova líder) já cria a conta. O sistema não envia e-mail nenhum —
+a tela gera uma senha provisória, você copia a mensagem pronta e manda para
+a líder pelo WhatsApp. No primeiro acesso ela é obrigada a criar a senha
+dela antes de conseguir usar qualquer tela.
+
+Isso é de propósito: o serviço de e-mail embutido do Supabase é limitado a
+poucos envios por hora (a documentação deles o descreve como algo "para
+experimentar", com disponibilidade best-effort), e na prática o cadastro
+travava a partir da segunda líder seguida. Se um dia você quiser
+recuperação de senha por e-mail, aí sim vale configurar um SMTP próprio em
+*Authentication → SMTP Settings* e subir o limite em *Authentication →
+Rate Limits* — mas o cadastro de líder não depende mais disso.
 
 ## Texto legal da LGPD
 
