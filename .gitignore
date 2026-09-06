@@ -1,0 +1,4 @@
+# Pacotes gerados só para enviar ao usuário — o conteúdo deles já está
+# versionado nas pastas cafe-com-deus-shine/ e cafe-com-deus-landing/.
+# Versioná-los duplicaria o projeto inteiro no histórico a cada entrega.
+*.zip
