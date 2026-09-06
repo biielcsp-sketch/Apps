@@ -9,9 +9,9 @@ const CONFIG_KEY = "cafe_rules";
 const MAX_LENGTH = 5000;
 
 // Texto das regras do café, escrito uma vez pela pastora e exibido para a
-// participante (no formulário público e na tela dela). Leitura é liberada
-// para qualquer visitante — o formulário público precisa mostrar as regras
-// antes mesmo de existir uma sessão.
+// participante na tela dela. Para telas sem sessão use
+// `getPublicCafeRules()` — a policy de SELECT desta tabela é só para
+// `authenticated`.
 export async function getCafeRules(): Promise<string> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -21,6 +21,24 @@ export async function getCafeRules(): Promise<string> {
     .maybeSingle();
 
   if (error) dbError(error, "cafeRules.get");
+
+  const value = data?.value as { text?: string } | null;
+  return value?.text?.trim() ?? "";
+}
+
+// Mesma leitura, mas para quem ainda não tem sessão (landing e formulário
+// público). A policy de SELECT de `app_config` é só para `authenticated`,
+// então o client normal devolveria vazio para a visitante — aqui o
+// service_role lê a chave, e nada além do texto das regras sai daqui.
+export async function getPublicCafeRules(): Promise<string> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("app_config")
+    .select("value")
+    .eq("key", CONFIG_KEY)
+    .maybeSingle();
+
+  if (error) dbError(error, "cafeRules.getPublic");
 
   const value = data?.value as { text?: string } | null;
   return value?.text?.trim() ?? "";

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { validateEnrollmentSource } from "@/lib/services/public-enrollment.service";
-import { getCafeRules } from "@/lib/services/cafe-rules.service";
+import { getPublicCafeRules } from "@/lib/services/cafe-rules.service";
 import { PublicEnrollmentForm } from "@/components/cadastro-publico/public-enrollment-form";
 import { Card } from "@/components/ui/Card";
 import { BackButton } from "@/components/ui/BackButton";
@@ -26,7 +26,7 @@ export default async function CadastroPage({
 
   // As regras nunca podem derrubar o formulário: se a leitura falhar, a
   // inscrição continua funcionando sem o bloco de regras.
-  const cafeRules = isValidSource ? await getCafeRules().catch(() => "") : "";
+  const cafeRules = isValidSource ? await getPublicCafeRules().catch(() => "") : "";
 
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-10">

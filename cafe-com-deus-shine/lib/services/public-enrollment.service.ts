@@ -12,6 +12,22 @@ export type PublicEnrollmentResult = "created" | "duplicate" | "discarded";
 // cadastro. `enrollment_sources` só tem policy de RLS para `authenticated`
 // (admin CRUD, líder select) — quem acessa esta página não tem sessão
 // nenhuma, por isso o client admin, não o normal.
+// Código da origem de inscrição ativa, para a landing pública montar o
+// formulário sem sessão. Usa service_role só para ler o código (a tabela
+// não libera SELECT para anon) — nada além disso sai daqui.
+export async function getPublicEnrollmentCode(): Promise<string | null> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("enrollment_sources")
+    .select("code")
+    .eq("active", true)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) dbError(error, "publicEnrollment.getPublicCode");
+  return data?.code ?? null;
+}
+
 export async function validateEnrollmentSource(code: string): Promise<boolean> {
   const admin = createAdminClient();
   const { data, error } = await admin

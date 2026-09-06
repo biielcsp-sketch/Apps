@@ -66,3 +66,95 @@ body {
 .leaflet-attribution-flag {
   display: none;
 }
+
+/* ===================================================================
+   Landing pública (/) — versão "cinematográfica" na paleta do café:
+   fundo espresso, tipografia editorial e o cubo 3D girando. Fica aqui
+   e não no Tailwind porque transform-style/perspective e keyframes de
+   rotação não têm utilitário equivalente.
+   =================================================================== */
+.landing {
+  --landing-bg: #1a120b;
+  --landing-surface: #241a12;
+  --landing-text: #fdf8f3;
+  --landing-muted: #b8a894;
+  --landing-gold: #c99a4b;
+  --landing-gold-soft: #e8c77e;
+  --landing-green: #5ba33f;
+  background: var(--landing-bg);
+  color: var(--landing-text);
+}
+
+.landing-stage {
+  perspective: 2000px;
+}
+
+.landing-cube {
+  position: relative;
+  width: 46vh;
+  height: 46vh;
+  transform-style: preserve-3d;
+  animation: landing-cube-spin 24s linear infinite;
+}
+
+.landing-cube-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem;
+  text-align: center;
+  border: 1px solid rgba(253, 248, 243, 0.12);
+  border-radius: 1.5rem;
+  background: rgba(36, 26, 18, 0.72);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+}
+
+/* 4 faces giradas no eixo X, cada uma empurrada por metade da altura. */
+.landing-cube-face:nth-child(1) { transform: rotateX(0deg) translateZ(23vh); }
+.landing-cube-face:nth-child(2) { transform: rotateX(-90deg) translateZ(23vh); }
+.landing-cube-face:nth-child(3) { transform: rotateX(-180deg) translateZ(23vh); }
+.landing-cube-face:nth-child(4) { transform: rotateX(90deg) translateZ(23vh); }
+
+@keyframes landing-cube-spin {
+  to { transform: rotateX(360deg); }
+}
+
+.landing-glow {
+  position: absolute;
+  border-radius: 9999px;
+  background: var(--landing-gold);
+  opacity: 0.16;
+  filter: blur(100px);
+  pointer-events: none;
+}
+
+.landing-pulse {
+  animation: landing-pulse 2s ease-in-out infinite;
+}
+
+@keyframes landing-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+/* Quem pediu menos movimento não recebe o cubo girando nem o pulso. */
+@media (prefers-reduced-motion: reduce) {
+  .landing-cube,
+  .landing-pulse {
+    animation: none;
+  }
+}
+
+/* Em tela pequena o cubo encolhe junto — senão as faces vazam da viewport. */
+@media (max-width: 640px) {
+  .landing-cube { width: 62vw; height: 62vw; }
+  .landing-cube-face:nth-child(1) { transform: rotateX(0deg) translateZ(31vw); }
+  .landing-cube-face:nth-child(2) { transform: rotateX(-90deg) translateZ(31vw); }
+  .landing-cube-face:nth-child(3) { transform: rotateX(-180deg) translateZ(31vw); }
+  .landing-cube-face:nth-child(4) { transform: rotateX(90deg) translateZ(31vw); }
+}

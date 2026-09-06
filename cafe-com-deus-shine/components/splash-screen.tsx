@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const MAX_DURATION_MS = 2800;
@@ -10,6 +11,11 @@ const MAX_DURATION_MS = 2800;
 // navegações internas do App Router não remontam o layout raiz, então não
 // reaparece ao trocar de aba dentro do app.
 export function SplashScreen() {
+  const pathname = usePathname();
+  // A landing pública é a primeira impressão de quem vem de fora — não faz
+  // sentido segurar a visitante quase 3s numa tela creme antes de mostrar
+  // a página escura. A abertura é do app, para quem já é de casa.
+  const isLanding = pathname === "/";
   const [visible, setVisible] = useState(true);
   const [fadingOut, setFadingOut] = useState(false);
 
@@ -22,7 +28,7 @@ export function SplashScreen() {
     };
   }, []);
 
-  if (!visible) return null;
+  if (isLanding || !visible) return null;
 
   function dismiss() {
     setFadingOut(true);
