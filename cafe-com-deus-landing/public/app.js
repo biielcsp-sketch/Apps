@@ -14,9 +14,9 @@
 
   /* --------------------- nav ao rolar --------------------- */
 
-  // Sobre o hero verde a nav é transparente com texto creme; a partir do
-  // primeiro scroll ela vira um vidro rosé com texto marrom, senão o
-  // texto creme sumiria no fundo claro das seções seguintes.
+  // A página inteira é clara, então o texto da nav não muda de cor: ela
+  // só ganha um fundo rosa translúcido ao sair do topo, para o conteúdo
+  // não passar por baixo dela sem nenhuma separação.
   var nav = document.getElementById("nav");
   var ticking = false;
 
@@ -204,7 +204,7 @@
       el.doneAccess.hidden = false;
     } else if (!hasEmail) {
       var note = document.createElement("p");
-      note.className = "done-body done-access-text";
+      note.className = "body done-access-text";
       note.textContent =
         "Para criar seu acesso ao aplicativo depois, avise nossa equipe do seu e-mail — é por ele que o acesso é liberado.";
       el.done.appendChild(note);

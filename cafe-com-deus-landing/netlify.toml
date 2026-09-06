@@ -8,8 +8,9 @@
   publish = "public"
   functions = "netlify/functions"
 
-# Cabeçalhos de segurança. A página não carrega script de terceiro nenhum
-# além da fonte do Google, então a CSP pode ser fechada.
+# Cabeçalhos de segurança. A página não carrega absolutamente nada de
+# terceiro — nem script, nem estilo, nem fonte — então a CSP é 'self' em
+# tudo.
 [[headers]]
   for = "/*"
   [headers.values]
@@ -18,7 +19,7 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
     Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
 
 # Os assets têm nome fixo, então cache curto: se a logo for trocada, a
 # visitante vê a nova no mesmo dia.
@@ -26,3 +27,9 @@
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=3600"
+
+# As fontes, ao contrário, nunca mudam — vale o cache longo.
+[[headers]]
+  for = "/assets/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

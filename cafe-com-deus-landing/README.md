@@ -13,16 +13,22 @@ cafe-com-deus-landing/
 ├── public/                 o site em si
 │   ├── index.html
 │   ├── styles.css
+│   ├── fonts.css           as fontes (servidas pelo próprio site)
 │   ├── app.js
 │   ├── config.js           ← o único arquivo que você edita
 │   ├── favicon.png
-│   └── assets/             logo e ícones
+│   └── assets/             logo, ícones e fontes/
 └── netlify/functions/
     └── api.mjs             fala com o banco (a chave fica só aqui)
 ```
 
 Não tem `npm install`, não tem build, não tem framework. É HTML, CSS e
 JavaScript.
+
+As fontes (Cormorant Garamond e Geist, as duas sob licença SIL Open Font
+License 1.1) ficam dentro do próprio projeto, em `public/assets/fonts/`.
+A página não faz nenhuma requisição a servidor de terceiro para carregar
+— nem ao Google.
 
 ---
 

@@ -3,38 +3,37 @@
    Projeto separado do sistema: CSS escrito à mão, sem Tailwind e sem
    build.
 
-   A paleta sai da própria logo e do sistema, não de um tema genérico:
-   o verde escuro do "Shine" (#0d5b06, o --primary do app), o dourado
-   do "DEUS" (#c99a4b, o --accent) e o rosé do fundo da logo (#f8f1ed,
-   o --logo-panel). O marrom do texto é o --foreground.
+   Direção: rosa como cor principal, delicado e minimalista. Título em
+   serifa clara, corpo em sans leve, muito espaço em branco, fio fino no
+   lugar de sombra e cartão. Nada de caixa alta gigante, nada de vidro
+   fosco, nada de 3D.
 
-   A página alterna blocos rosé e blocos verdes — é o mesmo par de
-   cores da logo, em escala de página.
+   O verde (#0d5b06) e o dourado (#c99a4b) da logo continuam presentes,
+   mas em dose pequena — são assinatura, não protagonista.
    =================================================================== */
 
 :root {
-  /* --- do sistema, sem inventar --- */
-  --rose: #f8f1ed;        /* --logo-panel: fundo da logo */
-  --rose-deep: #f3e9e0;   /* --muted */
-  --border: #e8dcd0;      /* --border */
-  --ink: #3a2e28;         /* --foreground */
-  --ink-muted: #6b5c53;   /* --muted-foreground escurecido: o #8a7a70 do
-                             sistema dá 3.7:1 no rosé, abaixo do mínimo
-                             de leitura; este mesmo tom dá 5.7:1 */
-  --green: #0d5b06;       /* --primary: o "Shine" da logo */
-  --gold: #c99a4b;        /* --accent: o "DEUS" da logo */
-  --cream: #fdf8f3;       /* --primary-foreground */
+  /* --- rosa: a cor principal --- */
+  --pink-bg: #fdf6f6;     /* fundo da página */
+  --pink-soft: #faeeef;   /* blocos alternados */
+  --pink-line: #f0dadd;   /* fios e bordas */
+  --pink-mid: #d99aa5;    /* ornamentos */
+  --pink: #a85567;        /* botões (5.1:1 com branco) */
+  --pink-ink: #9d4f62;    /* rótulos sobre fundo claro (5.3:1) */
+  --pink-deep: #8f4557;   /* hover */
+
+  /* --- da logo e do sistema, em dose pequena --- */
+  --green: #0d5b06;
+  --gold: #c99a4b;
+
+  /* --- texto --- */
+  --ink: #3a2e28;
+  --ink-soft: #63554c;
   --white: #ffffff;
-  --danger: #b3432f;      /* --danger */
+  --danger: #b3432f;
 
-  /* --- derivados, só para dar profundidade aos blocos verdes --- */
-  --green-deep: #084003;
-  --gold-pale: #ffeaaa;   /* ponta clara do degradê do "DEUS" */
-  --gold-ink: #8a6220;    /* o mesmo dourado, escuro o bastante para ser
-                             lido sobre fundo claro (4.9:1 no rosé) — o
-                             #c99a4b puro só dá 2.3:1 */
-
-  --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+  --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -47,16 +46,17 @@
 html {
   scroll-behavior: smooth;
   /* A nav é fixa: sem isso a âncora joga o título embaixo dela. */
-  scroll-padding-top: 5rem;
+  scroll-padding-top: 5.5rem;
 }
 
 body {
   margin: 0;
-  background: var(--rose);
+  background: var(--pink-bg);
   color: var(--ink);
-  font-family: var(--font);
+  font-family: var(--sans);
   font-weight: 300;
-  line-height: 1.6;
+  font-size: 1rem;
+  line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   /* Nada nesta página deve poder empurrar a largura da viewport. */
   overflow-x: hidden;
@@ -67,10 +67,63 @@ img {
   display: block;
 }
 
-/* ---------------------------- Nav ----------------------------
-   Sem mix-blend-difference aqui: numa página verde ele devolveria
-   magenta, que não é cor da marca. A nav começa transparente sobre o
-   hero verde (texto creme) e ganha um vidro rosé ao rolar. */
+/* ---------------------- Tipografia base ---------------------- */
+
+.serif {
+  font-family: var(--serif);
+  font-weight: 300;
+  letter-spacing: 0.01em;
+}
+
+/* Rótulo miúdo em versalete — o único lugar com caixa alta na página. */
+.label {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--pink-ink);
+}
+
+.label-center {
+  text-align: center;
+}
+
+.body {
+  margin: 1rem 0 0;
+  color: var(--ink-soft);
+}
+
+.body-center {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 44ch;
+  text-align: center;
+}
+
+/* Fio com um losango no meio: o ornamento da página, usado com parcimônia. */
+.ornament {
+  display: block;
+  position: relative;
+  width: 100%;
+  max-width: 13rem;
+  margin: 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--pink-line), transparent);
+}
+
+.ornament::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  background: var(--pink-mid);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+/* ---------------------------- Nav ---------------------------- */
 
 .nav {
   position: fixed;
@@ -81,48 +134,44 @@ img {
 }
 
 .nav.scrolled {
-  background: rgba(248, 241, 237, 0.85);
-  border-bottom-color: var(--border);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  background: rgba(253, 246, 246, 0.88);
+  border-bottom-color: var(--pink-line);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
 .nav-inner {
   margin: 0 auto;
-  max-width: 90rem;
+  max-width: 72rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 1.25rem 1.5rem;
+  padding: 1.125rem 1.5rem;
 }
 
 .nav-brand {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
+  gap: 0.5rem;
   min-width: 0;
+  text-decoration: none;
 }
 
 .nav-dot {
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 5px;
+  height: 5px;
   flex-shrink: 0;
-  border-radius: 9999px;
-  background: var(--gold);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-.nav.scrolled .nav-dot {
-  background: var(--green);
+  background: var(--pink-mid);
+  transform: rotate(45deg);
 }
 
 .nav-wordmark {
   white-space: nowrap;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-family: var(--serif);
+  font-size: 1.0625rem;
+  color: var(--ink);
+  letter-spacing: 0.04em;
 }
 
 .nav-links {
@@ -131,455 +180,286 @@ img {
   gap: 2rem;
 }
 
-.nav-wordmark,
-.nav-links a,
-.nav-cta {
-  color: var(--cream);
-  transition: color 0.3s, border-color 0.3s;
-}
-
-.nav.scrolled .nav-wordmark,
-.nav.scrolled .nav-links a {
-  color: var(--ink);
-}
-
-.nav.scrolled .nav-cta {
-  color: var(--green);
-  border-color: var(--green);
-}
-
-.nav-links a,
-.nav-cta {
+.nav-links a {
+  color: var(--ink-soft);
   text-decoration: none;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  font-size: 0.8125rem;
+  transition: color 0.2s;
 }
 
 .nav-links a:hover {
-  opacity: 0.65;
+  color: var(--pink-ink);
 }
 
-.nav-cta {
-  white-space: nowrap;
-  flex-shrink: 0;
-  border: 1px solid rgba(253, 248, 243, 0.5);
+/* ---------------------------- Botões ---------------------------- */
+
+.btn {
+  display: inline-block;
+  border: none;
   border-radius: 9999px;
-  padding: 0.5rem 1rem;
-  font-size: 0.625rem;
-  letter-spacing: 0.18em;
-  transition: transform 0.2s, color 0.3s, border-color 0.3s;
+  font-family: var(--sans);
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-align: center;
+  padding: 0.9375rem 2.25rem;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
 }
 
-.nav-cta:hover {
-  transform: scale(1.02);
+.btn-pink {
+  background: var(--pink);
+  color: var(--white);
+}
+
+.btn-pink:hover {
+  background: var(--pink-deep);
+}
+
+.btn-sm {
+  padding: 0.5rem 1.125rem;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.btn-block {
+  display: block;
+  width: 100%;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+/* Link discreto, sublinhado fino — nunca compete com o botão. */
+.link-quiet {
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-bottom: 1px solid var(--pink-line);
+  padding-bottom: 2px;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.link-quiet:hover {
+  color: var(--pink-ink);
+  border-bottom-color: var(--pink-mid);
 }
 
 /* ---------------------------- Hero ----------------------------
-   Bloco verde: é a cor do "Shine" da logo ocupando a tela inteira. */
+   Sem cubo 3D e sem palavra gigante ao fundo: a logo respira no meio
+   de espaço em branco, e é ela que carrega a marca. */
 
 .hero {
-  position: relative;
-  overflow: hidden;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  padding: 7rem 1.5rem 3rem;
-  background: linear-gradient(160deg, var(--green) 0%, var(--green-deep) 100%);
-  color: var(--cream);
-}
-
-.hero-bigword {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  text-align: center;
-  pointer-events: none;
-  user-select: none;
-  font-size: 26vw;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -0.05em;
-  text-transform: uppercase;
-  color: rgba(253, 248, 243, 0.07);
-}
-
-.hero-cube-area {
-  /* A perspectiva precisa estar no pai DIRETO do cubo — se ficar na
-     seção, o cubo é neto e a projeção sai achatada. */
-  perspective: 2000px;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cube {
-  position: relative;
-  width: 62vw;
-  height: 62vw;
-  transform-style: preserve-3d;
-  animation: cube-spin 24s linear infinite;
-}
-
-.cube-face {
-  position: absolute;
-  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  padding: 2rem;
   text-align: center;
-  overflow: hidden;
-  border: 1px solid rgba(253, 248, 243, 0.2);
-  border-radius: 1.5rem;
-  background: rgba(8, 64, 3, 0.55);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  gap: 1.75rem;
+  padding: 8.5rem 1.5rem 5rem;
+  /* Um véu rosa muito leve descendo do topo, no lugar das manchas
+     borradas de antes. */
+  background: radial-gradient(120% 60% at 50% 0%, var(--pink-soft) 0%, var(--pink-bg) 62%);
 }
 
-/* Quatro faces no eixo X, cada uma empurrada por metade da altura. */
-.cube-face:nth-child(1) { transform: rotateX(0deg) translateZ(31vw); }
-.cube-face:nth-child(2) { transform: rotateX(-90deg) translateZ(31vw); }
-.cube-face:nth-child(3) { transform: rotateX(-180deg) translateZ(31vw); }
-.cube-face:nth-child(4) { transform: rotateX(90deg) translateZ(31vw); }
-
-.cube-logo {
-  width: 4rem;
-  height: 4rem;
-  border-radius: 1rem;
-  object-fit: cover;
+.hero-logo {
+  width: 13rem;
+  height: auto;
+  margin: 0.5rem 0 0;
 }
 
-.cube-title {
+.hero-title {
   margin: 0;
-  font-size: 1.25rem;
-  font-weight: 900;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--cream);
-}
-
-.cube-sub {
-  margin: 0;
-  max-width: 22ch;
-  font-size: 0.875rem;
-  color: var(--gold-pale);
-}
-
-.hero-foot {
-  position: relative;
-  margin-top: 3rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.25rem;
-  text-align: center;
+  font-size: 2.25rem;
+  line-height: 1.22;
+  color: var(--ink);
 }
 
 .hero-lead {
   margin: 0;
-  max-width: 34ch;
-  font-size: 1rem;
-  color: rgba(253, 248, 243, 0.82);
+  max-width: 40ch;
+  color: var(--ink-soft);
+}
+
+.hero-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
 }
 
 /* ---------------------------- Seções ---------------------------- */
 
 .section {
-  position: relative;
-  overflow: hidden;
-  padding: 6rem 1.5rem;
+  padding: 5.5rem 1.5rem;
 }
 
-/* A seção da inscrição fica no rosé mais fundo, para o painel branco do
-   formulário se destacar dela. */
-.section-deep {
-  background: var(--rose-deep);
+.section-soft {
+  background: var(--pink-soft);
 }
 
 .wrap {
   margin: 0 auto;
-  max-width: 90rem;
+  max-width: 68rem;
 }
 
 .wrap-narrow {
-  max-width: 48rem;
+  max-width: 40rem;
 }
 
-.display {
-  margin: 0;
-  font-size: 13vw;
-  font-weight: 900;
-  line-height: 0.85;
-  letter-spacing: -0.04em;
-  text-transform: uppercase;
-  color: var(--green);
+.section-title {
+  margin: 1.25rem auto 0;
+  max-width: 22ch;
+  font-size: 1.875rem;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--ink);
 }
 
-.lead {
-  margin: 2rem 0 0;
-  max-width: 46ch;
-  font-size: 1.125rem;
-  color: var(--ink-muted);
-}
+/* ---------------------------- Pilares ---------------------------- */
 
-.lead-tight {
-  margin-top: 1.25rem;
-}
-
-.eyebrow {
-  margin: 0;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--gold-ink);
-}
-
-.grid-3 {
+.pillars {
   margin-top: 4rem;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1rem;
+  gap: 3rem;
 }
 
-.grid-tight {
-  margin-top: 1rem;
+.pillar {
+  text-align: center;
 }
 
-/* Vidro sobre o rosé: branco translúcido e borda de baixo contraste, sem
-   sombra. */
-.glass {
-  border: 1px solid var(--border);
-  border-radius: 1.5rem;
-  background: rgba(255, 255, 255, 0.65);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  padding: 2rem;
+/* Numeral romano em serifa: marca o lugar sem pesar como um selo. */
+.pillar-num {
+  display: block;
+  font-size: 1.125rem;
+  letter-spacing: 0.1em;
+  color: var(--pink-mid);
 }
 
-.card-title {
-  margin: 1.25rem 0 0;
-  font-size: 1.875rem;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  text-transform: uppercase;
-  line-height: 1.1;
-  color: var(--green);
-}
-
-.card-title-sm {
-  font-size: 1.5rem;
-}
-
-.card-body {
+.pillar-title {
   margin: 0.75rem 0 0;
-  font-size: 1rem;
-  color: var(--ink-muted);
-}
-
-/* Passo em destaque na "janela" com os pontinhos do macOS — em verde,
-   para quebrar a sequência de cartões claros. */
-.window {
-  margin-top: 3rem;
-  padding: 0;
-  overflow: hidden;
-  border-color: var(--green);
-  background: linear-gradient(160deg, var(--green) 0%, var(--green-deep) 100%);
-}
-
-.window-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  border-bottom: 1px solid rgba(253, 248, 243, 0.18);
-}
-
-.dot {
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 9999px;
-}
-
-.dot-red { background: #ff5f57; }
-.dot-yellow { background: #febc2e; }
-.dot-green { background: #28c840; }
-
-.window-body {
-  padding: 2rem;
-}
-
-.window .eyebrow {
-  color: var(--gold-pale);
-}
-
-.window-title {
-  margin: 1.25rem 0 0;
-  font-size: 2.25rem;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -0.04em;
-  text-transform: uppercase;
-  color: var(--cream);
-}
-
-.window .lead {
-  color: rgba(253, 248, 243, 0.82);
-}
-
-/* ---------------------------- Brilhos ----------------------------
-   Manchas douradas de baixa opacidade, o mesmo dourado do "DEUS". */
-
-.glow {
-  position: absolute;
-  border-radius: 9999px;
-  background: var(--gold);
-  opacity: 0.14;
-  filter: blur(100px);
-  pointer-events: none;
-}
-
-.glow-hero {
-  left: 50%;
-  top: 33%;
-  width: 40vh;
-  height: 40vh;
-  transform: translateX(-50%);
-  opacity: 0.3;
-}
-
-.glow-right {
-  right: 0;
-  top: 25%;
-  width: 36vh;
-  height: 36vh;
-}
-
-.glow-left {
-  left: 15%;
-  top: 0;
-  width: 36vh;
-  height: 36vh;
-}
-
-/* ---------------------------- Botões ---------------------------- */
-
-/* Dourado do "DEUS", com o degradê da própria logo. */
-.btn-gold {
-  display: inline-block;
-  border: none;
-  border-radius: 9999px;
-  background: linear-gradient(90deg, var(--gold), var(--gold-pale));
+  font-size: 1.5rem;
   color: var(--ink);
-  font-family: inherit;
-  font-size: 0.875rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  text-decoration: none;
-  text-align: center;
-  padding: 1rem 2rem;
-  cursor: pointer;
-  transition: transform 0.2s;
 }
 
-/* Verde do "Shine" — é o botão de ação do sistema, então o de enviar o
-   formulário também é ele. */
-.btn-primary {
-  display: inline-block;
-  width: 100%;
-  border: none;
-  border-radius: 0.875rem;
-  background: var(--green);
-  color: var(--cream);
-  font-family: inherit;
-  font-size: 0.875rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  text-decoration: none;
-  text-align: center;
-  padding: 1rem 2rem;
-  cursor: pointer;
-  transition: transform 0.2s, opacity 0.2s;
+.pillar .body {
+  max-width: 32ch;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.btn-gold:hover,
-.btn-primary:hover {
-  transform: scale(1.02);
+/* ---------------------------- Passos ---------------------------- */
+
+.steps {
+  margin: 3.5rem 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: progress;
-  transform: none;
+.step {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  gap: 1rem;
+  padding: 2rem 0;
+  border-top: 1px solid var(--pink-line);
 }
 
-/* ---------------------------- Formulário ---------------------------- */
+.step:last-child {
+  border-bottom: 1px solid var(--pink-line);
+}
+
+/* Um tom acima do numeral romano dos pilares: ali é puro ornamento,
+   aqui o número diz em que ponto da sequência a leitora está. */
+.step-num {
+  font-size: 1.25rem;
+  color: var(--pink);
+  line-height: 1.5;
+}
+
+.step-title {
+  margin: 0;
+  font-size: 1.375rem;
+  color: var(--ink);
+}
+
+.step .body {
+  margin-top: 0.5rem;
+}
+
+/* ---------------------------- Inscrição ---------------------------- */
 
 .rules {
-  margin-top: 2.5rem;
+  margin-top: 3rem;
+  border: 1px solid var(--pink-line);
+  border-radius: 1rem;
+  background: var(--pink-soft);
+  padding: 1.75rem;
+}
+
+.rules .body {
+  white-space: pre-line;
 }
 
 .form-panel {
-  margin-top: 2.5rem;
-  border: 1px solid var(--border);
-  border-radius: 1.5rem;
+  margin-top: 2rem;
+  border: 1px solid var(--pink-line);
+  border-radius: 1rem;
   background: var(--white);
-  padding: 1.5rem;
-}
-
-.form-status,
-.closed-body,
-.done-body {
-  margin: 0;
-  color: var(--ink-muted);
-  font-size: 0.875rem;
-  text-align: center;
+  padding: 1.75rem;
 }
 
 .form-status {
+  margin: 0;
   padding: 1.5rem 0;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.875rem;
 }
 
-.form-closed,
-.form-done {
+.form-notice {
   text-align: center;
   padding: 1rem 0;
 }
 
-.closed-title,
-.done-title {
-  margin: 0 0 0.5rem;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--green);
+.notice-title {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--ink);
+}
+
+.form-notice .body {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 38ch;
 }
 
 .done-access-text {
-  margin: 1.5rem 0 0.75rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border);
-  color: var(--ink);
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--pink-line);
 }
+
+#done-access .btn {
+  margin-top: 1rem;
+}
+
+/* ---------------------------- Formulário ---------------------------- */
 
 #form {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.375rem;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
+  gap: 0.4375rem;
   border: none;
   margin: 0;
   padding: 0;
@@ -588,46 +468,57 @@ img {
 
 .field label,
 .field legend {
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.8125rem;
+  font-weight: 400;
   color: var(--ink);
   padding: 0;
 }
 
+/* Campo sem caixa: só um fio embaixo. É o que mais aproxima o formulário
+   do resto da página. */
 .field input,
 .field textarea {
   width: 100%;
   font-family: inherit;
   font-size: 1rem;
+  font-weight: 300;
   color: var(--ink);
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  padding: 0.625rem 0.875rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--pink-line);
+  border-radius: 0;
+  padding: 0.5rem 0.125rem;
   outline: none;
+  transition: border-color 0.2s;
 }
 
 .field input:focus,
 .field textarea:focus {
-  border-color: var(--green);
-  box-shadow: 0 0 0 2px rgba(13, 91, 6, 0.25);
+  border-bottom-color: var(--pink);
 }
 
 .field textarea {
+  border: 1px solid var(--pink-line);
+  border-radius: 0.625rem;
+  padding: 0.625rem 0.75rem;
   resize: vertical;
+}
+
+.field textarea:focus {
+  border-color: var(--pink);
 }
 
 .hint {
   margin: 0;
   font-size: 0.75rem;
-  color: var(--ink-muted);
+  color: var(--ink-soft);
 }
 
 .checks {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  margin-top: 0.25rem;
+  gap: 0.625rem 1.125rem;
+  margin-top: 0.375rem;
 }
 
 .checks label,
@@ -643,11 +534,9 @@ img {
 .consent {
   align-items: flex-start;
   gap: 0.625rem;
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
-  background: var(--rose);
-  padding: 1rem;
-  line-height: 1.4;
+  border-top: 1px solid var(--pink-line);
+  padding-top: 1.375rem;
+  line-height: 1.5;
 }
 
 .checks input,
@@ -656,11 +545,11 @@ img {
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
-  accent-color: var(--green);
+  accent-color: var(--pink);
 }
 
 .consent input {
-  margin-top: 0.125rem;
+  margin-top: 0.1875rem;
 }
 
 .form-error {
@@ -680,103 +569,73 @@ img {
 /* ---------------------------- Rodapé ---------------------------- */
 
 .footer {
-  padding: 4rem 1.5rem;
-  background: linear-gradient(160deg, var(--green) 0%, var(--green-deep) 100%);
-  color: var(--cream);
+  padding: 4.5rem 1.5rem 3.5rem;
+  text-align: center;
+  background: var(--pink-soft);
 }
 
-.footer .display {
-  color: var(--cream);
-}
-
-.display-footer {
-  font-size: 13vw;
-}
-
-.footer-row {
-  margin-top: 2.5rem;
-  padding-top: 2rem;
-  border-top: 1px solid rgba(253, 248, 243, 0.18);
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+.footer-name {
+  margin: 2rem 0 0;
+  font-size: 1.75rem;
+  color: var(--ink);
 }
 
 .footer-note {
-  margin: 0;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(253, 248, 243, 0.72);
+  margin: 0.375rem 0 1.75rem;
+  font-size: 0.875rem;
+  color: var(--ink-soft);
 }
 
-.footer-link {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--gold-pale);
-  text-decoration: none;
-  transition: opacity 0.2s;
-}
-
-.footer-link:hover {
-  opacity: 0.7;
-}
-
-/* ---------------------------- Animações ---------------------------- */
-
-@keyframes cube-spin {
-  to { transform: rotateX(360deg); }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.25; }
-}
+/* ---------------------------- Movimento ----------------------------
+   A página não anima nada por conta própria: a única transição é a da
+   nav ao rolar e o hover dos botões. */
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .cube,
-  .nav-dot {
-    animation: none;
-  }
+  * { transition: none !important; }
 }
 
 /* ---------------------------- Telas maiores ---------------------------- */
 
 @media (min-width: 641px) {
-  .cube { width: 46vh; height: 46vh; }
-  .cube-face:nth-child(1) { transform: rotateX(0deg) translateZ(23vh); }
-  .cube-face:nth-child(2) { transform: rotateX(-90deg) translateZ(23vh); }
-  .cube-face:nth-child(3) { transform: rotateX(-180deg) translateZ(23vh); }
-  .cube-face:nth-child(4) { transform: rotateX(90deg) translateZ(23vh); }
-
-  .cube-logo { width: 5rem; height: 5rem; }
-  .cube-title { font-size: 1.5rem; }
-
   .nav-inner { padding: 1.25rem 2rem; }
-  .nav-wordmark { font-size: 0.875rem; letter-spacing: 0.2em; }
-  .nav-cta { padding: 0.5rem 1.25rem; font-size: 0.75rem; letter-spacing: 0.2em; }
 
-  .section { padding: 8rem 2rem; }
-  .footer { padding: 4rem 2rem; }
-  .display { font-size: 10vw; }
-  .display-footer { font-size: 9vw; }
-  .hero-lead { font-size: 1.125rem; }
-  .window-body { padding: 3.5rem; }
-  .window-title { font-size: 3.75rem; }
+  .hero {
+    gap: 2rem;
+    padding: 10rem 2rem 6.5rem;
+  }
+  .hero-logo { width: 16rem; }
+  .hero-title { font-size: 3.25rem; }
+  .hero-lead { font-size: 1.0625rem; }
+
+  .hero-actions {
+    flex-direction: row;
+    gap: 2rem;
+  }
+
+  .section { padding: 7rem 2rem; }
+  .section-title { font-size: 2.5rem; }
+
+  .pillars {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3.5rem;
+  }
+
+  .step {
+    grid-template-columns: 5rem 1fr;
+    gap: 2rem;
+    padding: 2.5rem 0;
+  }
+  .step-num { font-size: 1.5rem; }
+  .step-title { font-size: 1.5rem; }
+
+  .rules,
   .form-panel { padding: 2.5rem; }
 
-  .footer-row {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
+  .footer { padding: 6rem 2rem 4rem; }
+  .footer-name { font-size: 2.25rem; }
 }
 
 @media (min-width: 768px) {
   .nav-links { display: flex; }
-  .grid-3 { grid-template-columns: repeat(3, 1fr); }
 }

@@ -6,9 +6,9 @@
     <title>Café com Deus Shine — inscreva-se</title>
     <meta
       name="description"
-      content="Um encontro semanal de mulheres, em volta de um café, para ouvir a Palavra e caminhar juntas. Inscreva-se e encontramos o grupo mais perto de você."
+      content="Um encontro mensal de mulheres, em volta de um café, para ouvir a Palavra e caminhar juntas. Inscreva-se e encontramos o grupo mais perto de você."
     />
-    <meta name="theme-color" content="#0d5b06" />
+    <meta name="theme-color" content="#fdf6f6" />
     <link rel="icon" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
 
@@ -18,106 +18,111 @@
     <meta property="og:title" content="Café com Deus Shine" />
     <meta
       property="og:description"
-      content="Um encontro semanal de mulheres, em volta de um café, para ouvir a Palavra e caminhar juntas."
+      content="Um encontro mensal de mulheres, em volta de um café, para ouvir a Palavra e caminhar juntas."
     />
     <meta property="og:image" content="/assets/logo-official.png" />
     <meta name="twitter:card" content="summary_large_image" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Fontes do próprio site (ver fonts.css): nenhuma requisição a
+         terceiro no carregamento. As duas de maior peso visual entram
+         com preload para o título não piscar. -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;600;700;900&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      href="/assets/fonts/cormorant-garamond-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
+    <link
+      rel="preload"
+      href="/assets/fonts/geist-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="/fonts.css" />
     <link rel="stylesheet" href="/styles.css" />
     <script src="/config.js"></script>
   </head>
 
   <body>
-    <!-- A nav começa transparente sobre o hero verde e ganha um vidro
-         rosé ao rolar (a classe é trocada no app.js). -->
+    <!-- A nav é transparente sobre o hero e ganha um fundo claro ao rolar
+         (a classe é trocada no app.js). O texto é escuro o tempo todo —
+         a página inteira é clara. -->
     <header class="nav" id="nav">
       <nav class="nav-inner">
-        <div class="nav-brand">
+        <a class="nav-brand" href="#topo">
           <span class="nav-dot" aria-hidden="true"></span>
           <span class="nav-wordmark">Café com Deus</span>
-        </div>
+        </a>
         <div class="nav-links">
           <a href="#sobre">O que é</a>
           <a href="#como-funciona">Como funciona</a>
           <a href="#inscricao">Inscrição</a>
         </div>
-        <a class="nav-cta" href="#inscricao">Quero participar</a>
+        <a class="btn btn-pink btn-sm" href="#inscricao">Quero participar</a>
       </nav>
     </header>
 
-    <main>
+    <main id="topo">
       <!-- ================= HERO ================= -->
       <section class="hero">
-        <div class="glow glow-hero" aria-hidden="true"></div>
-        <span class="hero-bigword" aria-hidden="true">Shine</span>
+        <p class="label">Encontros mensais de mulheres</p>
 
-        <div class="hero-cube-area">
-          <div class="cube">
-            <div class="cube-face">
-              <img src="/assets/logo.png" alt="" width="512" height="512" class="cube-logo" />
-              <p class="cube-title">Café com Deus</p>
-              <p class="cube-sub">Um encontro por semana</p>
-            </div>
-            <div class="cube-face">
-              <p class="cube-title">Palavra</p>
-              <p class="cube-sub">Que sustenta a semana inteira</p>
-            </div>
-            <div class="cube-face">
-              <p class="cube-title">Mulheres</p>
-              <p class="cube-sub">Caminhando juntas</p>
-            </div>
-            <div class="cube-face">
-              <p class="cube-title">Perto de você</p>
-              <p class="cube-sub">Um café no seu bairro</p>
-            </div>
-          </div>
+        <img
+          src="/assets/logo-lockup.png"
+          alt="Café com Deus Shine"
+          width="876"
+          height="866"
+          class="hero-logo"
+        />
+
+        <h1 class="serif hero-title">
+          Um café, uma Palavra,<br />
+          uma mesa que te espera.
+        </h1>
+
+        <p class="hero-lead">
+          Uma vez por mês, mulheres se encontram em casas pelos bairros para tomar um café
+          e ouvir a Palavra juntas. Sem palco, sem plateia.
+        </p>
+
+        <div class="hero-actions">
+          <a class="btn btn-pink" href="#inscricao">Quero me inscrever</a>
+          <a class="link-quiet" href="#como-funciona">Como funciona</a>
         </div>
 
-        <div class="hero-foot">
-          <p class="hero-lead">
-            Um encontro semanal de mulheres, em volta de um café, para ouvir a Palavra e
-            caminhar juntas.
-          </p>
-          <a class="btn-gold" href="#inscricao">Quero me inscrever</a>
-        </div>
+        <span class="ornament" aria-hidden="true"></span>
       </section>
 
       <!-- ================= O QUE É ================= -->
       <section class="section" id="sobre">
         <div class="wrap">
-          <h2 class="display">O que é</h2>
-          <p class="lead">
-            O Café com Deus Shine é um encontro semanal de mulheres em grupos pequenos,
-            espalhados pelos bairros. Cada grupo tem uma líder, um endereço e um horário —
-            e a mesma Palavra no mês.
-          </p>
+          <p class="label label-center">O que é</p>
+          <h2 class="serif section-title">
+            Um grupo pequeno, perto de casa, com a mesma Palavra no mês.
+          </h2>
 
-          <div class="grid-3">
-            <article class="glass">
-              <p class="eyebrow">01</p>
-              <h3 class="card-title">Palavra</h3>
-              <p class="card-body">
+          <div class="pillars">
+            <article class="pillar">
+              <span class="serif pillar-num" aria-hidden="true">i</span>
+              <h3 class="serif pillar-title">Palavra</h3>
+              <p class="body">
                 Cada encontro tem um tema do mês e uma palavra ministrada, para levar junto
-                na semana.
+                no mês inteiro.
               </p>
             </article>
-            <article class="glass">
-              <p class="eyebrow">02</p>
-              <h3 class="card-title">Mesa</h3>
-              <p class="card-body">
+            <article class="pillar">
+              <span class="serif pillar-num" aria-hidden="true">ii</span>
+              <h3 class="serif pillar-title">Mesa</h3>
+              <p class="body">
                 Um café de verdade, na casa de alguém do seu bairro. Sem palco, sem plateia.
               </p>
             </article>
-            <article class="glass">
-              <p class="eyebrow">03</p>
-              <h3 class="card-title">Caminho</h3>
-              <p class="card-body">
+            <article class="pillar">
+              <span class="serif pillar-num" aria-hidden="true">iii</span>
+              <h3 class="serif pillar-title">Caminho</h3>
+              <p class="body">
                 Você entra num grupo pequeno, com uma líder que acompanha sua caminhada de
                 perto.
               </p>
@@ -127,71 +132,73 @@
       </section>
 
       <!-- ================= COMO FUNCIONA ================= -->
-      <section class="section" id="como-funciona">
-        <div class="glow glow-right" aria-hidden="true"></div>
-        <div class="wrap">
-          <h2 class="display">Como funciona</h2>
+      <section class="section section-soft" id="como-funciona">
+        <div class="wrap wrap-narrow">
+          <p class="label label-center">Como funciona</p>
+          <h2 class="serif section-title">Do formulário até a sua primeira xícara.</h2>
 
-          <article class="glass window">
-            <div class="window-bar">
-              <span class="dot dot-red" aria-hidden="true"></span>
-              <span class="dot dot-yellow" aria-hidden="true"></span>
-              <span class="dot dot-green" aria-hidden="true"></span>
-            </div>
-            <div class="window-body">
-              <p class="eyebrow">Passo 1</p>
-              <h3 class="window-title">Você se inscreve</h3>
-              <p class="lead lead-tight">
-                Preenche o formulário aqui embaixo contando onde mora e quando consegue
-                participar. Leva menos de três minutos.
-              </p>
-            </div>
-          </article>
-
-          <div class="grid-3 grid-tight">
-            <article class="glass">
-              <p class="eyebrow">Passo 2</p>
-              <h3 class="card-title card-title-sm">Encontramos seu café</h3>
-              <p class="card-body">
-                Nossa equipe procura o grupo mais perto de você, com dia e horário que
-                caibam na sua rotina.
-              </p>
-            </article>
-            <article class="glass">
-              <p class="eyebrow">Passo 3</p>
-              <h3 class="card-title card-title-sm">Sua líder entra em contato</h3>
-              <p class="card-body">
-                Ela te chama no WhatsApp, se apresenta e te conta tudo sobre o primeiro
-                encontro.
-              </p>
-            </article>
-            <article class="glass">
-              <p class="eyebrow">Passo 4</p>
-              <h3 class="card-title card-title-sm">Você acompanha pelo app</h3>
-              <p class="card-body">
-                Depois de se inscrever, você cria seu acesso e vê os próximos encontros, o
-                tema do mês e a Bíblia num lugar só.
-              </p>
-            </article>
-          </div>
+          <!-- Lista com fio fino entre os passos, no lugar dos cartões —
+               é a forma mais silenciosa de mostrar uma sequência. -->
+          <ol class="steps">
+            <li class="step">
+              <span class="serif step-num" aria-hidden="true">01</span>
+              <div>
+                <h3 class="serif step-title">Você se inscreve</h3>
+                <p class="body">
+                  Preenche o formulário aqui embaixo contando onde mora e quando consegue
+                  participar. Leva menos de três minutos.
+                </p>
+              </div>
+            </li>
+            <li class="step">
+              <span class="serif step-num" aria-hidden="true">02</span>
+              <div>
+                <h3 class="serif step-title">Encontramos seu café</h3>
+                <p class="body">
+                  Nossa equipe procura o grupo mais perto de você, com dia e horário que
+                  caibam na sua rotina.
+                </p>
+              </div>
+            </li>
+            <li class="step">
+              <span class="serif step-num" aria-hidden="true">03</span>
+              <div>
+                <h3 class="serif step-title">Sua líder entra em contato</h3>
+                <p class="body">
+                  Ela te chama no WhatsApp, se apresenta e te conta tudo sobre o primeiro
+                  encontro.
+                </p>
+              </div>
+            </li>
+            <li class="step">
+              <span class="serif step-num" aria-hidden="true">04</span>
+              <div>
+                <h3 class="serif step-title">Você acompanha pelo app</h3>
+                <p class="body">
+                  Depois de se inscrever, você cria seu acesso e vê os próximos encontros, o
+                  tema do mês e a Bíblia num lugar só.
+                </p>
+              </div>
+            </li>
+          </ol>
         </div>
       </section>
 
       <!-- ================= INSCRIÇÃO ================= -->
-      <section class="section section-deep" id="inscricao">
-        <div class="glow glow-left" aria-hidden="true"></div>
+      <section class="section" id="inscricao">
         <div class="wrap wrap-narrow">
-          <h2 class="display">Inscrição</h2>
-          <p class="lead">
-            Conte um pouco sobre você e onde mora. A partir daí, nossa equipe encontra o
-            café mais perto e sua líder entra em contato.
+          <p class="label label-center">Inscrição</p>
+          <h2 class="serif section-title">Conte um pouquinho sobre você.</h2>
+          <p class="body body-center">
+            A partir daí, nossa equipe encontra o café mais perto e sua líder entra em
+            contato.
           </p>
 
-          <!-- Preenchido pelo config.js/app.js quando a pastora escreveu as
-               regras no painel. Fica escondido até lá. -->
-          <div class="glass rules" id="rules" hidden>
-            <p class="eyebrow">Como funciona o café</p>
-            <p class="card-body" id="rules-text"></p>
+          <!-- Preenchido pelo app.js quando a pastora escreveu as regras no
+               painel. Fica escondido até lá. -->
+          <div class="rules" id="rules" hidden>
+            <p class="label">Como funciona o café</p>
+            <p class="body" id="rules-text"></p>
           </div>
 
           <div class="form-panel">
@@ -199,22 +206,22 @@
             <p class="form-status" id="form-loading">Carregando o formulário…</p>
 
             <!-- Inscrições fechadas (nenhuma origem ativa no sistema). -->
-            <div class="form-closed" id="form-closed" hidden>
-              <p class="closed-title">As inscrições estão fechadas no momento</p>
-              <p class="closed-body">
+            <div class="form-notice" id="form-closed" hidden>
+              <p class="serif notice-title">As inscrições estão fechadas no momento</p>
+              <p class="body">
                 Fale com a equipe do Café com Deus Shine para saber da próxima turma.
               </p>
             </div>
 
             <!-- Sucesso. -->
-            <div class="form-done" id="form-done" hidden>
-              <p class="done-title">Inscrição recebida! 💛</p>
-              <p class="done-body" id="done-body"></p>
+            <div class="form-notice" id="form-done" hidden>
+              <p class="serif notice-title">Inscrição recebida</p>
+              <p class="body" id="done-body"></p>
               <div id="done-access" hidden>
-                <p class="done-body done-access-text">
+                <p class="body done-access-text">
                   Agora crie seu acesso para acompanhar sua jornada pelo aplicativo:
                 </p>
-                <a class="btn-primary" id="done-link" href="#">Criar meu acesso</a>
+                <a class="btn btn-pink btn-block" id="done-link" href="#">Criar meu acesso</a>
               </div>
             </div>
 
@@ -332,7 +339,9 @@
 
               <p class="form-error" id="form-error" hidden role="alert"></p>
 
-              <button class="btn-primary" type="submit" id="submit">Quero me inscrever</button>
+              <button class="btn btn-pink btn-block" type="submit" id="submit">
+                Quero me inscrever
+              </button>
             </form>
           </div>
         </div>
@@ -341,11 +350,10 @@
 
     <footer class="footer">
       <div class="wrap">
-        <p class="display display-footer">Café com Deus Shine</p>
-        <div class="footer-row">
-          <p class="footer-note">Um encontro por semana, uma mesa de cada vez</p>
-          <a class="footer-link" id="login-link" href="#">Já participo — entrar</a>
-        </div>
+        <span class="ornament" aria-hidden="true"></span>
+        <p class="serif footer-name">Café com Deus Shine</p>
+        <p class="footer-note">Um encontro por mês, uma mesa de cada vez</p>
+        <a class="link-quiet" id="login-link" href="#">Já participo — entrar</a>
       </div>
     </footer>
 
