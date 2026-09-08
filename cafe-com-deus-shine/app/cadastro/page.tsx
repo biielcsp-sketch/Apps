@@ -34,10 +34,10 @@ export default async function CadastroPage({
         <BackButton />
         <div className="mt-4 mb-6 flex flex-col items-center text-center">
           <Image
-            src="/icons/logo-official.png"
+            src="/icons/logo-cafe-com-deus.png"
             alt="Café com Deus Shine"
-            width={876}
-            height={866}
+            width={900}
+            height={562}
             className="h-32 w-auto"
             priority
           />

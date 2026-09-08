@@ -8,10 +8,10 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm bg-logo-panel p-8">
         <div className="mb-8 flex flex-col items-center text-center">
           <Image
-            src="/icons/logo-official.png"
+            src="/icons/logo-cafe-com-deus.png"
             alt="Café com Deus Shine"
-            width={876}
-            height={866}
+            width={900}
+            height={562}
             className="h-40 w-auto"
             priority
           />
