@@ -11,7 +11,20 @@ import { z } from "zod";
 // variável for chamada pela primeira vez).
 const ServerEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.url({ error: "precisa ser uma URL válida (ex.: https://xxxx.supabase.co)" }),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, { error: "não pode ficar vazia" }),
+  // Esta vai inteira para o JavaScript do navegador (todo NEXT_PUBLIC_ vai).
+  // Por isso só pode ser a chave pública: `sb_publishable_...` ou a anon
+  // legada (um JWT, que começa com "eyJ"). Já aconteceu de a chave secreta
+  // ser colada aqui por engano — e uma chave `sb_secret_` publicada assim
+  // ignora toda a RLS para quem abrir o código-fonte da página. Agora a
+  // aplicação se recusa a subir nesse estado em vez de servir o buraco.
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z
+    .string()
+    .min(1, { error: "não pode ficar vazia" })
+    .refine((v) => !v.startsWith("sb_secret_"), {
+      error:
+        "está com a chave SECRETA (sb_secret_...), que vai parar no navegador de quem abrir o site. " +
+        "Use a publishable (sb_publishable_...), em Supabase → Project Settings → API Keys",
+    }),
   // Chave mestra — ignora RLS. Nunca prefixar com NEXT_PUBLIC_, nunca
   // importar este módulo de um Client Component (o "server-only" acima já
   // impede isso na build).
@@ -29,6 +42,18 @@ function loadServerEnv() {
     const details = result.error.issues.map((issue) => `  - ${issue.path.join(".")}: ${issue.message}`).join("\n");
     throw new Error(
       `Configuração de ambiente inválida — corrija .env.local (ou as variáveis do Netlify) antes de subir a aplicação:\n${details}`,
+    );
+  }
+
+  // A mesma checagem por outro ângulo: mesmo que um dia a secreta mude de
+  // prefixo, ela nunca pode ser igual à chave que vai para o navegador.
+  if (
+    result.data.NEXT_PUBLIC_SUPABASE_ANON_KEY === result.data.SUPABASE_SERVICE_ROLE_KEY
+  ) {
+    throw new Error(
+      "Configuração de ambiente inválida — NEXT_PUBLIC_SUPABASE_ANON_KEY está com o mesmo " +
+        "valor de SUPABASE_SERVICE_ROLE_KEY. A primeira é publicada no navegador; a segunda " +
+        "ignora toda a RLS. Troque a NEXT_PUBLIC_ pela chave publishable.",
     );
   }
 
