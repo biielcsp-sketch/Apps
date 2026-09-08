@@ -1,11 +1,13 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile } from "@/lib/services/profiles.service";
 import { logAuditEvent } from "@/lib/services/audit.service";
 import {
   createResumableUpload,
+  createDriveFolder,
   getDriveFileMeta,
-  getConfiguredFolderId,
+  getPinnedFolderId,
   deleteFromDrive,
 } from "@/lib/google-drive";
 import { AppError, dbError } from "@/lib/errors";
@@ -175,6 +177,50 @@ export async function listGroupsICanPostTo(): Promise<{ id: string; name: string
   return data ?? [];
 }
 
+/* ------------------------- A pasta do mural -------------------------
+   Por padrão o app cria a própria pasta no Drive de quem autorizou, e
+   guarda o id em app_config. É o que permite usar a permissão estreita
+   do Google (drive.file, que só enxerga arquivo criado pelo próprio
+   app): com ela não há verificação a passar, nem política de privacidade
+   a publicar, nem autorização caindo a cada 7 dias.
+
+   A pasta aparece no Drive dela normalmente e pode ser movida ou
+   renomeada — o acesso é pelo id, não pelo lugar onde ela está.
+
+   GOOGLE_DRIVE_FOLDER_ID continua valendo como override, para quem
+   preferir fixar uma pasta que já existe. Aí é preciso a permissão ampla
+   do Drive, com tudo o que ela cobra. */
+
+const FOLDER_CONFIG_KEY = "drive_folder_id";
+const FOLDER_NAME = "Café com Deus Shine — Mural";
+
+async function getMuralFolderId(): Promise<string> {
+  const pinned = getPinnedFolderId();
+  if (pinned) return pinned;
+
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("app_config")
+    .select("value")
+    .eq("key", FOLDER_CONFIG_KEY)
+    .maybeSingle();
+
+  const saved = (data?.value as { id?: string } | null)?.id;
+  if (saved) return saved;
+
+  // Primeira publicação de todas: cria a pasta e guarda o id. Se duas
+  // usuárias publicarem no mesmo instante, o upsert deixa uma das duas
+  // pastas órfã e vazia no Drive — chato, não quebra nada, e é raro o
+  // bastante para não valer um lock.
+  const folderId = await createDriveFolder(FOLDER_NAME);
+  const { error } = await admin
+    .from("app_config")
+    .upsert({ key: FOLDER_CONFIG_KEY, value: { id: folderId } });
+  if (error) dbError(error, "cafeMedia.saveFolderId");
+
+  return folderId;
+}
+
 /* ------------------------- Envio -------------------------
    Duas etapas. O servidor abre a sessão de upload (só ele tem o token do
    Drive) e o navegador manda os bytes direto para o Google; depois o
@@ -217,7 +263,11 @@ export async function createMediaUploadSession(input: {
   // Nome sempre gerado aqui: nome vindo do navegador nunca vira nome de
   // arquivo no Drive.
   const fileName = `${input.groupId}-${crypto.randomUUID()}.${extensionFor(input.mimeType)}`;
-  const uploadUrl = await createResumableUpload({ mimeType: input.mimeType, fileName });
+  const uploadUrl = await createResumableUpload({
+    mimeType: input.mimeType,
+    fileName,
+    folderId: await getMuralFolderId(),
+  });
 
   return { uploadUrl, mediaType };
 }
@@ -238,7 +288,7 @@ export async function registerCafeMedia(input: {
   const meta = await getDriveFileMeta(input.driveFileId);
   if (!meta) throw new AppError("O arquivo não foi encontrado no Google Drive.");
 
-  if (!meta.parents.includes(getConfiguredFolderId())) {
+  if (!meta.parents.includes(await getMuralFolderId())) {
     throw new AppError("Arquivo fora da pasta do mural.");
   }
 

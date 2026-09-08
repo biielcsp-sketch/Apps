@@ -22,23 +22,53 @@ function config() {
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
   const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN;
-  const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
 
-  if (!clientId || !clientSecret || !refreshToken || !folderId) {
+  if (!clientId || !clientSecret || !refreshToken) {
     throw new AppError(
       "O envio de fotos e vídeos ainda não foi configurado. Fale com quem cuida do sistema.",
     );
   }
-  return { clientId, clientSecret, refreshToken, folderId };
+  return { clientId, clientSecret, refreshToken };
 }
 
 export function isDriveConfigured() {
   return Boolean(
     process.env.GOOGLE_OAUTH_CLIENT_ID &&
       process.env.GOOGLE_OAUTH_CLIENT_SECRET &&
-      process.env.GOOGLE_OAUTH_REFRESH_TOKEN &&
-      process.env.GOOGLE_DRIVE_FOLDER_ID,
+      process.env.GOOGLE_OAUTH_REFRESH_TOKEN,
   );
+}
+
+// Pasta fixada por variável de ambiente. Só funciona com a permissão
+// ampla do Drive; com a estreita (drive.file, que é a recomendada) o app
+// não enxerga pasta que não criou, e quem manda é a pasta própria dele —
+// ver createDriveFolder abaixo.
+export function getPinnedFolderId(): string | null {
+  return process.env.GOOGLE_DRIVE_FOLDER_ID || null;
+}
+
+// Cria a pasta do mural no Drive da conta que autorizou. Como foi o app
+// que criou, ele continua enxergando ela mesmo com a permissão estreita —
+// e é isso que dispensa a verificação do Google.
+export async function createDriveFolder(name: string): Promise<string> {
+  const token = await getAccessToken();
+  const response = await fetch(`${API}/files?fields=id`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json; charset=UTF-8",
+    },
+    body: JSON.stringify({ name, mimeType: "application/vnd.google-apps.folder" }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    console.error("[drive] criação da pasta falhou:", response.status, detail.slice(0, 400));
+    throw new AppError("Não foi possível criar a pasta do mural no Google Drive.");
+  }
+
+  const data = (await response.json()) as { id: string };
+  return data.id;
 }
 
 /* ------------------------- Token de acesso -------------------------
@@ -99,8 +129,8 @@ async function getAccessToken(): Promise<string> {
 export async function createResumableUpload(input: {
   mimeType: string;
   fileName: string;
+  folderId: string;
 }): Promise<string> {
-  const { folderId } = config();
   const token = await getAccessToken();
 
   const response = await fetch(
@@ -112,7 +142,7 @@ export async function createResumableUpload(input: {
         "content-type": "application/json; charset=UTF-8",
         "x-upload-content-type": input.mimeType,
       },
-      body: JSON.stringify({ name: input.fileName, parents: [folderId] }),
+      body: JSON.stringify({ name: input.fileName, parents: [input.folderId] }),
     },
   );
 
@@ -173,10 +203,6 @@ export async function getDriveFileMeta(fileId: string): Promise<DriveFileMeta | 
     size: Number(data.size ?? 0),
     parents: data.parents ?? [],
   };
-}
-
-export function getConfiguredFolderId(): string {
-  return config().folderId;
 }
 
 // Busca o conteúdo do arquivo. `range` é repassado para o Google quando

@@ -23,11 +23,17 @@ import { stdin, stdout } from "node:process";
 // página (ela vai dar erro de conexão — é esperado, o que importa é a URL).
 const REDIRECT = "http://localhost:53682/";
 
-// Escopo cheio do Drive: é o que garante escrever numa pasta que já
-// existe, criada por você e não pelo app. O drive.file, mais restrito,
-// só enxerga arquivos que o próprio app criou — e aí a pasta que você
-// escolheu não seria alcançável.
-const SCOPE = "https://www.googleapis.com/auth/drive";
+// drive.file: o app só enxerga o que ele mesmo criou. O Google
+// classifica como não-sensível, então publicar o app é um clique — sem
+// política de privacidade, sem site, sem auditoria, e sem a autorização
+// caindo a cada 7 dias.
+//
+// O preço é que o app não alcança pasta que não criou; por isso ele cria
+// a própria pasta do mural no Drive desta conta. Se um dia você precisar
+// fixar uma pasta que já existe, troque por
+// "https://www.googleapis.com/auth/drive" e configure
+// GOOGLE_DRIVE_FOLDER_ID — mas aí o Google passa a exigir a verificação.
+const SCOPE = "https://www.googleapis.com/auth/drive.file";
 
 const rl = createInterface({ input: stdin, output: stdout });
 

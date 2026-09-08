@@ -80,12 +80,14 @@ dizendo que o envio ainda não foi configurado.
    um projeto (ou use um que já tenha).
 2. **APIs e serviços → Biblioteca** → procure **Google Drive API** →
    *Ativar*.
-3. **APIs e serviços → Tela de consentimento OAuth**: tipo **Externo**,
-   preencha nome do app e e-mail de contato.
-4. Ainda na tela de consentimento, **publique o app** (*Publicar app* /
-   "Em produção"). Este passo não é opcional: enquanto o app estiver em
-   **Testing**, o Google derruba a autorização a cada 7 dias e o mural
-   para de aceitar envios toda semana.
+3. **APIs e serviços → Tela de consentimento OAuth** (hoje aparece como
+   **Google Auth Platform**): tipo **Externo**, preencha nome do app e
+   e-mail de contato. Página inicial, política de privacidade e termos
+   ficam em branco — com a permissão que usamos, o Google não os exige.
+4. Em **Público** (Audience), **publique o app** (*Publicar app* / "Em
+   produção"). Este passo não é opcional: enquanto o app estiver em
+   **Teste**, o Google derruba a autorização a cada 7 dias e o mural para
+   de aceitar envios toda semana.
 5. **Credenciais → Criar credenciais → ID do cliente OAuth** → tipo
    **App para computador** (Desktop app). Anote o **Client ID** e o
    **Client Secret**.
@@ -110,13 +112,14 @@ Em **Site configuration → Environment variables**:
 
 | Nome | Valor |
 |---|---|
-| `GOOGLE_DRIVE_FOLDER_ID` | `1hEjy6uVwOBOkfDTWiJo7AE_m7v6O9ArY` |
 | `GOOGLE_OAUTH_CLIENT_ID` | o Client ID do passo 1 |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | o Client Secret do passo 1 |
 | `GOOGLE_OAUTH_REFRESH_TOKEN` | o que saiu do passo 2 |
 
-O `GOOGLE_DRIVE_FOLDER_ID` é o trecho final do endereço da pasta: em
-`drive.google.com/drive/folders/XXXX`, é o `XXXX`.
+São três, não quatro: a pasta o próprio app cria, com o nome
+**Café com Deus Shine — Mural**, no Drive da conta que autorizou. Ela
+aparece lá normalmente e pode ser movida ou renomeada à vontade — o app
+acha pelo id, não pelo lugar.
 
 Salve e refaça o deploy (**Deploys → Trigger deploy**) para as funções
 enxergarem as variáveis.
@@ -137,6 +140,18 @@ de celular sem esbarrar no limite de tamanho das funções do Netlify.
 página, então cada foto e vídeo é servida por `/api/midia/<id>`, que
 confere se quem pediu pode ver aquela publicação e só então repassa o
 conteúdo. Vídeo funciona com adiantar/voltar normalmente.
+
+### Se preferir usar uma pasta que já existe
+
+Dá, mas custa caro. Fixar uma pasta que o app não criou exige a permissão
+ampla do Drive (`https://www.googleapis.com/auth/drive`, no lugar de
+`drive.file` no script de autorização) — e com ela o Google passa a
+exigir política de privacidade publicada, site do app e uma auditoria de
+segurança que leva semanas. Para um mural de igreja não compensa.
+
+Se ainda assim quiser: troque o escopo no script, gere o token de novo e
+configure `GOOGLE_DRIVE_FOLDER_ID` com o trecho final do endereço da
+pasta (em `drive.google.com/drive/folders/XXXX`, é o `XXXX`).
 
 ### Se der problema
 
