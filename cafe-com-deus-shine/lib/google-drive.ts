@@ -24,6 +24,11 @@ function config() {
   const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN;
 
   if (!clientId || !clientSecret || !refreshToken) {
+    const faltando = driveConfigStatus()
+      .filter((v) => !v.presente)
+      .map((v) => v.nome)
+      .join(", ");
+    console.error("[drive] variáveis de ambiente ausentes:", faltando);
     throw new AppError(
       "O envio de fotos e vídeos ainda não foi configurado. Fale com quem cuida do sistema.",
     );
@@ -32,11 +37,26 @@ function config() {
 }
 
 export function isDriveConfigured() {
-  return Boolean(
-    process.env.GOOGLE_OAUTH_CLIENT_ID &&
-      process.env.GOOGLE_OAUTH_CLIENT_SECRET &&
-      process.env.GOOGLE_OAUTH_REFRESH_TOKEN,
-  );
+  return driveConfigStatus().every((v) => v.presente);
+}
+
+// Diz quais das três variáveis o servidor está enxergando de fato —
+// só o nome e sim/não, nunca o valor. Existe porque "não foi
+// configurado" sozinho não diz o que falta, e quem cuida do sistema
+// fica adivinhando entre variável ausente, nome errado e escopo errado
+// no painel da hospedagem.
+export function driveConfigStatus(): { nome: string; presente: boolean }[] {
+  return [
+    { nome: "GOOGLE_OAUTH_CLIENT_ID", presente: Boolean(process.env.GOOGLE_OAUTH_CLIENT_ID) },
+    {
+      nome: "GOOGLE_OAUTH_CLIENT_SECRET",
+      presente: Boolean(process.env.GOOGLE_OAUTH_CLIENT_SECRET),
+    },
+    {
+      nome: "GOOGLE_OAUTH_REFRESH_TOKEN",
+      presente: Boolean(process.env.GOOGLE_OAUTH_REFRESH_TOKEN),
+    },
+  ];
 }
 
 // Pasta fixada por variável de ambiente. Só funciona com a permissão
