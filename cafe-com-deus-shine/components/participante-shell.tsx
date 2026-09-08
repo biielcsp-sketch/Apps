@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Sparkles, BookOpen, Newspaper, Menu, X, LogOut } from "lucide-react";
+import { Sparkles, BookOpen, Newspaper, Images, Menu, X, LogOut } from "lucide-react";
 import { NavLink } from "@/components/nav-link";
 import { SidebarIdentity } from "@/components/ui/SidebarIdentity";
 import { logout } from "@/app/actions/auth";
 
 const NAV_ITEMS = [
   { href: "/feed", label: "Feed", icon: Newspaper },
+  { href: "/mural", label: "Mural", icon: Images },
   { href: "/minha-jornada", label: "Minha Jornada", icon: Sparkles },
   { href: "/biblia", label: "Bíblia", icon: BookOpen },
 ];

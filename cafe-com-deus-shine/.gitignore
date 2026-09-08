@@ -33,6 +33,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# O modelo não tem valor nenhum preenchido e só serve se estiver no
+# repositório — é ele que diz quais variáveis o projeto espera.
+!.env.example
 
 # vercel
 .vercel

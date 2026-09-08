@@ -55,30 +55,114 @@ export type Database = {
           },
         ]
       }
+      cafe_photo_comments: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          photo_id: string
+          profile_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          photo_id: string
+          profile_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          photo_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cafe_photo_comments_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "cafe_photos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cafe_photo_comments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cafe_photo_likes: {
+        Row: {
+          created_at: string
+          photo_id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          photo_id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          photo_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cafe_photo_likes_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "cafe_photos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cafe_photo_likes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cafe_photos: {
         Row: {
           author_profile_id: string
           caption: string | null
           created_at: string
+          drive_file_id: string | null
+          file_name: string | null
           group_id: string
           id: string
-          storage_path: string
+          media_type: string
+          mime_type: string | null
+          storage_path: string | null
         }
         Insert: {
           author_profile_id: string
           caption?: string | null
           created_at?: string
+          drive_file_id?: string | null
+          file_name?: string | null
           group_id: string
           id?: string
-          storage_path: string
+          media_type?: string
+          mime_type?: string | null
+          storage_path?: string | null
         }
         Update: {
           author_profile_id?: string
           caption?: string | null
           created_at?: string
+          drive_file_id?: string | null
+          file_name?: string | null
           group_id?: string
           id?: string
-          storage_path?: string
+          media_type?: string
+          mime_type?: string | null
+          storage_path?: string | null
         }
         Relationships: [
           {

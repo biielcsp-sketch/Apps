@@ -17,6 +17,7 @@ import {
   Menu,
   X,
   LogOut,
+  Images,
 } from "lucide-react";
 import { NavLink } from "@/components/nav-link";
 import { SidebarIdentity } from "@/components/ui/SidebarIdentity";
@@ -24,6 +25,7 @@ import { logout } from "@/app/actions/auth";
 
 const NAV_ITEMS = [
   { href: "/feed", label: "Feed", icon: Newspaper },
+  { href: "/mural", label: "Mural", icon: Images },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/participantes", label: "Participantes", icon: Users },
   { href: "/liderancas", label: "Líderes", icon: UserCog },

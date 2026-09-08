@@ -5,27 +5,28 @@ import { getCurrentProfile } from "@/lib/services/profiles.service";
 import { getMyAvatarSignedUrl } from "@/lib/services/avatar.service";
 import { getDailyVerse } from "@/lib/services/bible.service";
 import { listStudyMaterials } from "@/lib/services/study-materials.service";
-import { listCafePhotos, listGroupsICanPostTo } from "@/lib/services/cafe-photos.service";
+import { getLatestCafeMedia } from "@/lib/services/cafe-media.service";
 import { listMeetings } from "@/lib/services/meetings.service";
 import { RoleShell } from "@/components/role-shell";
-import { PhotoWall } from "@/components/feed/photo-wall";
+import { LatestMedia } from "@/components/feed/latest-media";
 import { StudyMaterialsPanel } from "@/components/estudos/study-materials-panel";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 // Feed: a tela onde a comunidade acompanha o que está acontecendo —
 // versículo do dia, próximos encontros, o tema do mês (só leitura; quem
-// publica é a pastora, em /estudos) e o mural de fotos dos cafés.
+// publica é a pastora, em /estudos) e a última publicação do mural, com
+// atalho para a aba Mural.
 export default async function FeedPage() {
   const profile = await getCurrentProfile();
   if (!profile) redirect("/login");
 
-  const [avatarUrl, verse, materials, photos, postableGroups, meetings] = await Promise.all([
+  const [avatarUrl, verse, materials, latestMedia, meetings] = await Promise.all([
     getMyAvatarSignedUrl(),
     getDailyVerse(),
     listStudyMaterials().catch(() => []),
-    listCafePhotos().catch(() => []),
-    listGroupsICanPostTo().catch(() => []),
+    // Só a última publicação: o mural inteiro tem aba própria.
+    getLatestCafeMedia().catch(() => null),
     listMeetings({}).catch(() => []),
   ]);
 
@@ -111,7 +112,7 @@ export default async function FeedPage() {
           )}
         </Card>
 
-        <PhotoWall photos={photos} postableGroups={postableGroups} />
+        <LatestMedia media={latestMedia} currentProfileId={profile.id} />
       </div>
     </RoleShell>
   );
