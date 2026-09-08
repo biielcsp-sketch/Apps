@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { logAuditEvent } from "@/lib/services/audit.service";
+import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
 import { AppError, dbError } from "@/lib/errors";
 
 export async function requestErasure(participantId: string, reason: string) {
@@ -117,4 +118,20 @@ export async function processErasure(requestId: string) {
       erasure_request_id: requestId,
     },
   });
+}
+
+// Exclusão feita pela pastora/desenvolvedora direto na ficha, sem passar
+// pela fila de solicitações. O efeito é o mesmo do fluxo LGPD já existente
+// — anonimização, não DELETE de linha —, porque a jornada, a presença e os
+// encontros dela são histórico da comunidade e não podem sumir. Reaproveita
+// requestErasure + processErasure para que a solicitação e o processamento
+// continuem registrados do mesmo jeito.
+export async function eraseParticipantNow(participantId: string, reason: string) {
+  const profile = await getCurrentProfile();
+  if (!isAdminRole(profile?.role)) {
+    throw new AppError("Apenas a pastora ou a desenvolvedora podem excluir uma participante.");
+  }
+
+  const { id } = await requestErasure(participantId, reason);
+  await processErasure(id);
 }

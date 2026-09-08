@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { LeaderCreateSchema, LeaderUpdateSchema } from "@/lib/validators/leader.schema";
-import { createLeaderAccount, updateLeader, setLeaderStatus } from "@/lib/services/leaders.service";
+import {
+  createLeaderAccount,
+  updateLeader,
+  setLeaderStatus,
+  deleteLeader,
+} from "@/lib/services/leaders.service";
 import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
 import { AppError, toUserMessage } from "@/lib/errors";
 import type { FormActionState } from "@/app/actions/participants";
@@ -105,4 +110,13 @@ export async function toggleLeaderStatusAction(id: string, currentStatus: "ativa
   await setLeaderStatus(id, currentStatus === "ativa" ? "inativa" : "ativa");
   revalidatePath("/liderancas");
   revalidatePath(`/liderancas/${id}`);
+}
+
+export async function deleteLeaderAction(id: string) {
+  const profile = await getCurrentProfile();
+  if (!isAdminRole(profile?.role)) throw new AppError("Apenas administradoras podem excluir líderes.");
+
+  const result = await deleteLeader(id);
+  revalidatePath("/liderancas");
+  return result;
 }

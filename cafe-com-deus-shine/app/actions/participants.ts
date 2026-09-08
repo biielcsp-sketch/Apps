@@ -18,7 +18,11 @@ import {
   updateMyParticipantProfile,
   getCurrentParticipant,
 } from "@/lib/services/participants.service";
-import { requestErasure, processErasure } from "@/lib/services/erasure.service";
+import {
+  requestErasure,
+  processErasure,
+  eraseParticipantNow,
+} from "@/lib/services/erasure.service";
 import { getCurrentProfile, isAdminRole } from "@/lib/services/profiles.service";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -318,4 +322,19 @@ export async function updateMyParticipantProfileAction(
 
   revalidatePath("/minha-jornada");
   redirect("/minha-jornada");
+}
+
+// Botão "Excluir" da ficha da participante. Chama-se excluir porque é o que
+// a pastora espera encontrar, mas o que acontece por baixo é a anonimização
+// da LGPD: os dados pessoais somem e a jornada fica sem dono. Apagar a linha
+// levaria junto presença e encontros, que são histórico da comunidade.
+export async function deleteParticipantAction(participantId: string) {
+  const profile = await getCurrentProfile();
+  if (!isAdminRole(profile?.role)) {
+    throw new AppError("Apenas administradoras podem excluir participantes.");
+  }
+
+  await eraseParticipantNow(participantId, "Exclusão feita pela administração.");
+  revalidatePath("/participantes");
+  revalidatePath(`/participantes/${participantId}`);
 }

@@ -83,7 +83,12 @@ export default async function ParticipantesPage({
       </div>
 
       <div className="mt-4">
-        <ParticipantsTable participants={participants} basePath="/participantes" alertsMap={alertsMap} />
+        <ParticipantsTable
+          participants={participants}
+          basePath="/participantes"
+          alertsMap={alertsMap}
+          canManage
+        />
       </div>
     </div>
   );

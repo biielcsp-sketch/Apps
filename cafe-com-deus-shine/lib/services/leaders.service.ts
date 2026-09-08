@@ -184,3 +184,87 @@ export async function listHostsForSelect() {
   if (error) dbError(error, "leaders.listHostsForSelect");
   return data ?? [];
 }
+
+// Exclui a líder de verdade: a linha de `leaders`, o profile e o login.
+// Só passa quando não há nada pendurado nela — participantes, grupos,
+// encontros, acompanhamentos ou histórico de vínculo. Todas essas FKs são
+// "no action" no banco, então apagar com histórico não é uma escolha de
+// produto: o Postgres recusaria. Quando há histórico, o caminho certo é
+// inativar (a líder some das listas de distribuição e perde a sessão, mas
+// os encontros dela continuam existindo).
+export async function deleteLeader(id: string) {
+  const profile = await getCurrentProfile();
+  if (!isAdminRole(profile?.role)) {
+    throw new AppError("Apenas a pastora ou a desenvolvedora podem excluir uma líder.");
+  }
+
+  const admin = createAdminClient();
+  const { data: leader, error: leaderError } = await admin
+    .from("leaders")
+    .select("id, profile_id, profile:profiles(full_name)")
+    .eq("id", id)
+    .single();
+  if (leaderError || !leader) throw new AppError("Líder não encontrada.");
+
+  if (leader.profile_id === profile!.id) {
+    throw new AppError("Você não pode excluir o seu próprio cadastro de líder.");
+  }
+
+  // Uma consulta por tabela em vez de um laço genérico: o tipo gerado do
+  // banco amarra o nome da coluna à tabela, então um laço só passaria com
+  // `any` — e aqui errar a coluna significaria excluir com histórico.
+  const [participantes, cafes, encontros, acompanhamentos, historico] = await Promise.all([
+    admin.from("participants").select("id", { count: "exact", head: true }).eq("current_leader_id", id),
+    admin.from("groups").select("id", { count: "exact", head: true }).eq("leader_id", id),
+    admin.from("meetings").select("id", { count: "exact", head: true }).eq("leader_id", id),
+    admin.from("follow_ups").select("id", { count: "exact", head: true }).eq("leader_id", id),
+    admin.from("participant_leader_history").select("id", { count: "exact", head: true }).eq("leader_id", id),
+  ]);
+
+  const vinculos: { rotulo: string; total: number }[] = [];
+  for (const [rotulo, resultado] of [
+    ["participante(s) sob responsabilidade dela", participantes],
+    ["café(s) liderado(s) por ela", cafes],
+    ["encontro(s) registrado(s)", encontros],
+    ["acompanhamento(s) escrito(s)", acompanhamentos],
+    ["registro(s) no histórico de vínculo", historico],
+  ] as const) {
+    if (resultado.error) dbError(resultado.error, "leaders.delete.check");
+    if (resultado.count && resultado.count > 0) {
+      vinculos.push({ rotulo, total: resultado.count });
+    }
+  }
+
+  if (vinculos.length > 0) {
+    const lista = vinculos.map((v) => `${v.total} ${v.rotulo}`).join(", ");
+    throw new AppError(
+      `Não dá para excluir: esta líder tem ${lista}. Apagar levaria junto esse histórico. ` +
+        'Transfira as participantes para outra líder e, se ela saiu da equipe, use "Inativar líder".',
+    );
+  }
+
+  const { error: deleteLeaderError } = await admin.from("leaders").delete().eq("id", id);
+  if (deleteLeaderError) dbError(deleteLeaderError, "leaders.delete.leader");
+
+  // O profile pode ter histórico próprio (audit_log, presença registrada).
+  // Se tiver, o Postgres recusa e paramos aqui: a linha de `leaders` já
+  // saiu, então ela deixa de ser líder de fato; sobra só o login, que a
+  // desenvolvedora desativa em Contas.
+  const { error: profileError } = await admin.from("profiles").delete().eq("id", leader.profile_id);
+  if (!profileError) {
+    const { error: authError } = await admin.auth.admin.deleteUser(leader.profile_id);
+    if (authError) dbError(authError, "leaders.delete.auth");
+  }
+
+  await logAuditEvent({
+    action: "leader.delete",
+    entity: "leaders",
+    entityId: id,
+    after: {
+      full_name: leader.profile?.full_name ?? null,
+      login_removido: !profileError,
+    },
+  });
+
+  return { loginRemovido: !profileError };
+}

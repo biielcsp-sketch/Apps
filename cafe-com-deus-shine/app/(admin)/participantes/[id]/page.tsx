@@ -21,6 +21,7 @@ import { CopySignupLink } from "@/components/participantes/copy-signup-link";
 import { ContactButtons } from "@/components/participantes/contact-buttons";
 import { CONTACT_STATUS_BADGE, CONTACT_STATUS_LABELS } from "@/lib/participant-status-labels";
 import { BackLink } from "@/components/ui/BackLink";
+import { ParticipantDeleteButton } from "@/components/participantes/participant-delete-button";
 
 export default async function ParticipantePage({
   params,
@@ -72,13 +73,20 @@ export default async function ParticipantePage({
           </div>
         </div>
         {!participant.anonymized_at && (
-          <Link
-            href={`/participantes/${id}/editar`}
-            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground hover:bg-muted"
-          >
-            <Pencil size={15} />
-            Editar
-          </Link>
+          <div className="flex shrink-0 items-start gap-2">
+            <Link
+              href={`/participantes/${id}/editar`}
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              <Pencil size={15} />
+              Editar
+            </Link>
+            <ParticipantDeleteButton
+              id={id}
+              nome={participant.full_name}
+              redirectTo="/participantes"
+            />
+          </div>
         )}
       </div>
 

@@ -5,6 +5,7 @@ import { getLeader } from "@/lib/services/leaders.service";
 import { listParticipants } from "@/lib/services/participants.service";
 import { LeaderEditForm } from "@/components/liderancas/leader-edit-form";
 import { ToggleStatusButton } from "@/components/liderancas/toggle-status-button";
+import { LeaderDeleteButton } from "@/components/liderancas/leader-delete-button";
 import { ParticipantsTable } from "@/components/participantes/participants-table";
 
 export default async function LiderancaPage({
@@ -28,11 +29,21 @@ export default async function LiderancaPage({
             {leader.profile?.email} · {leader.profile?.phone ?? "sem telefone"}
           </p>
         </div>
-        <ToggleStatusButton id={leader.id} status={leader.status} />
+        <div className="flex shrink-0 items-start gap-2">
+          <ToggleStatusButton id={leader.id} status={leader.status} />
+          <LeaderDeleteButton
+            id={leader.id}
+            nome={leader.profile?.full_name ?? "esta líder"}
+            redirectTo="/liderancas"
+          />
+        </div>
       </div>
 
       <Card className="p-6">
-        <p className="mb-4 text-sm font-semibold text-foreground">Dados da liderança</p>
+        <p className="mb-1 text-sm font-semibold text-foreground">Editar dados da liderança</p>
+        <p className="mb-4 text-xs text-muted-foreground">
+          Altere o que precisar e salve — vale para líder já cadastrada.
+        </p>
         <LeaderEditForm leader={leader} />
       </Card>
 
