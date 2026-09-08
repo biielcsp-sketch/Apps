@@ -97,7 +97,12 @@ export async function updateSession(request: NextRequest) {
     path === "/definir-senha" ||
     path === "/criar-acesso" ||
     // Q2 (cadastro público via QR Code): a visitante nunca tem sessão.
-    path === "/cadastro";
+    path === "/cadastro" ||
+    // Privacidade e termos precisam abrir para qualquer um, inclusive
+    // para o robô do Google que confere o link antes de liberar a
+    // publicação do app OAuth do mural.
+    path === "/privacidade" ||
+    path === "/termos";
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
